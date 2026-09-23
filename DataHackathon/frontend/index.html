@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Аналитика демографии и экономики Казахстана</title>
+  
+  <!-- Стили -->
+  <link rel="stylesheet" href="style.css">
+  
+  <!-- Chart.js для графиков -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- ECharts для интерактивной карты Казахстана -->
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+</head>
+<body>
+
+  <div class="container">
+    <header class="app-header">
+      <h2>Аналитика демографии и экономики Казахстана</h2>
+    </header>
+
+    <!-- Затемнение фона при открытом левом сайдбаре -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+    <!-- Главный макет приложения -->
+    <div class="app-layout" id="appLayout">
+      
+      <!-- 1. ЛЕВЫЙ ВЫДВИЖНОЙ САЙДБАР (КАТЕГОРИИ ДАННЫХ) -->
+      <aside class="category-sidebar" id="categorySidebar">
+        <div class="sidebar-header">
+          <span class="sidebar-title-text">Категории данных</span>
+          <button class="sidebar-close-btn" onclick="toggleSidebar()" title="Закрыть меню">
+            ✕
+          </button>
+        </div>
+
+        <div class="category-tree" id="categoryTree">
+          <!-- Категория 1 -->
+          <div class="cat-group">
+            <div class="cat-header" onclick="toggleCategory(this)">
+              <span class="cat-icon">👥</span>
+              <span class="cat-text">Население и демография</span>
+            </div>
+            <div class="subcat-list">
+              <div class="subcat-item" onclick="selectIndicator('Естественный прирост населения(Человек)')">Естественный прирост</div>
+              <div class="subcat-item" onclick="selectIndicator('Рождаемость(Человек)')">Рождаемость</div>
+              <div class="subcat-item" onclick="selectIndicator('Смертность(Человек)')">Смертность</div>
+            </div>
+          </div>
+
+          <!-- Категория 2 -->
+          <div class="cat-group">
+            <div class="cat-header" onclick="toggleCategory(this)">
+              <span class="cat-icon">📈</span>
+              <span class="cat-text">Экономика и финансы</span>
+            </div>
+            <div class="subcat-list">
+              <div class="subcat-item" onclick="selectIndicator('ВРП (млн тенге)')">ВРП региона</div>
+              <div class="subcat-item" onclick="selectIndicator('Средняя зарплата (тенге)')">Средняя зарплата</div>
+            </div>
+          </div>
+
+          <!-- Категория 3 -->
+          <div class="cat-group">
+            <div class="cat-header" onclick="toggleCategory(this)">
+              <span class="cat-icon">🎓</span>
+              <span class="cat-text">Образование и кадры</span>
+            </div>
+            <div class="subcat-list">
+              <div class="subcat-item" onclick="selectIndicator('Люди с высшим образованием(Человек)')">С высшим образованием</div>
+              <div class="subcat-item" onclick="selectIndicator('Студенты вузов(Человек)')">Студенты вузов</div>
+            </div>
+          </div>
+
+          <!-- Категория 4 -->
+          <div class="cat-group">
+            <div class="cat-header" onclick="toggleCategory(this)">
+              <span class="cat-icon">🏭</span>
+              <span class="cat-text">Промышленность и труд</span>
+            </div>
+            <div class="subcat-list">
+              <div class="subcat-item" onclick="selectIndicator('Промышленное производство (млн тенге)')">Пром. производство</div>
+              <div class="subcat-item" onclick="selectIndicator('Уровень безработицы(%)')">Уровень безработицы</div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- ОСНОВНОЙ КОНТЕНТ -->
+      <main class="content-full">
+        
+        <!-- Кнопка открытия левого сайдбара -->
+        <div class="top-nav-bar">
+          <button class="sidebar-toggle-btn-main" onclick="toggleSidebar()" title="Открыть меню категорий">
+            <img src="img/icon Sidebar left.png" alt="Меню" class="nav-btn-icon" onerror="this.style.display='none'; this.innerText='☰ Меню'">
+          </button>
+        </div>
+
+        <!-- Бегущая строка (Ticker с инсайтами) -->
+        <div class="ticker-container">
+          <div class="ticker-label">AI MARKET TICKER</div>
+          <div class="ticker-wrap">
+            <div class="ticker-track" id="tickerTrack"></div>
+          </div>
+        </div>
+
+        <!-- Панель управления (Фильтры и Переключение вкладок) -->
+        <section class="controls-panel">
+          <div class="control-group" id="yearSelectorBlock">
+            <label for="indicatorSelect">Показатель:</label>
+            <select id="indicatorSelect" onchange="onFilterChange()"></select>
+          </div>
+
+          <div class="control-group" id="yearSelectorBlock2">
+            <label for="yearSelect">Год:</label>
+            <select id="yearSelect" onchange="onFilterChange()"></select>
+          </div>
+
+          <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('year')">По областям (за год)</button>
+            <button class="tab-btn" onclick="switchTab('summary')">Итоговый (все года)</button>
+          </div>
+        </section>
+
+        <!-- Контейнеры графиков и гео-карты -->
+        <div id="yearChartWrapper" class="chart-container">
+          <canvas id="regionChart"></canvas>
+        </div>
+
+        <div id="mapChartWrapper" class="chart-container" style="margin-top: 20px; height: 500px;">
+          <div id="kazakhstanMapChart" style="width: 100%; height: 100%;"></div>
+        </div>
+
+        <div id="summaryChartWrapper" class="chart-container hidden" style="margin-top: 20px;">
+          <canvas id="summaryChart"></canvas>
+        </div>
+
+        <!-- Таблица данных -->
+        <section class="table-section" style="margin-top: 20px;">
+          <div class="table-toolbar">
+            <input type="text" id="searchInput" placeholder="Поиск по регионам..." oninput="filterTable()">
+            <span id="counter">Записей в базе: 0</span>
+          </div>
+          <div class="table-wrapper">
+            <table id="dataTable">
+              <thead id="tableHead"></thead>
+              <tbody id="tableBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- 2. ПРАВЫЙ ВИДЖЕТ ИИ-АССИСТЕНТА -->
+  <button class="ai-toggle-btn" onclick="toggleAIChat()" title="Открыть AI-ассистента">
+    <img src="img/icon Ai.png" alt="AI" class="ai-btn-icon" onerror="this.style.display='none'; this.innerText='🤖'">
+  </button>
+
+  <div class="ai-popup-sidebar" id="aiPopupSidebar">
+    <div class="ai-card">
+      <div class="ai-card-header">
+        <h3>Аналитический AI</h3>
+        <div class="ai-header-controls">
+          <span class="ai-status-badge">Online</span>
+          <button class="close-chat-btn" onclick="toggleAIChat()">✕</button>
+        </div>
+      </div>
+      <div class="chat-messages" id="chatMessages">
+        <div class="chat-bubble ai">Здравствуйте! Я ваш ИИ-помощник по анализу данных Казахстана. Задайте мне вопрос по графикам или показателям.</div>
+      </div>
+      <div class="chat-input-area">
+        <textarea id="chatInput" rows="1" placeholder="Спросите о данных..." onkeydown="handleChatKeyDown(event)"></textarea>
+        <button onclick="sendMessageToAI()">Отправить</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Логика приложения -->
+  <script src="renderer.js"></script>
+</body>
+</html>

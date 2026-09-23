@@ -1,0 +1,29 @@
+{
+  "name": "dataset-viewer",
+  "version": "1.0.0",
+  "description": "Аналитика демографии Казахстана",
+  "author": "Daniil Shterkel",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build:mac": "electron-builder --mac"
+  },
+  "build": {
+    "appId": "com.datasetviewer.app",
+    "productName": "Аналитика Демографии",
+    "mac": {
+      "category": "public.app-category.business",
+      "target": ["dmg", "zip"]
+    },
+    "extraResources": [
+      {
+        "from": "resources",
+        "to": "."
+      }
+    ]
+  },
+  "devDependencies": {
+    "electron": "^43.5.0",
+    "electron-builder": "^26.15.3"
+  }
+}
