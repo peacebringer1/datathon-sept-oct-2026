@@ -1,1 +1,6 @@
 dataset/
+.DS_Store
+node_modules
+.venv
+__MACOSX
+DataHackathon/data/raw
