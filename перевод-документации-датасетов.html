@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Синтетические микроданные опросов, 2021–2024</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+
+
+
+
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Синтетические микроданные опросов, 2021–2024</h1>
+<h3 class="subtitle">236 таблиц · 72,6 миллиона строк</h3>
+
+
+
+<style>
+body { max-width: 46rem; margin: 3rem auto; padding: 0 1.25rem 4rem;
+font: 16px/1.6 Georgia, "Times New Roman", serif; color: #1a1a1a;
+background: #fbfbf9; }
+h1 { font-size: 1.7rem; margin: 0 0 .2rem; }
+h1.title { margin-bottom: .2rem; }
+h2 { font-size: 1.15rem; margin: 2.2rem 0 .6rem; padding-bottom: .25rem;
+border-bottom: 1px solid #d8d8d2; }
+.subtitle { color: #5b5b5b; font-style: italic; margin: 0 0 2rem; font-size: 1rem; }
+table { border-collapse: collapse; width: 100%; margin: .8rem 0; font-size: .92rem; }
+th, td { text-align: left; padding: .35rem .6rem; border-bottom: 1px solid #d8d8d2; }
+code { font: .88em ui-monospace, Menlo, Consolas, monospace; background: #efefe9;
+padding: .08em .3em; border-radius: 3px; }
+blockquote { border-left: 3px solid #8a4b00; background: #fdf6ee; margin: 1rem 0;
+padding: .7rem 1rem; color: #8a4b00; font-weight: 600; }
+blockquote p { margin: 0; }
+@media print { body { background: #fff; margin: 0; } }
+</style>
+<p>Эти таблицы были сгенерированы на основе обезличенных микроданных опросов. Они повторяют <strong>структуру</strong> оригиналов. У них те же формы, колонки (в основном) и ключи. Их можно объединять (join) между формами и по годам.</p>
+<div id="what-is-here" class="section level2">
+<h2>Что здесь находится</h2>
+<table>
+<colgroup>
+<col width="18%" />
+<col width="45%" />
+<col width="18%" />
+<col width="18%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Папка</th>
+<th>Форма</th>
+<th align="right">Таблицы</th>
+<th align="right">Строки</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>1t_god</code></td>
+<td>1-Т годовая, труд предприятий</td>
+<td align="right">4</td>
+<td align="right">30 025 899</td>
+</tr>
+<tr class="even">
+<td><code>1t_kv</code></td>
+<td>1-Т квартальная</td>
+<td align="right">16</td>
+<td align="right">24 480 242</td>
+</tr>
+<tr class="odd">
+<td><code>d004</code></td>
+<td>Бюджет домашних хозяйств, квартальная (12 таблиц/квартал)</td>
+<td align="right">192</td>
+<td align="right">8 612 484</td>
+</tr>
+<tr class="even">
+<td><code>2t</code></td>
+<td>2-Т, оплата труда</td>
+<td align="right">4</td>
+<td align="right">7 328 814</td>
+</tr>
+<tr class="odd">
+<td><code>t001</code></td>
+<td>Т-001, рабочая сила</td>
+<td align="right">4</td>
+<td align="right">1 885 110</td>
+</tr>
+<tr class="even">
+<td><code>d008</code></td>
+<td>Список членов домашнего хозяйства (физические лица)</td>
+<td align="right">4</td>
+<td align="right">169 059</td>
+</tr>
+<tr class="odd">
+<td><code>d002</code></td>
+<td>Респондент &amp; оценка</td>
+<td align="right">8</td>
+<td align="right">95 542</td>
+</tr>
+<tr class="even">
+<td><code>d006</code></td>
+<td>Жилище</td>
+<td align="right">4</td>
+<td align="right">46 743</td>
+</tr>
+</tbody>
+</table>
+<p>Один файл <code>.csv</code> на каждую оригинальную таблицу (в кодировке UTF-8), расположенный по схеме
+<code>&lt;форма&gt;/&lt;год&gt;/[&lt;квартал&gt;/]&lt;таблица&gt;.csv</code>
+— та же структура и те же имена файлов, что и у исходников.
+<code>MANIFEST.csv</code> содержит список всех таблиц с указанием синтетического и реального количества строк и колонок.</p>
+</div>
+<div id="how-the-tables-join" class="section level2">
+<h2>Как объединяются таблицы</h2>
+<p><strong><code>NOMER</code> — это ключ домашнего хозяйства</strong>, и он работает точно так же, как в реальных данных. В рамках одного года он связывает список членов семьи
+(<code>d008</code>), жилищные условия (<code>d006</code>), таблицы опроса/отношений
+(<code>d002</code>) и все 48 квартальных бюджетных таблиц
+(<code>d004</code>). Человек идентифицируется как <code>NOMER</code> +
+<code>NOMP</code>.</p>
+<p>Эти связи соблюдаются <em>по определению (by construction).</em> Домашние хозяйства генерируются один раз как основа, а затем из нее извлекается каждая форма. В итоговых таблицах каждая строка <code>d006</code> привязана к домашнему хозяйству, а <code>TE</code>/<code>K</code> совпадают со списком членов семьи для 100% из них.</p>
+<p><strong><code>ID</code> — это ключ предприятия</strong> в формах 1-Т и 2-Т. Синтетические ID имеют вид <code>S-2t-2023-000001</code>; реальные ID состоят только из цифр, поэтому синтетический ID не может совпасть с реальным.</p>
+<p><strong>Одни и те же домашние хозяйства и предприятия повторяются из года в год</strong>, что делает возможным проведение динамического анализа (over-time analysis).</p>
+</div>
+<div id="reading-the-values" class="section level2">
+<h2>Чтение значений</h2>
+<p>Почти каждое поле представляет собой числовой <em>код</em>, как и в источнике — например, <code>POL</code> означает пол, но то, является ли <code>1</code> мужским полом, не задокументировано для большинства форм. Кодификаторы (справочники) значений существуют для большинства форм и находятся в папке <code>documentation</code>. Рекомендуется выделить время на их изучение.</p>
+<p>Открывайте файлы с помощью любого инструмента, работающего с CSV. Не открывайте крупные файлы в Excel: размер нескольких таблиц превышает его лимит в 1 048 576 строк, и он без предупреждения обрежет их.</p>
+</div>
+<div id="the-original-documentation" class="section level2">
+<h2>Оригинальная документация</h2>
+<p>Папка <code>documentation/</code> содержит материалы, которые поставлялись внутри исходных архивов, организованные по формам и годам:
+<strong>36</strong> документов со структурой таблиц, <strong>45</strong>
+справочников и кодификаторов, <strong>15</strong>
+бланков анкет и <strong>3</strong> инструкции для интервьюеров.
+<code>documentation/INDEX.csv</code> содержит полный их список с описанием назначения каждого документа.</p>
+<p>Эти документы описывают сами формы, а не конкретных респондентов, и являются авторитетным источником того, что означает каждая колонка. Обратите внимание, что один и тот же файл может содержать разное наполнение в разные годы, именно поэтому папка сохраняет структуру по годам.</p>
+</div>
+<div id="limitations" class="section level2">
+<h2>Ограничения</h2>
+<blockquote>
+<p>Несколько слов о различиях между синтетическими и реальными данными.</p>
+</blockquote>
+<table>
+<colgroup>
+<col width="72%" />
+<col width="27%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Ограничение</th>
+<th>Замерено</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Синтез немного уменьшает стандартные ошибки.</td>
+<td>—</td>
+</tr>
+<tr class="even">
+<td>Связи <em>между</em> переменными сокращены примерно вдвое. Знаки (направленность) правильные почти во всех случаях, но размер эффекта также уменьшается. Вы можете рассматривать оценки коэффициентов как нижнюю границу реальных эффектов.</td>
+<td>Площадь жилья к размеру домохозяйства: 0,100 против 0,171</td>
+</tr>
+<tr class="odd">
+<td>Межгодовая устойчивость (persistence) в панели 1-Т составляет около половины от реального значения.</td>
+<td>0,49 / 0,24 против 0,93 / 0,79</td>
+</tr>
+<tr class="even">
+<td>Количество строк немного отличается: охват и количество строк на единицу моделируются, а не копируются.</td>
+<td>медиана +0,13% / −0,23%</td>
+</tr>
+<tr class="odd">
+<td>Т-001 сгенерирована только для 40 из 154 оригинальных колонок. Большинство из остальных колонок всё равно содержали более 90% пропущенных значений.</td>
+<td>—</td>
+</tr>
+<tr class="even">
+<td>В 2021 году возраст респондента не привязан к конкретному лицу — в списке за этот год вообще нет года рождения.</td>
+<td>—</td>
+</tr>
+<tr class="odd">
+<td>Поле <code>kv_vopr1</code> в D-004 повторяет элементы внутри домашнего хозяйства чаще, чем в реальных данных.</td>
+<td>15% строк против 2,4%</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
