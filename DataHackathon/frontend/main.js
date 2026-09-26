@@ -57,14 +57,14 @@ function createWindow() {
     title: 'Аналитика Демографии Казахстана',
     webPreferences: {
       nodeIntegration: true,
-      contextIsolation: false
+      contextIsolation: false,
+      webSecurity: false
     }
   });
 
   mainWindow.loadFile(INDEX_HTML_PATH);
   
-  // Раскомментируйте строчку ниже, если потребуется отладка через консоль разработчика
-  // mainWindow.webContents.openDevTools();
+
 }
 
 app.whenReady().then(() => {
@@ -72,7 +72,6 @@ app.whenReady().then(() => {
   createWindow();
 });
 
-// Корректное завершение процесса Flask при закрытии приложения
 app.on('window-all-closed', () => {
   if (flaskProcess) {
     if (process.platform === 'win32') {

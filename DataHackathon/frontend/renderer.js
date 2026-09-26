@@ -1,260 +1,164 @@
-let yearChartInstance = null;
-let summaryChartInstance = null;
-let kzMapInstance = null;
-let cachedKZJson = null;
+import { 
+  updateYearChart, 
+  updateSummaryChart, 
+  initKazakhstanMap, 
+  activateMapZoom,
+  yearChartInstance,
+  lineChartInstance,
+  pieChartInstance,
+  hBarChartInstance,
+  summaryChartInstance,
+  kzMapInstance
+} from './src/components/chartsMap.js';
+import { toggleCategory, selectIndicator as sidebarSelectIndicator } from './src/components/sidebar.js';
+import { loadTablePage, filterTable, toggleTableVisibility } from './src/components/table.js';
+import { fetchAIInsights } from './src/components/insightsTicker.js';
+import { renderBarAnimationChart, renderDynamicSwitchChart } from './src/components/dynamicCharts.js';
+import { initAIChat, toggleAIChat, handleChatKeyDown } from './src/components/aiChat.js';
 
 let activeTab = 'year';
-let currentPage = 1;
-
-// СЮДА НИ В КОЕМ СЛУЧАЕ НЕ СОВАТЬ КЛЮЧ ОТ API - КОНФИДЕНЦИАЛЬНАЯ ИНФОРМАЦИЯ,
-// КОТОРАЯ МОЖЕТ СТАТЬ ПУБЛИЧНОЙ В СЛУЧАЕ ОТПРАВКИ ИЗМЕНЕНИЙ В РЕПОЗИТОРИЙ.
-const GEMINI_API_KEY = '!!!!!!!!!!!!!!!!!!';
-const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
-let chatHistory = [];
 
 const API_BASE_URL = 'http://127.0.0.1:5000';
 
-// Словарь соответствия названий из data.csv к названиям на карте GeoJSON
-const regionNameMapping = {
-  "Акмолинская область": "Ақмола облысы",
-  "Актюбинская область": "Ақтөбе облысы",
-  "Алматинская область": "Алматы облысы",
-  "Атырауская область": "Атырау облысы",
-  "Восточно-Казахстанская область": "Шығыс Қазақстан облысы",
-  "Жамбылская область": "Жамбыл облысы",
-  "Западно-Казахстанская область": "Батыс Қазақстан облысы",
-  "Карагандинская область": "Қарағанды облысы",
-  "Костанайская область": "Қостанай облысы",
-  "Кызылординская область": "Қызылорда облысы",
-  "Мангистауская область": "Маңғыстау облысы",
-  "Павлодарская область": "Павлодар облысы",
-  "Северо-Казахстанская область": "Солтүстік Қазақстан облысы",
-  "Южно-Казахстанская область": "Түркістан облысы",
-  "Туркестанская область": "Түркістан облысы",
-  "Область Абай": "Абай облысы",
-  "Область Жетысу": "Жетісу облысы",
-  "Область Улытау": "Ұлытау облысы",
-  "г. Алматы": "Алматы",
-  "г. Астана": "Астана",
-  "г. Шымкент": "Шымкент"
-};
-
-// Инициализация при старте приложения
 async function initApp() {
   try {
     const res = await fetch(`${API_BASE_URL}/api/init-filters`);
     const { indicators, years } = await res.json();
 
-    const indicatorSelect = document.getElementById('indicatorSelect');
-    if (indicatorSelect) {
-      indicatorSelect.innerHTML = indicators.map(ind => `<option value="${ind}">${ind}</option>`).join('');
-    }
+    const optionsHTML = indicators.map(ind => `<option value="${ind}">${ind}</option>`).join('');
+    const yearsHTML = years.map(y => `<option value="${y}">${y} год</option>`).join('');
 
-    const yearSelect = document.getElementById('yearSelect');
-    if (yearSelect) {
-      yearSelect.innerHTML = years.map(y => `<option value="${y}">${y} год</option>`).join('');
-    }
+    const regionIndEl = document.getElementById('regionIndicatorSelect');
+    const regionYearEl = document.getElementById('regionYearSelect');
+    const mapIndEl = document.getElementById('mapIndicatorSelect');
+    const mapYearEl = document.getElementById('mapYearSelect');
+    const summaryIndEl = document.getElementById('summaryIndicatorSelect');
 
-    onFilterChange();
+    if (regionIndEl) regionIndEl.innerHTML = optionsHTML;
+    if (regionYearEl) regionYearEl.innerHTML = yearsHTML;
+    if (mapIndEl) mapIndEl.innerHTML = optionsHTML;
+    if (mapYearEl) mapYearEl.innerHTML = yearsHTML;
+    if (summaryIndEl) summaryIndEl.innerHTML = optionsHTML;
+
+    populateAllSelectors(indicators, years);
+
+    onRegionFilterChange();
+    onMapFilterChange();
+    onSummaryFilterChange();
+    loadTablePage(API_BASE_URL);
+    fetchAIInsights(API_BASE_URL);
   } catch (err) {
     console.warn('Ожидание запуска Flask-сервера...', err);
     setTimeout(initApp, 1000);
   }
 }
 
-// Пересчет данных при изменении фильтров
-async function onFilterChange() {
-  currentPage = 1;
-  const indicatorEl = document.getElementById('indicatorSelect');
-  const yearEl = document.getElementById('yearSelect');
-  
-  if (!indicatorEl || !yearEl) return;
+function populateAllSelectors(indicatorsList, yearsList) {
+  const optionsHTML = indicatorsList.map(ind => `<option value="${ind}">${ind}</option>`).join('');
+  const yearsHTML = yearsList.map(y => `<option value="${y}">${y} год</option>`).join('');
 
-  const indicator = indicatorEl.value;
-  const year = yearEl.value;
+  const regionIndEl = document.getElementById('regionIndicatorSelect');
+  const regionYearEl = document.getElementById('regionYearSelect');
+  if (regionIndEl) regionIndEl.innerHTML = optionsHTML;
+  if (regionYearEl) regionYearEl.innerHTML = yearsHTML;
 
-  if (!indicator) return;
-
-  if (activeTab === 'year') {
-    await updateYearChart(indicator, year);
-    await initKazakhstanMap(indicator, year);
-  } else {
-    await updateSummaryChart(indicator);
+  for (let i = 1; i <= 6; i++) {
+    const indEl = document.getElementById(`card${i}Indicator`);
+    const yearEl = document.getElementById(`card${i}Year`);
+    
+    if (indEl) {
+      const currentInd = indEl.value;
+      indEl.innerHTML = optionsHTML;
+      if (currentInd) indEl.value = currentInd;
+    }
+    if (yearEl) {
+      const currentYear = yearEl.value;
+      yearEl.innerHTML = yearsHTML;
+      if (currentYear) yearEl.value = currentYear;
+    }
   }
-  
-  loadTablePage();
-  fetchAIInsights();
 }
 
-// Отрисовка столбчатого графика по годам и регионам
-async function updateYearChart(indicator, year) {
+async function onRegionFilterChange() {
+  const indicator = document.getElementById('regionIndicatorSelect')?.value;
+  const year = document.getElementById('regionYearSelect')?.value;
+  if (!indicator || !year) return;
+
+  await updateYearChart(API_BASE_URL, indicator, year);
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/table-data?page=1&limit=50&indicator=${encodeURIComponent(indicator)}`);
+    const json = await res.json();
+    const filteredRows = (json.data || []).filter(row => String(row.year) === String(year));
+    
+    const regions = filteredRows.map(row => row.province);
+    const values = filteredRows.map(row => row.value);
+
+    renderBarAnimationChart(regions, values);
+    renderDynamicSwitchChart(regions, values);
+  } catch (err) {
+    console.warn('Используем резервные данные', err);
+  }
+
+  fetchAIInsights(API_BASE_URL);
+}
+
+async function onCardFilterChange(cardNumber) {
+  const indicator = document.getElementById(`card${cardNumber}Indicator`)?.value;
+  const year = document.getElementById(`card${cardNumber}Year`)?.value;
   if (!indicator || !year) return;
 
   try {
-    const res = await fetch(`${API_BASE_URL}/api/chart-year?indicator=${encodeURIComponent(indicator)}&year=${year}`);
-    const { labels, values } = await res.json();
-
-    const canvas = document.getElementById('regionChart');
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+    const res = await fetch(`${API_BASE_URL}/api/table-data?page=1&limit=50&indicator=${encodeURIComponent(indicator)}`);
+    const json = await res.json();
+    const filteredRows = (json.data || []).filter(row => String(row.year) === String(year));
     
-    if (yearChartInstance) yearChartInstance.destroy();
+    const regions = filteredRows.map(row => row.province);
+    const values = filteredRows.map(row => row.value);
 
-    yearChartInstance = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: labels,
-        datasets: [{
-          label: `${indicator} (${year} год)`,
-          data: values,
-          backgroundColor: 'rgba(54, 162, 235, 0.75)',
-          borderColor: 'rgba(54, 162, 235, 1)',
-          borderWidth: 1.5,
-          borderRadius: 4
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: { y: { beginAtZero: true } }
-      }
-    });
-  } catch (e) {
-    console.error('Ошибка загрузки данных по годам:', e);
+    switch (cardNumber) {
+      case 1:
+      case 2:
+      case 3:
+      case 4:
+        await updateYearChart(API_BASE_URL, indicator, year);
+        break;
+      case 5:
+        renderBarAnimationChart(regions, values);
+        break;
+      case 6:
+        renderDynamicSwitchChart(regions, values);
+        break;
+    }
+  } catch (err) {
+    console.error(`Ошибка при обновлении карточки ${cardNumber}:`, err);
   }
 }
 
-// Отрисовка итогового графика (за все года)
-async function updateSummaryChart(indicator) {
+async function onMapFilterChange() {
+  const indicator = document.getElementById('mapIndicatorSelect')?.value;
+  const year = document.getElementById('mapYearSelect')?.value;
+  if (!indicator || !year) return;
+
+  try {
+    await initKazakhstanMap(API_BASE_URL, indicator, year);
+  } catch (err) {
+    console.error('Ошибка при загрузке интерактивной карты Казахстана:', err);
+  }
+}
+
+async function onSummaryFilterChange() {
+  const indicator = document.getElementById('summaryIndicatorSelect')?.value;
   if (!indicator) return;
 
-  try {
-    const res = await fetch(`${API_BASE_URL}/api/chart-summary?indicator=${encodeURIComponent(indicator)}`);
-    const { labels, values } = await res.json();
-
-    const canvas = document.getElementById('summaryChart');
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-
-    if (summaryChartInstance) summaryChartInstance.destroy();
-
-    summaryChartInstance = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: labels,
-        datasets: [{
-          label: `Итоговый показатель: ${indicator}`,
-          data: values,
-          backgroundColor: 'rgba(75, 192, 192, 0.75)',
-          borderColor: 'rgba(75, 192, 192, 1)',
-          borderWidth: 1.5,
-          borderRadius: 4
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: { y: { beginAtZero: true } }
-      }
-    });
-  } catch (e) {
-    console.error('Ошибка загрузки суммарных данных:', e);
-  }
+  await updateSummaryChart(API_BASE_URL, indicator);
 }
 
-// Отрисовка карты Казахстана (ECharts)
-async function initKazakhstanMap(indicator, year) {
-  const chartDom = document.getElementById('kazakhstanMapChart');
-  if (!chartDom) return;
-
-  if (!kzMapInstance) {
-    kzMapInstance = echarts.init(chartDom);
-  }
-
-  kzMapInstance.showLoading();
-
-  try {
-    if (!cachedKZJson) {
-      const geoRes = await fetch('https://raw.githubusercontent.com/artemnovichkov/KazakhstanMapExample/main/KazakhstanMapExample/kazakhstan.geojson');
-      if (!geoRes.ok) throw new Error(`HTTP error! status: ${geoRes.status}`);
-      
-      cachedKZJson = await geoRes.json();
-      echarts.registerMap('KZ', cachedKZJson);
-    }
-
-    const res = await fetch(`${API_BASE_URL}/api/chart-year?indicator=${encodeURIComponent(indicator)}&year=${year}`);
-    const chartData = await res.json();
-
-    const formattedData = chartData.labels.map((label, index) => {
-      const mappedName = regionNameMapping[label] || label;
-      return {
-        name: mappedName,
-        value: chartData.values[index]
-      };
-    });
-
-    const values = chartData.values;
-    const minVal = values.length ? Math.min(...values) : 0;
-    const maxVal = values.length ? Math.max(...values) : 100;
-
-    const option = {
-      title: {
-        text: `Географическое распределение: ${indicator} (${year})`,
-        left: 'center',
-        textStyle: { fontSize: 14, color: '#1e293b' }
-      },
-      tooltip: {
-        trigger: 'item',
-        formatter: function(params) {
-          const val = params.value !== undefined && !isNaN(params.value) ? params.value.toLocaleString('ru-RU') : 'Нет данных';
-          return `<b>${params.name}</b><br/>Значение: <b>${val}</b>`;
-        }
-      },
-      visualMap: {
-        left: 'right',
-        min: minVal,
-        max: maxVal,
-        inRange: {
-          color: ['#e0f3f8', '#abd9e9', '#74add1', '#4575b4', '#313695']
-        },
-        text: ['Макс', 'Мин'],
-        calculable: true
-      },
-      series: [{
-        type: 'map',
-        map: 'KZ',
-        roam: true,
-        center: [67.0, 48.0],
-        zoom: 4.5,
-        scaleLimit: { min: 1, max: 10 },
-        data: formattedData,
-        label: {
-          show: true,
-          fontSize: 8,
-          color: '#333'
-        },
-        emphasis: {
-          itemStyle: { areaColor: '#f46d43' },
-          label: { show: true, color: '#000', fontWeight: 'bold' }
-        }
-      }]
-    };
-
-    kzMapInstance.hideLoading();
-    kzMapInstance.setOption(option, true);
-  } catch (error) {
-    console.error('Ошибка загрузки карты Казахстана:', error);
-    kzMapInstance.hideLoading();
-  }
-}
-
-// Управление вкладками
 function switchTab(tab) {
   activeTab = tab;
   const btns = document.querySelectorAll('.tab-btn');
-  const yearBlock = document.getElementById('yearSelectorBlock2');
-  const yearWrapper = document.getElementById('yearChartWrapper');
-  const mapWrapper = document.getElementById('mapChartWrapper');
+  const yearSection = document.getElementById('yearChartSection');
+  const mapSection = document.getElementById('mapChartSection');
   const summaryWrapper = document.getElementById('summaryChartWrapper');
 
   if (btns.length >= 2) {
@@ -262,234 +166,159 @@ function switchTab(tab) {
     btns[1].classList.toggle('active', tab === 'summary');
   }
 
+  const toggleVisibility = (element, show) => {
+    if (!element) return;
+    if (show) {
+      element.classList.remove('hidden');
+      element.style.opacity = '0';
+      element.style.transform = 'translateY(10px)';
+      requestAnimationFrame(() => {
+        element.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+        element.style.opacity = '1';
+        element.style.transform = 'translateY(0)';
+      });
+    } else {
+      element.classList.add('hidden');
+    }
+  };
+
   if (tab === 'year') {
-    if (yearBlock) yearBlock.classList.remove('hidden');
-    if (yearWrapper) yearWrapper.classList.remove('hidden');
-    if (mapWrapper) mapWrapper.classList.remove('hidden');
-    if (summaryWrapper) summaryWrapper.classList.add('hidden');
-    if (yearChartInstance) yearChartInstance.resize();
-    if (kzMapInstance) kzMapInstance.resize();
+    toggleVisibility(yearSection, true);
+    toggleVisibility(mapSection, true);
+    toggleVisibility(summaryWrapper, false);
+    
+    setTimeout(() => {
+      if (yearChartInstance) yearChartInstance.resize();
+      if (kzMapInstance) kzMapInstance.resize();
+    }, 50);
   } else {
-    if (yearBlock) yearBlock.classList.add('hidden');
-    if (yearWrapper) yearWrapper.classList.add('hidden');
-    if (mapWrapper) mapWrapper.classList.add('hidden');
-    if (summaryWrapper) summaryWrapper.classList.remove('hidden');
-    if (summaryChartInstance) summaryChartInstance.resize();
-  }
-
-  onFilterChange();
-}
-
-// Загрузка таблицы
-async function loadTablePage() {
-  const indicatorEl = document.getElementById('indicatorSelect');
-  const searchEl = document.getElementById('searchInput');
-  const counterEl = document.getElementById('counter');
-  const head = document.getElementById('tableHead');
-  const body = document.getElementById('tableBody');
-
-  if (!indicatorEl || !head || !body) return;
-
-  const indicator = indicatorEl.value;
-  const search = searchEl ? searchEl.value : '';
-
-  try {
-    const res = await fetch(`${API_BASE_URL}/api/table-data?page=${currentPage}&limit=50&indicator=${encodeURIComponent(indicator)}&search=${encodeURIComponent(search)}`);
-    const { total, columns, data } = await res.json();
-
-    if (counterEl) {
-      counterEl.innerText = `Записей в базе: ${total.toLocaleString('ru-RU')}`;
-    }
-
-    head.innerHTML = `<tr>${columns.map(c => `<th>${c}</th>`).join('')}</tr>`;
-    body.innerHTML = data.map(row => `
-      <tr>
-        <td>${row.indicator}</td>
-        <td>${row.year}</td>
-        <td>${row.province}</td>
-        <td>${row.value !== undefined && row.value !== null ? row.value.toLocaleString('ru-RU') : 0}</td>
-      </tr>
-    `).join('');
-  } catch (err) {
-    console.error('Ошибка загрузки таблицы:', err);
+    toggleVisibility(yearSection, false);
+    toggleVisibility(mapSection, false);
+    toggleVisibility(summaryWrapper, true);
+    
+    setTimeout(() => {
+      if (summaryChartInstance) summaryChartInstance.resize();
+    }, 50);
   }
 }
 
-function filterTable() {
-  currentPage = 1;
-  loadTablePage();
+window.toggleAIChat = toggleAIChat;
+window.handleChatKeyDown = handleChatKeyDown;
+window.toggleCategory = toggleCategory;
+window.selectIndicator = (name) => {
+  sidebarSelectIndicator(name, event, onRegionFilterChange);
+};
+window.switchTab = switchTab;
+window.filterTable = () => filterTable(API_BASE_URL);
+window.onRegionFilterChange = onRegionFilterChange;
+window.onMapFilterChange = onMapFilterChange;
+window.onSummaryFilterChange = onSummaryFilterChange;
+window.onCardFilterChange = onCardFilterChange;
+window.toggleTableVisibility = toggleTableVisibility;
+window.activateMapZoom = activateMapZoom;
+
+window.addEventListener('resize', () => {
+  if (yearChartInstance) yearChartInstance.resize();
+  if (lineChartInstance) lineChartInstance.resize();
+  if (pieChartInstance) pieChartInstance.resize();
+  if (hBarChartInstance) hBarChartInstance.resize();
+  if (summaryChartInstance) summaryChartInstance.resize();
+  if (kzMapInstance) kzMapInstance.resize();
+});
+
+const themeToggleBtn = document.getElementById('themeToggleBtn');
+if (localStorage.getItem('theme') === 'dark') {
+  document.body.classList.add('dark-theme');
+  if (themeToggleBtn) themeToggleBtn.textContent = '☀️';
 }
 
-// ИИ Инсайты и тикер
-async function fetchAIInsights() {
-  const indicatorEl = document.getElementById('indicatorSelect');
-  const track = document.getElementById('tickerTrack');
-  if (!indicatorEl || !track) return;
+if (themeToggleBtn) {
+  themeToggleBtn.addEventListener('click', async (event) => {
+    const rect = themeToggleBtn.getBoundingClientRect();
+    const x = rect.left + rect.width / 2;
+    const y = rect.top + rect.height / 2;
 
-  const indicator = indicatorEl.value;
+    const isDark = document.body.classList.contains('dark-theme');
+    const nextDark = !isDark;
 
-  try {
-    const res = await fetch(`${API_BASE_URL}/api/ai-insights?indicator=${encodeURIComponent(indicator)}`);
-    const { insights } = await res.json();
+    if (document.startViewTransition) {
+      const transition = document.startViewTransition(() => {
+        document.body.classList.toggle('dark-theme', nextDark);
+      });
 
-    if (!insights || insights.length === 0) {
-      track.innerHTML = '<div class="ticker-item">Аномалий не обнаружено</div>';
-      return;
-    }
+      await transition.ready;
+      const maxRadius = Math.hypot(
+        Math.max(x, window.innerWidth - x),
+        Math.max(y, window.innerHeight - y)
+      );
 
-    const fullList = [...insights, ...insights];
-    track.innerHTML = fullList.map(item => `
-      <div class="ticker-item ${item.type}">
-        <span class="ticker-title">${item.title}</span>
-        <span class="ticker-badge">${item.badge}</span>
-        <span class="ticker-sub">(${item.text})</span>
-      </div>
-    `).join('');
-  } catch (err) {
-    console.error('Ошибка тикера:', err);
-  }
-}
-
-// Управление AI-чатом
-function toggleAIChat() {
-  const sidebar = document.getElementById('aiPopupSidebar');
-  if (!sidebar) return;
-
-  if (sidebar.style.display === 'none' || sidebar.style.display === '') {
-    sidebar.style.display = 'block';
-    const input = document.getElementById('chatInput');
-    if (input) input.focus();
-  } else {
-    sidebar.style.display = 'none';
-  }
-}
-
-function handleChatKeyDown(event) {
-  if (event.key === 'Enter' && !event.shiftKey) {
-    event.preventDefault();
-    sendMessageToAI();
-  }
-}
-
-async function sendMessageToAI() {
-  const inputEl = document.getElementById('chatInput');
-  if (!inputEl) return;
-  const userText = inputEl.value.trim();
-  if (!userText) return;
-
-  inputEl.value = '';
-  appendMessage(userText, 'user');
-  const loadingBubble = appendMessage('Печатает...', 'ai loading');
-
-  const selectedIndicator = document.getElementById('indicatorSelect')?.value || 'Не выбран';
-  const selectedYear = document.getElementById('yearSelect')?.value || 'Не выбран';
-  
-  const contextPrompt = `
-Контекст панели:
-- Выбранный показатель: "${selectedIndicator}"
-- Выбранный год: "${selectedYear}"
-
-Вопрос пользователя: ${userText}
-`;
-
-  chatHistory.push({ role: 'user', parts: [{ text: contextPrompt }] });
-
-  try {
-    const response = await fetch(GEMINI_API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: chatHistory,
-        systemInstruction: {
-          parts: [{ text: 'Ты экспертный ИИ-аналитик демографических данных Казахстана. Отвечай кратко, чётко и вежливо на русском языке.' }]
+      document.documentElement.animate(
+        [
+          { clipPath: `circle(0px at ${x}px ${y}px)` },
+          { clipPath: `circle(${maxRadius}px at ${x}px ${y}px)` }
+        ],
+        {
+          duration: 1200,
+          easing: 'cubic-bezier(0.25, 1, 0.5, 1)',
+          pseudoElement: '::view-transition-new(root)'
         }
-      })
-    });
-
-    const data = await response.json();
-    loadingBubble.remove();
-
-    if (data.error) {
-      appendMessage(`Ошибка: ${data.error.message}`, 'ai');
-      return;
+      );
+    } else {
+      document.body.classList.toggle('dark-theme', nextDark);
     }
 
-    const aiReply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Не удалось получить ответ.';
-    chatHistory.push({ role: 'model', parts: [{ text: aiReply }] });
-    appendMessage(aiReply, 'ai');
-
-  } catch (err) {
-    loadingBubble.remove();
-    appendMessage('Ошибка соединения с Gemini API.', 'ai');
-  }
+    themeToggleBtn.textContent = nextDark ? '☀️' : '🌙';
+    localStorage.setItem('theme', nextDark ? 'dark' : 'light');
+    window.dispatchEvent(new Event('resize'));
+  });
 }
 
-function appendMessage(text, type) {
-  const chatMessages = document.getElementById('chatMessages');
-  if (!chatMessages) return null;
-  const bubble = document.createElement('div');
-  bubble.className = `chat-bubble ${type}`;
-  bubble.innerText = text;
-  chatMessages.appendChild(bubble);
-  chatMessages.scrollTop = chatMessages.scrollHeight;
-  return bubble;
+const aiToggleBtn = document.getElementById('aiToggleBtn');
+const aiNotificationBubble = document.getElementById('aiNotificationBubble');
+const aiNotificationText = document.getElementById('aiNotificationText');
+const aiNotificationClose = document.getElementById('aiNotificationClose');
+
+const aiTips = [
+  "Привет! Я готов проанализировать демографию 📊",
+  "Подсказать топ регионов по естественному приросту?",
+  "Нажмите на меня, если нужно составить отчет по таблице 🤖",
+  "Смените тему на темную, если работаете ночью 🌙"
+];
+
+let tipIndex = 0;
+let notificationTimer = null;
+
+function showAiNotification(text) {
+  if (!aiNotificationBubble || !aiNotificationText) return;
+  aiNotificationText.textContent = text;
+  aiNotificationBubble.classList.add('show');
+  if (aiToggleBtn) aiToggleBtn.classList.add('bounce-up');
+
+  clearTimeout(notificationTimer);
+  notificationTimer = setTimeout(() => {
+    hideAiNotification();
+  }, 6000);
 }
 
-// Управление категориями в сайдбаре
-function toggleCategory(headerEl) {
-  const sublist = headerEl.nextElementSibling;
-  if (sublist) {
-    sublist.style.display = sublist.style.display === 'none' ? 'flex' : 'none';
-  }
+function hideAiNotification() {
+  if (aiNotificationBubble) aiNotificationBubble.classList.remove('show');
+  if (aiToggleBtn) aiToggleBtn.classList.remove('bounce-up');
 }
 
-// Выбор показателя кликом по сайдбару
-function selectIndicator(indicatorName) {
-  const select = document.getElementById('indicatorSelect');
-  if (!select) return;
-  
-  let optionExists = false;
-  for (let i = 0; i < select.options.length; i++) {
-    if (select.options[i].value === indicatorName) {
-      select.selectedIndex = i;
-      optionExists = true;
-      break;
-    }
-  }
-
-  document.querySelectorAll('.subcat-item').forEach(el => el.classList.remove('active'));
-  if (event && event.target) {
-    event.target.classList.add('active');
-  }
-
-  if (optionExists) {
-    onFilterChange();
-  } else {
-    console.warn(`Показатель "${indicatorName}" не найден в текущем списке бэкенда.`);
-  }
+if (aiNotificationClose) {
+  aiNotificationClose.addEventListener('click', (e) => {
+    e.stopPropagation();
+    hideAiNotification();
+  });
 }
 
-// Переключение выдвижного сайдбара
-function toggleSidebar() {
-  const sidebar = document.getElementById('categorySidebar');
-  const overlay = document.getElementById('sidebarOverlay');
-  
-  if (sidebar && overlay) {
-    sidebar.classList.toggle('open');
-    overlay.classList.toggle('active');
-  }
-}
+setTimeout(() => {
+  showAiNotification(aiTips[0]);
+  setInterval(() => {
+    tipIndex = (tipIndex + 1) % aiTips.length;
+    showAiNotification(aiTips[tipIndex]);
+  }, 30000);
+}, 3000);
 
-// Закрыть сайдбар при клике на оверлей
-function closeSidebar() {
-  const sidebar = document.getElementById('categorySidebar');
-  const overlay = document.getElementById('sidebarOverlay');
-  
-  if (sidebar && overlay) {
-    sidebar.classList.remove('open');
-    overlay.classList.remove('active');
-  }
-}
-
-// Запуск приложения
 initApp();
+initAIChat();
