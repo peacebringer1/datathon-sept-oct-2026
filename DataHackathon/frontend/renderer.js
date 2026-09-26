@@ -1,5 +1,9 @@
 import { 
   updateYearChart, 
+  updateBarChart,
+  updateLineChart,
+  updatePieChart,
+  updateHBarChart,
   updateSummaryChart, 
   initKazakhstanMap, 
   activateMapZoom,
@@ -8,12 +12,14 @@ import {
   pieChartInstance,
   hBarChartInstance,
   summaryChartInstance,
-  kzMapInstance
+  kzMapInstance,
+  updateStackedAreaChart,
+  stackedAreaChartInstance
 } from './src/components/chartsMap.js';
 import { toggleCategory, selectIndicator as sidebarSelectIndicator } from './src/components/sidebar.js';
 import { loadTablePage, filterTable, toggleTableVisibility } from './src/components/table.js';
 import { fetchAIInsights } from './src/components/insightsTicker.js';
-import { renderBarAnimationChart, renderDynamicSwitchChart } from './src/components/dynamicCharts.js';
+import { renderDynamicSwitchChart } from './src/components/dynamicCharts.js';
 import { initAIChat, toggleAIChat, handleChatKeyDown } from './src/components/aiChat.js';
 
 let activeTab = 'year';
@@ -45,6 +51,14 @@ async function initApp() {
     onRegionFilterChange();
     onMapFilterChange();
     onSummaryFilterChange();
+
+    // Инициализация 5-й карточки градиентным стековым графиком при старте
+    const card5Ind = document.getElementById('card5Indicator')?.value || indicators[0];
+    const card5Year = document.getElementById('card5Year')?.value || years[0];
+    if (card5Ind && card5Year) {
+      await updateStackedAreaChart(API_BASE_URL, card5Ind, card5Year);
+    }
+
     loadTablePage(API_BASE_URL);
     fetchAIInsights(API_BASE_URL);
   } catch (err) {
@@ -94,7 +108,7 @@ async function onRegionFilterChange() {
     const regions = filteredRows.map(row => row.province);
     const values = filteredRows.map(row => row.value);
 
-    renderBarAnimationChart(regions, values);
+    // Старый анимационный график полностью исключен
     renderDynamicSwitchChart(regions, values);
   } catch (err) {
     console.warn('Используем резервные данные', err);
@@ -109,26 +123,30 @@ async function onCardFilterChange(cardNumber) {
   if (!indicator || !year) return;
 
   try {
-    const res = await fetch(`${API_BASE_URL}/api/table-data?page=1&limit=50&indicator=${encodeURIComponent(indicator)}`);
-    const json = await res.json();
-    const filteredRows = (json.data || []).filter(row => String(row.year) === String(year));
-    
-    const regions = filteredRows.map(row => row.province);
-    const values = filteredRows.map(row => row.value);
-
     switch (cardNumber) {
       case 1:
+        await updateBarChart(API_BASE_URL, indicator, year);
+        break;
       case 2:
+        await updateLineChart(API_BASE_URL, indicator, year);
+        break;
       case 3:
+        await updatePieChart(API_BASE_URL, indicator, year);
+        break;
       case 4:
-        await updateYearChart(API_BASE_URL, indicator, year);
+        await updateHBarChart(API_BASE_URL, indicator, year);
         break;
-      case 5:
-        renderBarAnimationChart(regions, values);
+      case 5: {
+        await updateStackedAreaChart(API_BASE_URL, indicator, year);
         break;
-      case 6:
-        renderDynamicSwitchChart(regions, values);
+      }
+      case 6: {
+        const res = await fetch(`${API_BASE_URL}/api/table-data?page=1&limit=50&indicator=${encodeURIComponent(indicator)}`);
+        const json = await res.json();
+        const filteredRows = (json.data || []).filter(row => String(row.year) === String(year));
+        renderDynamicSwitchChart(filteredRows.map(r => r.province), filteredRows.map(r => r.value));
         break;
+      }
     }
   } catch (err) {
     console.error(`Ошибка при обновлении карточки ${cardNumber}:`, err);
@@ -222,6 +240,7 @@ window.addEventListener('resize', () => {
   if (lineChartInstance) lineChartInstance.resize();
   if (pieChartInstance) pieChartInstance.resize();
   if (hBarChartInstance) hBarChartInstance.resize();
+  if (stackedAreaChartInstance) stackedAreaChartInstance.resize();
   if (summaryChartInstance) summaryChartInstance.resize();
   if (kzMapInstance) kzMapInstance.resize();
 });
@@ -272,53 +291,6 @@ if (themeToggleBtn) {
     window.dispatchEvent(new Event('resize'));
   });
 }
-
-const aiToggleBtn = document.getElementById('aiToggleBtn');
-const aiNotificationBubble = document.getElementById('aiNotificationBubble');
-const aiNotificationText = document.getElementById('aiNotificationText');
-const aiNotificationClose = document.getElementById('aiNotificationClose');
-
-const aiTips = [
-  "Привет! Я готов проанализировать демографию 📊",
-  "Подсказать топ регионов по естественному приросту?",
-  "Нажмите на меня, если нужно составить отчет по таблице 🤖",
-  "Смените тему на темную, если работаете ночью 🌙"
-];
-
-let tipIndex = 0;
-let notificationTimer = null;
-
-function showAiNotification(text) {
-  if (!aiNotificationBubble || !aiNotificationText) return;
-  aiNotificationText.textContent = text;
-  aiNotificationBubble.classList.add('show');
-  if (aiToggleBtn) aiToggleBtn.classList.add('bounce-up');
-
-  clearTimeout(notificationTimer);
-  notificationTimer = setTimeout(() => {
-    hideAiNotification();
-  }, 6000);
-}
-
-function hideAiNotification() {
-  if (aiNotificationBubble) aiNotificationBubble.classList.remove('show');
-  if (aiToggleBtn) aiToggleBtn.classList.remove('bounce-up');
-}
-
-if (aiNotificationClose) {
-  aiNotificationClose.addEventListener('click', (e) => {
-    e.stopPropagation();
-    hideAiNotification();
-  });
-}
-
-setTimeout(() => {
-  showAiNotification(aiTips[0]);
-  setInterval(() => {
-    tipIndex = (tipIndex + 1) % aiTips.length;
-    showAiNotification(aiTips[tipIndex]);
-  }, 30000);
-}, 3000);
 
 initApp();
 initAIChat();

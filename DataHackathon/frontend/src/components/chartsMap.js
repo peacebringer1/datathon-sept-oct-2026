@@ -1,15 +1,14 @@
 export let yearChartInstance = null; // Первый график (барчарт)
 export let lineChartInstance = null; // Второй график (линейный со сглаживанием)
 export let pieChartInstance = null;  // Третий график (круговой)
-export let hBarChartInstance = null; // Четвертый график (area chart)
+export let hBarChartInstance = null; // Четвертый график (горизонтальный bar с visualMap)
+export let stackedAreaChartInstance = null; // Пятый график (ECharts Bar Animation Delay)
 
 export let summaryChartInstance = null;
 export let kzMapInstance = null;
 let cachedKZJson = null;
 let isMapActive = false;
 
-// Общий тулбокс для всех графиков ECharts (кнопки справа сверху)
-// Тулбокс с кнопками "Data View" и "Save as Image" (без кнопок смены типа графика)
 const commonToolbox = {
   feature: {
     dataView: { readOnly: true, title: 'Data view' },
@@ -41,15 +40,13 @@ const regionNameMapping = {
   "г. Шымкент": "Шымкент"
 };
 
-// Функция обновления сразу 4 графиков первой вкладки
-export async function updateYearChart(apiBaseUrl, indicator, year) {
+// 1. Обновление первого графика (Карточка 1)
+export async function updateBarChart(apiBaseUrl, indicator, year) {
   if (!indicator || !year) return;
-
   try {
     const res = await fetch(`${apiBaseUrl}/api/chart-year?indicator=${encodeURIComponent(indicator)}&year=${year}`);
     const { labels, values } = await res.json();
 
-    // 1. Первый график: Вертикальный барчарт с фоном
     const domBar = document.getElementById('chartTypeBar');
     if (domBar) {
       if (!yearChartInstance) yearChartInstance = echarts.init(domBar);
@@ -75,8 +72,18 @@ export async function updateYearChart(apiBaseUrl, indicator, year) {
         }]
       });
     }
+  } catch (e) {
+    console.error('Ошибка загрузки первого графика:', e);
+  }
+}
 
-    // 2. Второй график: Сглаженный линейный с градиентной заливкой
+// 2. Обновление второго графика (Карточка 2)
+export async function updateLineChart(apiBaseUrl, indicator, year) {
+  if (!indicator || !year) return;
+  try {
+    const res = await fetch(`${apiBaseUrl}/api/chart-year?indicator=${encodeURIComponent(indicator)}&year=${year}`);
+    const { labels, values } = await res.json();
+
     const domLine = document.getElementById('chartTypeLine');
     if (domLine) {
       if (!lineChartInstance) lineChartInstance = echarts.init(domLine);
@@ -105,8 +112,18 @@ export async function updateYearChart(apiBaseUrl, indicator, year) {
         }]
       });
     }
+  } catch (e) {
+    console.error('Ошибка загрузки второго графика:', e);
+  }
+}
 
-    // 3. Третий график: Круговая диаграмма
+// 3. Обновление третьего графика (Карточка 3)
+export async function updatePieChart(apiBaseUrl, indicator, year) {
+  if (!indicator || !year) return;
+  try {
+    const res = await fetch(`${apiBaseUrl}/api/chart-year?indicator=${encodeURIComponent(indicator)}&year=${year}`);
+    const { labels, values } = await res.json();
+
     const pieData = labels.map((lbl, idx) => ({ name: lbl, value: values[idx] })).filter(item => item.value > 0);
     const domPie = document.getElementById('chartTypePie');
     if (domPie) {
@@ -128,51 +145,161 @@ export async function updateYearChart(apiBaseUrl, indicator, year) {
         }]
       });
     }
-
-    // 4. Четвертый график: Линейный с заливкой области (Area Chart)
-    const domHBar = document.getElementById('chartTypeHBar');
-    if (domHBar) {
-      if (!hBarChartInstance) hBarChartInstance = echarts.init(domHBar);
-      hBarChartInstance.setOption({
-        animation: true,
-        animationDuration: 1000,
-        title: { text: 'Динамика по периодам', left: 'center', textStyle: { fontSize: 13, color: '#1e293b' } },
-        toolbox: commonToolbox,
-        tooltip: { trigger: 'axis', formatter: (p) => `<b>${p[0].name}</b><br/>Значение: <b>${p[0].value.toLocaleString('ru-RU')}</b>` },
-        grid: { top: '20%', bottom: '30%', left: '10%', right: '5%' },
-        xAxis: { 
-          type: 'category', 
-          boundaryGap: false, 
-          data: labels,
-          axisLabel: { interval: 0, rotate: 35, fontSize: 9, color: '#475569' }
-        },
-        yAxis: { 
-          type: 'value', 
-          axisLabel: { fontSize: 10, color: '#475569' }, 
-          splitLine: { lineStyle: { color: '#f1f5f9' } } 
-        },
-        series: [{
-          data: values,
-          type: 'line',
-          smooth: true,
-          areaStyle: {
-            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: 'rgba(59, 130, 246, 0.5)' },
-              { offset: 1, color: 'rgba(59, 130, 246, 0.02)' }
-            ])
-          },
-          itemStyle: { color: '#3b82f6' },
-          lineStyle: { width: 2 }
-        }]
-      });
-    }
-
   } catch (e) {
-    console.error('Ошибка загрузки данных для графиков:', e);
+    console.error('Ошибка загрузки третьего графика:', e);
   }
 }
 
-// 5. Итоговый график (Chart.js)
+// 4. Обновление четвертого графика (Карточка 4) - Горизонтальная шкала с visualMap
+export async function updateHBarChart(apiBaseUrl, indicator, year) {
+  if (!indicator || !year) return;
+  try {
+    const res = await fetch(`${apiBaseUrl}/api/chart-year?indicator=${encodeURIComponent(indicator)}&year=${year}`);
+    const { labels, values } = await res.json();
+
+    const domHBar = document.getElementById('chartTypeHBar');
+    if (domHBar) {
+      if (!hBarChartInstance) hBarChartInstance = echarts.init(domHBar);
+
+      const sourceData = [['value', 'region']];
+      values.forEach((val, idx) => {
+        sourceData.push([val, labels[idx]]);
+      });
+
+      const minVal = values.length ? Math.min(...values) : 0;
+      const maxVal = values.length ? Math.max(...values) : 100;
+
+      hBarChartInstance.setOption({
+        animation: true,
+        animationDuration: 1000,
+        title: { text: 'Рейтинг регионов', left: 'center', textStyle: { fontSize: 13, color: '#1e293b' } },
+        toolbox: commonToolbox,
+        tooltip: { trigger: 'axis', formatter: (p) => `<b>${p[0].data[1]}</b><br/>${indicator}: <b>${p[0].data[0].toLocaleString('ru-RU')}</b>` },
+        dataset: {
+          source: sourceData
+        },
+        grid: { containLabel: true, top: '20%', bottom: '15%', left: '5%', right: '5%' },
+        xAxis: { type: 'value', axisLabel: { fontSize: 9, color: '#475569' }, splitLine: { lineStyle: { color: '#f1f5f9' } } },
+        yAxis: { type: 'category', axisLabel: { fontSize: 9, color: '#475569' } },
+        visualMap: {
+          orient: 'horizontal',
+          left: 'center',
+          bottom: '0%',
+          min: minVal,
+          max: maxVal === minVal ? maxVal + 1 : maxVal,
+          text: ['Макс', 'Мин'],
+          dimension: 0,
+          inRange: {
+            color: ['#65B581', '#FFCE34', '#FD665F']
+          }
+        },
+        series: [{
+          type: 'bar',
+          encode: {
+            x: 'value',
+            y: 'region'
+          },
+          itemStyle: {
+            borderRadius: [0, 4, 4, 0]
+          }
+        }]
+      });
+    }
+  } catch (e) {
+    console.error('Ошибка загрузки четвертого графика:', e);
+  }
+}
+
+// 5. Обновление пятого графика (Карточка 5) - Bar Animation Delay с реальным датасетом
+export async function updateStackedAreaChart(apiBaseUrl, indicator, year) {
+  if (!indicator || !year) return;
+  try {
+    const res = await fetch(`${apiBaseUrl}/api/chart-year?indicator=${encodeURIComponent(indicator)}&year=${year}`);
+    const { labels, values } = await res.json();
+
+    const dom = document.getElementById('barAnimationChart');
+    if (dom) {
+      if (!stackedAreaChartInstance) stackedAreaChartInstance = echarts.init(dom);
+
+      const half = Math.ceil(values.length / 2);
+      const data1 = values.slice(0, half);
+      const data2 = values.slice(half);
+      const xAxisData = labels.slice(0, Math.max(data1.length, data2.length));
+      const finalData2 = data2.length ? data2 : values.map(v => Math.round(v * 0.7));
+
+      stackedAreaChartInstance.setOption({
+        animation: true,
+        title: {
+          text: `Bar Animation Delay: ${indicator} (${year})`,
+          left: 'center',
+          textStyle: { fontSize: 13, color: '#1e293b' }
+        },
+        legend: {
+          data: ['bar', 'bar2'],
+          top: '10%',
+          textStyle: { fontSize: 10, color: '#475569' }
+        },
+        toolbox: {
+          feature: {
+            magicType: { type: ['stack'] },
+            dataView: { readOnly: true },
+            saveAsImage: { pixelRatio: 2 }
+          }
+        },
+        tooltip: { trigger: 'axis' },
+        grid: { top: '25%', bottom: '25%', left: '10%', right: '5%' },
+        xAxis: {
+          data: xAxisData,
+          splitLine: { show: false },
+          axisLabel: { interval: 0, rotate: 35, fontSize: 9, color: '#475569' }
+        },
+        yAxis: {
+          type: 'value',
+          axisLabel: { fontSize: 10, color: '#475569' },
+          splitLine: { lineStyle: { color: '#f1f5f9' } }
+        },
+        series: [
+          {
+            name: 'bar',
+            type: 'bar',
+            data: data1.length ? data1 : values,
+            itemStyle: { color: '#3b82f6', borderRadius: [4, 4, 0, 0] },
+            emphasis: { focus: 'series' },
+            animationDelay: function (idx) {
+              return idx * 20;
+            }
+          },
+          {
+            name: 'bar2',
+            type: 'bar',
+            data: finalData2,
+            itemStyle: { color: '#10b981', borderRadius: [4, 4, 0, 0] },
+            emphasis: { focus: 'series' },
+            animationDelay: function (idx) {
+              return idx * 20 + 100;
+            }
+          }
+        ],
+        animationEasing: 'elasticOut',
+        animationDelayUpdate: function (idx) {
+          return idx * 5;
+        }
+      });
+    }
+  } catch (e) {
+    console.error('Ошибка загрузки анимированного графика:', e);
+  }
+}
+
+// Сохраняем обратную совместимость
+export async function updateYearChart(apiBaseUrl, indicator, year) {
+  await updateBarChart(apiBaseUrl, indicator, year);
+  await updateLineChart(apiBaseUrl, indicator, year);
+  await updatePieChart(apiBaseUrl, indicator, year);
+  await updateHBarChart(apiBaseUrl, indicator, year);
+}
+
+// Итоговый график (Chart.js)
 export async function updateSummaryChart(apiBaseUrl, indicator) {
   if (!indicator) return;
   try {
@@ -210,7 +337,7 @@ export async function updateSummaryChart(apiBaseUrl, indicator) {
   }
 }
 
-// 6. Карта Казахстана (ECharts)
+// Карта Казахстана (ECharts)
 export async function initKazakhstanMap(apiBaseUrl, indicator, year) {
   const chartDom = document.getElementById('kazakhstanMapChart');
   if (!chartDom) return;
@@ -245,8 +372,6 @@ export async function initKazakhstanMap(apiBaseUrl, indicator, year) {
 
     const option = {
       animation: false,
-      animationDuration: 0,
-      animationDurationUpdate: 0,
       title: { text: `Географическое распределение: ${indicator} (${year})`, left: 'center', textStyle: { fontSize: 14, color: '#1e293b' } },
       toolbox: commonToolbox,
       tooltip: { trigger: 'item', formatter: (params) => `<b>${params.name}</b><br/>Значение: <b>${params.value !== undefined ? params.value.toLocaleString('ru-RU') : 'Нет данных'}</b>` },
