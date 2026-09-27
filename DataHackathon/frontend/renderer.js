@@ -217,10 +217,17 @@ async function onCardFilterChange(cardNumber) {
         break;
       }
       case 6: {
-        const res = await fetch(`${API_BASE_URL}/api/table-data?page=1&limit=50&indicator=${encodeURIComponent(indicator)}`);
-        const json = await res.json();
-        const filteredRows = (json.data || []).filter(row => String(row.year) === String(year));
-        renderDynamicSwitchChart(filteredRows.map(r => r.province), filteredRows.map(r => r.value));
+        const indicatorId = indicator;
+        const yearVal = year;
+        
+        // Рендерим в зависимости от сохраненного типа кастомного графика
+        if (customCardChartType === 'line') {
+          await updateLineChart(API_BASE_URL, indicatorId, yearVal);
+        } else if (customCardChartType === 'pie') {
+          await updatePieChart(API_BASE_URL, indicatorId, yearVal);
+        } else {
+          await updateBarChart(API_BASE_URL, indicatorId, yearVal);
+        }
         break;
       }
     }
@@ -377,14 +384,12 @@ window.openAnalyticsFromCard = async function(buttonElement) {
   const chartDiv = card.querySelector('[id^="chartType"], [id$="Chart"]');
   const chartId = chartDiv ? chartDiv.id : null;
 
-  // Открываем детальный вид с прелоадером
   window.openDetailedAnalytics(
     indicatorName,
     "⏳ Генерация ИИ-аналитики с помощью Gemini...",
     chartId
   );
 
-  // Загружаем реальный анализ
   const realAnalysisText = await fetchAIAnalysisForChart(indicatorName, categoryName);
 
   const descEl = document.getElementById('aiAnalyticsDescription');
@@ -393,7 +398,60 @@ window.openAnalyticsFromCard = async function(buttonElement) {
   }
 };
 
-// Кнопка возврата к дашборду
+// Переменная для хранения типа кастомного графика
+let customCardChartType = 'bar';
+
+// Управление модальным окном добавления кастомного графика
+window.openAddChartModal = function() {
+  const modal = document.getElementById('addChartModal');
+  const indSelect = document.getElementById('modalIndicatorSelect');
+  const yearSelect = document.getElementById('modalYearSelect');
+  
+  const sourceIndicator = document.getElementById('card1Indicator');
+  const sourceYear = document.getElementById('card1Year');
+  
+  if (sourceIndicator && sourceYear) {
+    indSelect.innerHTML = sourceIndicator.innerHTML;
+    yearSelect.innerHTML = sourceYear.innerHTML;
+  }
+  
+  modal.style.display = 'flex';
+};
+
+window.closeAddChartModal = function() {
+  document.getElementById('addChartModal').style.display = 'none';
+};
+
+window.saveCustomCard = async function() {
+  const selectedInd = document.getElementById('modalIndicatorSelect').value;
+  const selectedYear = document.getElementById('modalYearSelect').value;
+  const selectedType = document.getElementById('modalChartType').value; // считываем выбранный тип
+
+  customCardChartType = selectedType; // сохраняем
+
+  document.getElementById('customCardPrompt').style.display = 'none';
+  document.getElementById('customCardHeader').style.display = 'flex';
+  
+  const customCard = document.getElementById('chartTypeCustom');
+  customCard.style.display = 'block';
+
+  document.getElementById('card6Indicator').value = selectedInd;
+  document.getElementById('card6Year').value = selectedYear;
+
+  window.closeAddChartModal();
+
+  // Обновляем 6-ю карточку (рендерим график через case 6)
+  await onCardFilterChange(6);
+};
+
+window.resetCustomCard = function() {
+  document.getElementById('customCardPrompt').style.display = 'flex';
+  document.getElementById('customCardHeader').style.display = 'none';
+  document.getElementById('chartTypeCustom').style.display = 'none';
+  document.getElementById('chartTypeCustom').innerHTML = '';
+};
+
+// Инициализация при загрузке DOM
 document.addEventListener('DOMContentLoaded', () => {
   const backBtn = document.getElementById('backToDashBtn');
   if (backBtn) {
@@ -412,6 +470,43 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   initSidebarSearch();
+
+  const settingsBtn = document.getElementById('settingsToggleBtn');
+  const settingsMenu = document.getElementById('settingsDropdown');
+  
+  if (settingsBtn && settingsMenu) {
+    settingsBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      settingsMenu.style.display = settingsMenu.style.display === 'block' ? 'none' : 'block';
+    });
+    
+    document.addEventListener('click', (e) => {
+      if (!settingsMenu.contains(e.target) && !settingsBtn.contains(e.target)) {
+        settingsMenu.style.display = 'none';
+      }
+    });
+  }
+
+  const sidebar = document.getElementById('categorySidebar');
+  const mainContent = document.querySelector('.main-content-area');
+
+  if (sidebar) {
+    sidebar.addEventListener('click', (e) => {
+      if (e.target.closest('.sidebar-settings-footer') || e.target.closest('.sidebar-search-box')) {
+        return;
+      }
+      sidebar.classList.toggle('pinned');
+      e.stopPropagation();
+    });
+  }
+
+  if (mainContent) {
+    mainContent.addEventListener('click', () => {
+      if (sidebar) {
+        sidebar.classList.remove('pinned');
+      }
+    });
+  }
 });
 
 // Экспорт функций в глобальную область
@@ -427,6 +522,12 @@ window.onSummaryFilterChange = onSummaryFilterChange;
 window.onCardFilterChange = onCardFilterChange;
 window.toggleTableVisibility = toggleTableVisibility;
 window.activateMapZoom = activateMapZoom;
+window.openAddChartModal = openAddChartModal;
+window.closeAddChartModal = closeAddChartModal;
+window.saveCustomCard = saveCustomCard;
+window.resetCustomCard = resetCustomCard;
+window.openDetailedAnalytics = openDetailedAnalytics;
+window.openAnalyticsFromCard = openAnalyticsFromCard;
 
 window.addEventListener('resize', () => {
   if (yearChartInstance) yearChartInstance.resize();
@@ -486,23 +587,6 @@ if (themeToggleBtn) {
   });
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  const settingsBtn = document.getElementById('settingsToggleBtn');
-  const settingsMenu = document.getElementById('settingsDropdown');
-  
-  if (settingsBtn && settingsMenu) {
-    settingsBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      settingsMenu.style.display = settingsMenu.style.display === 'block' ? 'none' : 'block';
-    });
-    
-    document.addEventListener('click', (e) => {
-      if (!settingsMenu.contains(e.target) && !settingsBtn.contains(e.target)) {
-        settingsMenu.style.display = 'none';
-      }
-    });
-  }
-});
-
+// Запуск приложения
 initApp();
 initAIChat();
