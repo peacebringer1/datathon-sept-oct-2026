@@ -70,7 +70,7 @@ def chart_summary():
 @app.route('/api/table-data', methods=['GET'])
 def table_data():
     page = int(request.args.get('page', 1))
-    limit = int(request.args.get('limit', 50))
+    limit = int(request.args.get('limit', 5000))
     search = request.args.get('search', '').strip().lower()
     indicator = request.args.get('indicator', '')
 

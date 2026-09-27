@@ -16,15 +16,58 @@ import {
   updateStackedAreaChart,
   stackedAreaChartInstance
 } from './src/components/chartsMap.js';
-import { toggleCategory, selectIndicator as sidebarSelectIndicator } from './src/components/sidebar.js';
+import { toggleCategory, initSidebarSearch } from './src/components/sidebar.js';
 import { loadTablePage, filterTable, toggleTableVisibility } from './src/components/table.js';
 import { fetchAIInsights } from './src/components/insightsTicker.js';
 import { renderDynamicSwitchChart } from './src/components/dynamicCharts.js';
 import { initAIChat, toggleAIChat, handleChatKeyDown } from './src/components/aiChat.js';
 
 let activeTab = 'year';
-
 const API_BASE_URL = 'http://127.0.0.1:5000';
+
+// Наборы показателей для каждой категории (распределяются по 6 карточкам при клике)
+const categoryDashboards = {
+  "Население": [
+    "Естественный прирост населения, человек",
+    "Число зарегистрированных браков, человек",
+    "Число зарегистрированных разводов, человек",
+    "Число умерших, человек",
+    "Рождаемость, человек",
+    "Городское население, человек"
+  ],
+  "Экономика": [
+    "ВРП, млн тенге",
+    "Средняя зарплата, тенге",
+    "Уровень безработицы, %",
+    "Инвестиции в основной капитал",
+    "Объем розничной торговли",
+    "Индекс потребительских цен"
+  ],
+  "Образование": [
+    "Люди с высшим образованием, человек",
+    "Студенты вузов, человек",
+    "Охват дошкольным воспитанием",
+    "Количество дневных общеобразовательных школ",
+    "Численность учащихся",
+    "Численность учителей"
+  ],
+  "Промышленность": [
+    "Промышленное производство, млн тенге",
+    "Добыча полезных ископаемых",
+    "Обрабатывающая промышленность",
+    "Производство электроэнергии",
+    "Инвестиции в промышленность",
+    "Индекс физического объема"
+  ],
+  "Сельское хозяйство": [
+    "Валовой выпуск продукции сельского хозяйства, млн тенге",
+    "Производство мяса, тысяч тонн",
+    "Производство молока, тысяч тонн",
+    "Посевные площади сельскохозяйственных культур",
+    "Поголовье скота",
+    "Инвестиции в сельское хозяйство"
+  ]
+};
 
 async function initApp() {
   try {
@@ -52,7 +95,6 @@ async function initApp() {
     onMapFilterChange();
     onSummaryFilterChange();
 
-    // Инициализация 5-й карточки градиентным стековым графиком при старте
     const card5Ind = document.getElementById('card5Indicator')?.value || indicators[0];
     const card5Year = document.getElementById('card5Year')?.value || years[0];
     if (card5Ind && card5Year) {
@@ -93,6 +135,40 @@ function populateAllSelectors(indicatorsList, yearsList) {
   }
 }
 
+// Клик по категории: распределяет 6 показателей категории по 6 карточкам дашборда
+async function selectCategoryDashboard(categoryName, headerElement) {
+  const indicators = categoryDashboards[categoryName];
+  if (!indicators || indicators.length === 0) return;
+
+  document.querySelectorAll('.cat-header').forEach(el => el.classList.remove('active'));
+  if (headerElement) {
+    headerElement.classList.add('active');
+  }
+
+  const firstIndicator = indicators[0];
+  const regionIndEl = document.getElementById('regionIndicatorSelect');
+  const mapIndEl = document.getElementById('mapIndicatorSelect');
+  
+  if (regionIndEl) {
+    setSelectValuePrecise(regionIndEl, firstIndicator);
+    await onRegionFilterChange();
+  }
+  if (mapIndEl) {
+    setSelectValuePrecise(mapIndEl, firstIndicator);
+    await onMapFilterChange();
+  }
+
+  for (let i = 1; i <= 6; i++) {
+    const selectEl = document.getElementById(`card${i}Indicator`);
+    const targetIndicator = indicators[i - 1] || indicators[0];
+    
+    if (selectEl) {
+      setSelectValuePrecise(selectEl, targetIndicator);
+      await onCardFilterChange(i);
+    }
+  }
+}
+
 async function onRegionFilterChange() {
   const indicator = document.getElementById('regionIndicatorSelect')?.value;
   const year = document.getElementById('regionYearSelect')?.value;
@@ -108,7 +184,6 @@ async function onRegionFilterChange() {
     const regions = filteredRows.map(row => row.province);
     const values = filteredRows.map(row => row.value);
 
-    // Старый анимационный график полностью исключен
     renderDynamicSwitchChart(regions, values);
   } catch (err) {
     console.warn('Используем резервные данные', err);
@@ -220,12 +295,11 @@ function switchTab(tab) {
   }
 }
 
+// Экспорт функций в глобальную область
 window.toggleAIChat = toggleAIChat;
 window.handleChatKeyDown = handleChatKeyDown;
 window.toggleCategory = toggleCategory;
-window.selectIndicator = (name) => {
-  sidebarSelectIndicator(name, event, onRegionFilterChange);
-};
+window.selectCategoryDashboard = selectCategoryDashboard;
 window.switchTab = switchTab;
 window.filterTable = () => filterTable(API_BASE_URL);
 window.onRegionFilterChange = onRegionFilterChange;
@@ -257,7 +331,7 @@ if (themeToggleBtn) {
     const x = rect.left + rect.width / 2;
     const y = rect.top + rect.height / 2;
 
-    const isDark = document.body.classList.contains('dark-theme');
+    const isDark = document.body.classList.add ? document.body.classList.contains('dark-theme') : false;
     const nextDark = !isDark;
 
     if (document.startViewTransition) {
@@ -290,6 +364,43 @@ if (themeToggleBtn) {
     localStorage.setItem('theme', nextDark ? 'dark' : 'light');
     window.dispatchEvent(new Event('resize'));
   });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const settingsBtn = document.getElementById('settingsToggleBtn');
+  const settingsMenu = document.getElementById('settingsDropdown');
+  
+  if (settingsBtn && settingsMenu) {
+    settingsBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      settingsMenu.style.display = settingsMenu.style.display === 'block' ? 'none' : 'block';
+    });
+    
+    document.addEventListener('click', (e) => {
+      if (!settingsMenu.contains(e.target) && !settingsBtn.contains(e.target)) {
+        settingsMenu.style.display = 'none';
+      }
+    });
+  }
+
+  initSidebarSearch();
+});
+
+// Утилита для точного выбора значения в селекторах
+function setSelectValuePrecise(selectElement, targetValue) {
+  if (!selectElement || !selectElement.options.length) return;
+  const cleanTarget = targetValue.trim().toLowerCase();
+  
+  let bestMatch = selectElement.options[0].value;
+
+  for (let opt of selectElement.options) {
+    const optVal = opt.value.trim().toLowerCase();
+    if (optVal.includes(cleanTarget)) {
+      bestMatch = opt.value;
+      break;
+    }
+  }
+  selectElement.value = bestMatch;
 }
 
 initApp();
