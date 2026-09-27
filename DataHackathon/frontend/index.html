@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Аналитика демографии и экономики Казахстана</title>
+  <title>Big data analysis in the Republic of Kazakhstan</title>
   
   <link rel="stylesheet" href="style.css">
   
@@ -35,7 +35,6 @@
     .cat-header {
       cursor: pointer;
       padding: 10px 15px;
-      margin-bottom: 6px;
       font-size: 14px;
       font-weight: 500;
       color: var(--text-color, #475569);
@@ -101,7 +100,7 @@
           <span class="sidebar-title-text" id="sidebarTitleText">Категории данных</span>
         </div>
 
-        <div class="sidebar-search-box" style="padding: 0 15px 10px 15px;">
+        <div class="sidebar-search-box" style="padding: 10px 15px 10px 15px;">
           <input type="text" id="categorySearchInput" placeholder="Поиск категорий..." oninput="filterCategoriesSidebar()" style="width: 100%; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border-color, #cbd5e1); background: var(--bg-input, #f8fafc); font-size: 13px; outline: none; box-sizing: border-box;">
         </div>
 
@@ -139,10 +138,6 @@
           <div class="settings-dropdown-container">
             <button id="settingsToggleBtn" class="settings-toggle-btn" title="Настройки"><span>⚙️</span></button>
             <div id="settingsDropdown" class="settings-dropdown-menu">
-              <div class="settings-dropdown-title">Язык интерфейса</div>
-              <div class="settings-translate-wrapper">
-                <div id="google_translate_element" class="translate-widget-scale"></div>
-              </div>
             </div>
           </div>
           <button id="langToggleBtn" class="lang-toggle-btn" title="Сменить язык">RU</button>
@@ -155,22 +150,22 @@
       <div class="container">
         
         <header class="app-header">
-          <h2 id="mainTitleText">Аналитика демографии и экономики Казахстана</h2>
+          <h2 id="mainTitleText">Анализ больших данных</h2>
         </header>
 
         <!-- Главный дашборд -->
         <div id="mainDashboardContent" class="main-dashboard-content">
 
           <div class="ticker-container">
-            <div class="ticker-label">AI MARKET TICKER</div>
+            <!--<div class="ticker-label">Красивый ползунок</div>-->
             <div class="ticker-wrap">
               <div class="ticker-track" id="tickerTrack"></div>
             </div>
           </div>
 
           <div class="tabs" style="margin-bottom: 20px;">
-            <button class="tab-btn active" onclick="switchTab('year')">По областям — график и карта</button>
-            <button class="tab-btn" onclick="switchTab('summary')">Итоговый за все годы</button>
+            <button class="tab-btn active" onclick="switchTab('year')">По областям</button>
+            <button class="tab-btn" onclick="switchTab('summary')">Итоговый</button>
           </div>
 
           <div id="yearChartSection" class="chart-section-block">
@@ -248,17 +243,57 @@
               </div>
 
               <!-- Карточка 6 -->
-              <div class="sub-chart-card" style="position: relative;">
-                <div class="card-header-controls">
+              <!-- Карточка 6: Добавление своего графика -->
+              <div class="sub-chart-card custom-add-card" id="customCardContainer">
+                <div class="card-header-controls" id="customCardHeader" style="display: none;">
                   <div class="left-local-controls" style="display: flex; gap: 8px; width: 100%; align-items: center;">
                     <select class="mini-select" id="card6Indicator" style="flex: 1;" onchange="onCardFilterChange(6)"></select>
                     <select class="mini-select" id="card6Year" style="width: 110px;" onchange="onCardFilterChange(6)"></select>
                     <button class="custom-analytics-btn" onclick="openAnalyticsFromCard(this)" title="Открыть детальный анализ графика">📊</button>
+                    <button class="custom-analytics-btn" onclick="resetCustomCard()" title="Сбросить график" style="background: #ef4444;">✕</button>
                   </div>
                 </div>
-                <div id="dynamicSwitchChart" style="height: 330px;"></div>
+                
+                <!-- Состояние до добавления -->
+                <div id="customCardPrompt" class="center-add-prompt" style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; gap: 12px; cursor: pointer;" onclick="openAddChartModal()">
+                  <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(37, 99, 235, 0.1); color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold;">+</div>
+                  <span style="font-size: 14px; font-weight: 600; color: #475569;">Добавить свой график</span>
+                </div>
+
+                <!-- Сам график (появляется после настройки) -->
+                <div id="chartTypeCustom" style="height: 330px; display: none;"></div>
               </div>
 
+              <!-- Модальное окно настройки пользовательского графика -->
+              <div id="addChartModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center;">
+                <div style="background: var(--card-bg, #ffffff); padding: 24px; border-radius: 16px; width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); border: 1px solid var(--border-color, #e2e8f0);">
+                  <h3 style="margin-top: 0; margin-bottom: 16px; font-size: 18px; color: var(--text-color, #1e293b);">Настройка своего графика</h3>
+                  
+                  <div style="margin-bottom: 14px;">
+                    <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #475569;">Выберите показатель:</label>
+                    <select id="modalIndicatorSelect" style="width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #cbd5e1; outline: none; background: var(--bg-input, #fff); color: var(--text-color, #1e293b);"></select>
+                  </div>
+
+                  <div style="margin-bottom: 14px;">
+                    <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #475569;">Выберите год:</label>
+                    <select id="modalYearSelect" style="width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #cbd5e1; outline: none; background: var(--bg-input, #fff); color: var(--text-color, #1e293b);"></select>
+                  </div>
+
+                  <div style="margin-bottom: 20px;">
+                    <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #475569;">Тип визуализации:</label>
+                    <select id="modalChartType" style="width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #cbd5e1; outline: none; background: var(--bg-input, #fff); color: var(--text-color, #1e293b);">
+                      <option value="bar">Столбчатая диаграмма (Bar)</option>
+                      <option value="line">Линейный график (Line)</option>
+                      <option value="pie">Круговая диаграмма (Pie)</option>
+                    </select>
+                  </div>
+
+                  <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                    <button onclick="closeAddChartModal()" style="padding: 8px 16px; border-radius: 8px; border: 1px solid #cbd5e1; background: transparent; cursor: pointer; font-weight: 500; color: #475569;">Отмена</button>
+                    <button onclick="saveCustomCard()" style="padding: 8px 16px; border-radius: 8px; border: none; background: #2563eb; color: white; cursor: pointer; font-weight: 500;">Создать график</button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 

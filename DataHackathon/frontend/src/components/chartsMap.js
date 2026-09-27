@@ -3,6 +3,7 @@ export let lineChartInstance = null; // Второй график (линейн�
 export let pieChartInstance = null;  // Третий график (круговой)
 export let hBarChartInstance = null; // Четвертый график (горизонтальный bar с visualMap)
 export let stackedAreaChartInstance = null; // Пятый график (ECharts Bar Animation Delay)
+export let customChartInstance = null; // Кастомный график (Карточка 6)
 
 export let summaryChartInstance = null;
 export let kzMapInstance = null;
@@ -288,6 +289,68 @@ export async function updateStackedAreaChart(apiBaseUrl, indicator, year) {
     }
   } catch (e) {
     console.error('Ошибка загрузки анимированного графика:', e);
+  }
+}
+
+// 6. Обновление кастомного графика (Карточка 6)
+export async function updateCustomChart(apiBaseUrl, indicator, year, chartType) {
+  if (!indicator || !year) return;
+  try {
+    const res = await fetch(`${apiBaseUrl}/api/chart-year?indicator=${encodeURIComponent(indicator)}&year=${year}`);
+    const { labels, values } = await res.json();
+
+    const domCustom = document.getElementById('chartTypeCustom');
+    if (domCustom) {
+      if (!customChartInstance) {
+        customChartInstance = echarts.init(domCustom);
+      }
+
+      let option = {
+        animation: true,
+        animationDuration: 1000,
+        toolbox: commonToolbox,
+        grid: { top: '20%', bottom: '30%', left: '10%', right: '5%' },
+        xAxis: { type: 'category', data: labels, axisLabel: { interval: 0, rotate: 35, fontSize: 9, color: '#475569' } },
+        yAxis: { type: 'value', axisLabel: { fontSize: 10, color: '#475569' }, splitLine: { lineStyle: { color: '#f1f5f9' } } }
+      };
+
+      if (chartType === 'line') {
+        option.title = { text: `Динамика: ${indicator}`, left: 'center', textStyle: { fontSize: 13, color: '#1e293b' } };
+        option.tooltip = { trigger: 'axis' };
+        option.series = [{
+          data: values,
+          type: 'line',
+          smooth: true,
+          itemStyle: { color: '#0770FF' },
+          areaStyle: { color: 'rgba(7, 112, 255, 0.2)' }
+        }];
+      } else if (chartType === 'pie') {
+        const pieData = labels.map((lbl, idx) => ({ name: lbl, value: values[idx] })).filter(item => item.value > 0);
+        option.title = { text: `Доли: ${indicator}`, left: 'center', textStyle: { fontSize: 13, color: '#1e293b' } };
+        option.tooltip = { trigger: 'item', formatter: '{b}: <b>{c}</b> ({d}%)' };
+        option.legend = { type: 'scroll', orient: 'vertical', left: 'left', textStyle: { fontSize: 9 } };
+        option.series = [{
+          type: 'pie',
+          radius: ['40%', '65%'],
+          center: ['60%', '55%'],
+          data: pieData
+        }];
+        delete option.xAxis;
+        delete option.yAxis;
+      } else {
+        option.title = { text: `Распределение: ${indicator}`, left: 'center', textStyle: { fontSize: 13, color: '#1e293b' } };
+        option.tooltip = { trigger: 'axis', formatter: (p) => `<b>${p[0].name}</b><br/>${indicator}: <b>${p[0].value.toLocaleString('ru-RU')}</b>` };
+        option.series = [{
+          data: values,
+          type: 'bar',
+          itemStyle: { color: '#3b82f6', borderRadius: [4, 4, 0, 0] }
+        }];
+      }
+
+      customChartInstance.setOption(option, true);
+    }
+  } catch (e) {
+    console.error('Ошибка загрузки кастомного графика:', e);
   }
 }
 
