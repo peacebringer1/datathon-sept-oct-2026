@@ -21,6 +21,7 @@ import { loadTablePage, filterTable, toggleTableVisibility } from './src/compone
 import { fetchAIInsights } from './src/components/insightsTicker.js';
 import { renderDynamicSwitchChart } from './src/components/dynamicCharts.js';
 import { initAIChat, toggleAIChat, handleChatKeyDown } from './src/components/aiChat.js';
+import { fetchAIAnalysisForChart } from './src/components/geminiService.js';
 
 let activeTab = 'year';
 const API_BASE_URL = 'http://127.0.0.1:5000';
@@ -295,6 +296,124 @@ function switchTab(tab) {
   }
 }
 
+// Утилита для точного выбора значения в селекторах
+function setSelectValuePrecise(selectElement, targetValue) {
+  if (!selectElement || !selectElement.options.length) return;
+  const cleanTarget = targetValue.trim().toLowerCase();
+  
+  let bestMatch = selectElement.options[0].value;
+
+  for (let opt of selectElement.options) {
+    const optVal = opt.value.trim().toLowerCase();
+    if (optVal.includes(cleanTarget)) {
+      bestMatch = opt.value;
+      break;
+    }
+  }
+  selectElement.value = bestMatch;
+}
+
+// Глобальный инстанс детального графика
+let detailedEChartInstance = null;
+
+// Функция открытия детального просмотра с ИИ-аналитикой
+window.openDetailedAnalytics = async function(chartTitle, analyticsText, sourceChartElementId) {
+  const mainDashboard = document.getElementById('mainDashboardContent');
+  if (mainDashboard) mainDashboard.style.display = 'none';
+
+  const detailedSection = document.getElementById('detailedViewSection');
+  if (detailedSection) detailedSection.classList.add('active');
+
+  const titleEl = document.getElementById('detailedChartTitle');
+  if (titleEl) titleEl.innerText = chartTitle;
+
+  const descEl = document.getElementById('aiAnalyticsDescription');
+  if (descEl) {
+    descEl.innerText = analyticsText || "⏳ Загрузка анализа...";
+  }
+
+  setTimeout(() => {
+    renderDetailedChart(sourceChartElementId);
+  }, 50);
+};
+
+// Функция отрисовки графика в детальном режиме
+function renderDetailedChart(sourceChartId) {
+  const container = document.getElementById('realDetailedChart');
+  if (!container) return;
+
+  const sourceElement = document.getElementById(sourceChartId);
+  if (sourceElement && window.echarts) {
+    const sourceChart = echarts.getInstanceByDom(sourceElement);
+    if (sourceChart) {
+      const option = sourceChart.getOption();
+      
+      if (detailedEChartInstance) {
+        detailedEChartInstance.dispose();
+      }
+
+      detailedEChartInstance = echarts.init(container);
+      detailedEChartInstance.setOption(option);
+      
+      setTimeout(() => {
+        detailedEChartInstance.resize();
+      }, 100);
+      return;
+    }
+  }
+}
+
+// Функция вызова аналитики из карточки с запросом к Gemini
+window.openAnalyticsFromCard = async function(buttonElement) {
+  const card = buttonElement.closest('.sub-chart-card');
+  if (!card) return;
+
+  const select = card.querySelector('select');
+  const indicatorName = select ? select.options[select.selectedIndex].text : 'График данных';
+  
+  const activeCategoryEl = document.querySelector('.cat-header.active .cat-text');
+  const categoryName = activeCategoryEl ? activeCategoryEl.innerText : 'Общие данные';
+
+  const chartDiv = card.querySelector('[id^="chartType"], [id$="Chart"]');
+  const chartId = chartDiv ? chartDiv.id : null;
+
+  // Открываем детальный вид с прелоадером
+  window.openDetailedAnalytics(
+    indicatorName,
+    "⏳ Генерация ИИ-аналитики с помощью Gemini...",
+    chartId
+  );
+
+  // Загружаем реальный анализ
+  const realAnalysisText = await fetchAIAnalysisForChart(indicatorName, categoryName);
+
+  const descEl = document.getElementById('aiAnalyticsDescription');
+  if (descEl) {
+    descEl.innerText = realAnalysisText;
+  }
+};
+
+// Кнопка возврата к дашборду
+document.addEventListener('DOMContentLoaded', () => {
+  const backBtn = document.getElementById('backToDashBtn');
+  if (backBtn) {
+    backBtn.addEventListener('click', () => {
+      const detailedSection = document.getElementById('detailedViewSection');
+      if (detailedSection) detailedSection.classList.remove('active');
+
+      const mainDashboard = document.getElementById('mainDashboardContent');
+      if (mainDashboard) mainDashboard.style.display = 'block';
+
+      if (detailedEChartInstance) {
+        detailedEChartInstance.dispose();
+        detailedEChartInstance = null;
+      }
+    });
+  }
+
+  initSidebarSearch();
+});
+
 // Экспорт функций в глобальную область
 window.toggleAIChat = toggleAIChat;
 window.handleChatKeyDown = handleChatKeyDown;
@@ -317,6 +436,7 @@ window.addEventListener('resize', () => {
   if (stackedAreaChartInstance) stackedAreaChartInstance.resize();
   if (summaryChartInstance) summaryChartInstance.resize();
   if (kzMapInstance) kzMapInstance.resize();
+  if (detailedEChartInstance) detailedEChartInstance.resize();
 });
 
 const themeToggleBtn = document.getElementById('themeToggleBtn');
@@ -331,7 +451,7 @@ if (themeToggleBtn) {
     const x = rect.left + rect.width / 2;
     const y = rect.top + rect.height / 2;
 
-    const isDark = document.body.classList.add ? document.body.classList.contains('dark-theme') : false;
+    const isDark = document.body.classList.contains('dark-theme');
     const nextDark = !isDark;
 
     if (document.startViewTransition) {
@@ -382,26 +502,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
-
-  initSidebarSearch();
 });
-
-// Утилита для точного выбора значения в селекторах
-function setSelectValuePrecise(selectElement, targetValue) {
-  if (!selectElement || !selectElement.options.length) return;
-  const cleanTarget = targetValue.trim().toLowerCase();
-  
-  let bestMatch = selectElement.options[0].value;
-
-  for (let opt of selectElement.options) {
-    const optVal = opt.value.trim().toLowerCase();
-    if (optVal.includes(cleanTarget)) {
-      bestMatch = opt.value;
-      break;
-    }
-  }
-  selectElement.value = bestMatch;
-}
 
 initApp();
 initAIChat();

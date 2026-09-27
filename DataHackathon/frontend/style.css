@@ -1125,3 +1125,160 @@ body.dark-theme .settings-dropdown-title {
   opacity: 1;
   visibility: visible;
 }
+
+/* Контейнер режима детальной аналитики (скрыт по умолчанию) */
+.detailed-view-container {
+  display: none;
+  animation: fadeIn 0.3s ease forwards;
+}
+
+.detailed-view-container.active {
+  display: block;
+}
+
+.detailed-view-layout {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+  margin-top: 20px;
+}
+
+@media (max-width: 1024px) {
+  .detailed-view-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Карточка для ИИ-аналитики */
+.ai-analytics-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+}
+
+body.dark-theme .ai-analytics-card {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+.ai-analytics-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: #2563eb;
+}
+
+body.dark-theme .ai-analytics-header {
+  color: #60a5fa;
+}
+
+.ai-analytics-text {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #334155;
+}
+
+body.dark-theme .ai-analytics-text {
+  color: #cbd5e1;
+}
+
+.back-to-dashboard-btn {
+  background-color: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+  margin-bottom: 15px;
+}
+
+.back-to-dashboard-btn:hover {
+  background-color: #e2e8f0;
+}
+
+body.dark-theme .back-to-dashboard-btn {
+  background-color: #334155 !important;
+  color: #f8fafc !important;
+  border-color: #475569 !important;
+}
+
+.custom-analytics-btn {
+  background-color: #2563eb;
+  color: #ffffff;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.custom-analytics-btn:hover {
+  background-color: #1d4ed8;
+}
+
+.custom-analytics-btn:active {
+  transform: scale(0.97);
+}
+
+body.dark-theme .custom-analytics-btn {
+  background-color: #3b82f6;
+}
+
+/* Контейнер детальной страницы */
+#detailedViewSection {
+  display: none; /* Активным становится через класс .active */
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+#detailedViewSection.active {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Блок с графиком: делаем шире и выше */
+.detailed-chart-container {
+  width: 100%;
+  height: 550px; /* Увеличили высоту графика */
+  background: var(--card-bg, #ffffff);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  box-sizing: border-box;
+}
+
+/* Сам элемент графика внутри контейнера */
+#realDetailedChart {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Блок с ИИ-аналитикой: размещаем ниже на всю ширину */
+.detailed-analytics-container {
+  width: 100%;
+  background: var(--card-bg, #ffffff);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  box-sizing: border-box;
+}
