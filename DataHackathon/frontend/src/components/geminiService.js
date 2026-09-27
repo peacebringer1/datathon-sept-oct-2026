@@ -1,4 +1,4 @@
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "YOUR_API_KEY_HERE";
+
 
 export async function fetchAIAnalysisForChart(chartTitle, categoryName, retries = 2, delay = 2000) {
   const prompt = `Проанализируй данные по Республике Казахстан. ` +
