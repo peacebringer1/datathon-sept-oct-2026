@@ -11,6 +11,8 @@
   <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highcharts/11.3.0/highcharts.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highcharts/11.3.0/highcharts-3d.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="./node_modules/xlsx/xlsx.js"></script>
 
   <script type="text/javascript">
     function googleTranslateElementInit() {
@@ -29,12 +31,33 @@
     body { top: 0px !important; }
     #goog-gt-tt, .goog-te-balloon-frame { display: none !important; }
     .goog-text-highlight { background-color: none !important; box-shadow: none !important; }
+    
+    .cat-header {
+      cursor: pointer;
+      padding: 10px 15px;
+      margin-bottom: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-color, #475569);
+      border-radius: 6px;
+      transition: background 0.2s, color 0.2s;
+    }
+    .cat-header:hover {
+      background: rgba(59, 130, 246, 0.1);
+      color: var(--primary-color, #3b82f6);
+    }
+    .cat-header.active {
+      background: var(--primary-color, #3b82f6);
+      color: #ffffff !important;
+      border-radius: 6px;
+    }
   </style>
 </head>
 <body>
 
   <div class="app-layout">
     
+    <!-- Боковая панель с категориями и элементами управления внизу -->
     <aside class="category-sidebar-hover" id="categorySidebar">
       <div class="sidebar-collapsed-indicator">
         <div class="collapsed-icon-bar"></div>
@@ -47,62 +70,73 @@
           <span class="sidebar-title-text" id="sidebarTitleText">Категории данных</span>
         </div>
 
-        <div class="category-tree" id="categoryTree">
+        <div class="sidebar-search-box" style="padding: 0 15px 10px 15px;">
+          <input type="text" id="categorySearchInput" placeholder="Поиск категорий..." oninput="filterCategoriesSidebar()" style="width: 100%; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border-color, #cbd5e1); background: var(--bg-input, #f8fafc); font-size: 13px; outline: none; box-sizing: border-box;">
+        </div>
+
+        <div class="category-tree" id="categoryTree" style="padding: 0 10px;">
           
           <div class="cat-group">
-            <div class="cat-header" onclick="toggleCategory(this)">
+            <div class="cat-header active" onclick="selectCategoryDashboard('Население', this)">
               <span class="cat-text">Население</span>
             </div>
-            <div class="subcat-list">
-              <div class="subcat-item" onclick="selectIndicator('Естественный прирост населения, человек')">Естественный прирост</div>
-              <div class="subcat-item" onclick="selectIndicator('Рождаемость, человек')">Рожденные</div>
-              <div class="subcat-item" onclick="selectIndicator('Смертность, человек')">Умершие</div>
-            </div>
           </div>
 
           <div class="cat-group">
-            <div class="cat-header" onclick="toggleCategory(this)">
+            <div class="cat-header" onclick="selectCategoryDashboard('Экономика', this)">
               <span class="cat-text">Экономика</span>
             </div>
-            <div class="subcat-list">
-              <div class="subcat-item" onclick="selectIndicator('ВРП, млн тенге')">ВРП региона</div>
-              <div class="subcat-item" onclick="selectIndicator('Средняя зарплата, тенге')">Средняя зарплата</div>
-              <div class="subcat-item" onclick="selectIndicator('Уровень безработицы, %')">Уровень безработицы</div>
-            </div>
           </div>
 
           <div class="cat-group">
-            <div class="cat-header" onclick="toggleCategory(this)">
+            <div class="cat-header" onclick="selectCategoryDashboard('Образование', this)">
               <span class="cat-text">Образование</span>
             </div>
-            <div class="subcat-list">
-              <div class="subcat-item" onclick="selectIndicator('Люди с высшим образованием, человек')">С высшим образованием</div>
-              <div class="subcat-item" onclick="selectIndicator('Студенты вузов, человек')">Студенты вузов</div>
-            </div>
           </div>
 
           <div class="cat-group">
-            <div class="cat-header" onclick="toggleCategory(this)">
+            <div class="cat-header" onclick="selectCategoryDashboard('Промышленность', this)">
               <span class="cat-text">Промышленность</span>
             </div>
-            <div class="subcat-list">
-              <div class="subcat-item" onclick="selectIndicator('Промышленное производство, млн тенге')">Объем производства</div>
-            </div>
           </div>
 
           <div class="cat-group">
-            <div class="cat-header" onclick="toggleCategory(this)">
+            <div class="cat-header" onclick="selectCategoryDashboard('Сельское хозяйство', this)">
               <span class="cat-text">Сельское хозяйство</span>
-            </div>
-            <div class="subcat-list">
-              <div class="subcat-item" onclick="selectIndicator('Валовой выпуск продукции сельского хозяйства, млн тенге')">Валовой выпуск продукции</div>
-              <div class="subcat-item" onclick="selectIndicator('Производство мяса, тысяч тонн')">Производство мяса</div>
-              <div class="subcat-item" onclick="selectIndicator('Производство молока, тысяч тонн')">Производство молока</div>
             </div>
           </div>
 
         </div>
       </div>
+
+      <!-- Футер сайдбара: настройки (только иконка), язык и тема в один ряд -->
+<!-- Футер сайдбара: настройки, язык и тема -->
+      <div class="sidebar-settings-footer">
+        <div class="sidebar-buttons-row">
+          
+          <!-- Кнопка настроек -->
+          <div class="settings-dropdown-container">
+            <button id="settingsToggleBtn" class="settings-toggle-btn" title="Настройки">
+              <span>⚙️</span>
+            </button>
+            
+            <div id="settingsDropdown" class="settings-dropdown-menu">
+              <div class="settings-dropdown-title">Язык интерфейса</div>
+              <div class="settings-translate-wrapper">
+                <div id="google_translate_element" class="translate-widget-scale"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Кнопка языка -->
+          <button id="langToggleBtn" class="lang-toggle-btn" title="Сменить язык">RU</button>
+          
+          <!-- Кнопка темы -->
+          <button id="themeToggleBtn" class="theme-toggle-btn" title="Сменить тему">🌙</button>
+        
+        </div>
+      </div>
+
     </aside>
 
     <main class="main-content-area">
@@ -110,10 +144,6 @@
         
         <header class="app-header">
           <h2 id="mainTitleText">Аналитика демографии и экономики Казахстана</h2>
-          <div class="header-actions" style="display: flex; gap: 10px; align-items: center;">
-            <button id="langToggleBtn" class="lang-toggle-btn">RU</button>
-            <button id="themeToggleBtn" class="theme-toggle-btn" title="Сменить тему">🌙</button>
-          </div>
         </header>
 
         <div class="ticker-container">
@@ -208,11 +238,11 @@
         <div id="mapChartSection" class="chart-section-block" style="margin-top: 25px;">
           <div class="widget-controls">
             <div class="control-group">
-              <label>Показатель:</label>
+              <label>Показатель карты:</label>
               <select id="mapIndicatorSelect" onchange="onMapFilterChange()"></select>
             </div>
             <div class="control-group">
-              <label>Год:</label>
+              <label>Год карты:</label>
               <select id="mapYearSelect" onchange="onMapFilterChange()"></select>
             </div>
           </div>
@@ -242,8 +272,10 @@
               </button>
               <span id="counter">Записей в базе: 0</span>
             </div>
-            <div class="table-toolbar-right">
+            <div class="table-toolbar-right" style="display: flex; gap: 8px; align-items: center;">
               <input type="text" id="searchInput" placeholder="Поиск по регионам..." oninput="filterTable()">
+              <button onclick="exportTableToCSV()" class="tab-btn" style="padding: 6px 12px; font-size: 12px; cursor: pointer;">CSV</button>
+              <button onclick="exportTableToExcel()" class="tab-btn" style="padding: 6px 12px; font-size: 12px; cursor: pointer; background: #10b981; color: white; border: none;">Excel</button>
             </div>
           </div>
 

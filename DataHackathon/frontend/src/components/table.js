@@ -13,7 +13,8 @@ export async function loadTablePage(API_BASE_URL) {
   const search = searchEl ? searchEl.value : '';
 
   try {
-    const res = await fetch(`${API_BASE_URL}/api/table-data?page=${currentPage}&limit=50&indicator=${encodeURIComponent(indicator)}&search=${encodeURIComponent(search)}`);
+    // Увеличиваем limit до 2000, чтобы выгрузить все данные датасета целиком
+    const res = await fetch(`${API_BASE_URL}/api/table-data?page=${currentPage}&limit=2000&indicator=${encodeURIComponent(indicator)}&search=${encodeURIComponent(search)}`);
     const { total, columns, data } = await res.json();
 
     if (counterEl) {
@@ -56,3 +57,57 @@ export function toggleTableVisibility() {
     text.innerText = 'Скрыть таблицу';
   }
 }
+
+// Экспорт в CSV
+window.exportTableToCSV = function() {
+  const table = document.querySelector('.table-wrapper table');
+  if (!table) return;
+  
+  let csv = [];
+  const rows = table.querySelectorAll('tr');
+  
+  for (let i = 0; i < rows.length; i++) {
+    const row = [], cols = rows[i].querySelectorAll('td, th');
+    for (let j = 0; j < cols.length; j++) {
+      let data = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, '').replace(/(\s+)/gm, ' ');
+      row.push('"' + data + '"');
+    }
+    csv.push(row.join(';'));
+  }
+  
+  const csvFile = new Blob(["\uFEFF" + csv.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const downloadLink = document.createElement('a');
+  downloadLink.download = 'kazakhstan_analytics_data.csv';
+  downloadLink.href = window.URL.createObjectURL(csvFile);
+  downloadLink.style.display = 'none';
+  document.body.appendChild(downloadLink);
+  downloadLink.click();
+  document.body.removeChild(downloadLink);
+};
+
+// Экспорт в Excel (.xls / .xlsx без сторонних либ)
+window.exportTableToExcel = function() {
+  const table = document.querySelector('.table-wrapper table');
+  if (!table) {
+    alert('Таблица не найдена на странице');
+    return;
+  }
+
+  try {
+    const html = table.outerHTML;
+    const blob = new Blob(['\ufeff' + html], {
+      type: 'application/vnd.ms-excel;charset=utf-8;'
+    });
+    
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'kazakhstan_analytics_data.xls';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch (e) {
+    console.error('Ошибка экспорта в Excel:', e);
+  }
+};
