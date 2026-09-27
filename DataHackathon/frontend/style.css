@@ -745,14 +745,20 @@ body.dark-theme .widget-controls {
   background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important;
 }
 
+/* Полное перекрашивание заголовков, текста, элементов управления и графиков в белый цвет */
 body.dark-theme h2,
 body.dark-theme .app-header h2,
 body.dark-theme .sidebar-title-text,
 body.dark-theme .cat-text,
+body.dark-theme .control-group,
 body.dark-theme .control-group label,
 body.dark-theme th,
 body.dark-theme #counter,
-body.dark-theme .sub-chart-card span {
+body.dark-theme .sub-chart-card span,
+body.dark-theme .ticker-wrap,
+body.dark-theme .widget-controls .control-group,
+body.dark-theme .chart-section-block *,
+body.dark-theme .sub-chart-card * {
   color: #f8fafc !important;
 }
 
@@ -776,6 +782,12 @@ body.dark-theme .table-toolbar input {
   background-color: #0f172a !important;
   color: #f8fafc !important;
   border-color: #475569 !important;
+}
+
+/* Возвращаем корректный цвет для селектов внутри графиков */
+body.dark-theme .sub-chart-card select {
+  color: #f8fafc !important;
+  background-color: #0f172a !important;
 }
 
 body.dark-theme .tab-btn,
@@ -1003,4 +1015,113 @@ body.dark-theme .tool-icon-btn {
 body.dark-theme .tool-icon-btn:hover {
   background: #334155;
   color: #f8fafc;
+}
+
+.subcat-item.active-subcat {
+  background: rgba(59, 130, 246, 0.15);
+  color: var(--primary-color, #3b82f6);
+  font-weight: 600;
+}
+
+.settings-toggle-btn {
+  width: 46px;
+  height: 46px;
+  background-color: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  transition: transform 0.2s, background-color 0.2s;
+  flex-shrink: 0;
+}
+
+.settings-toggle-btn:hover {
+  background-color: #1d4ed8;
+  transform: scale(1.05);
+}
+
+.sidebar-settings-footer {
+  position: absolute;
+  bottom: 20px;
+  left: 0;
+  width: 100%;
+  padding: 0 15px;
+  box-sizing: border-box;
+}
+
+.sidebar-buttons-row {
+  display: flex;
+  align-items: center;
+  justify-content: left;
+  gap: 8px;
+}
+
+.settings-dropdown-container {
+  position: relative;
+}
+
+.settings-dropdown-menu {
+  display: none;
+  position: absolute;
+  bottom: 55px;
+  left: 0;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  padding: 12px;
+  width: 180px;
+  z-index: 1000;
+}
+
+.settings-dropdown-title {
+  font-size: 12px;
+  font-weight: bold;
+  margin-bottom: 8px;
+  color: #64748b;
+}
+
+.settings-translate-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+}
+
+.translate-widget-scale {
+  transform: scale(0.85);
+  transform-origin: left center;
+}
+
+body.dark-theme .settings-dropdown-menu {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+}
+
+body.dark-theme .settings-dropdown-title {
+  color: #94a3b8 !important;
+}
+
+.sidebar-settings-footer {
+  position: absolute;
+  bottom: 20px;
+  left: 0;
+  width: 100%;
+  padding: 0 15px;
+  box-sizing: border-box;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease;
+}
+
+.category-sidebar-hover:hover .sidebar-settings-footer {
+  opacity: 1;
+  visibility: visible;
 }
