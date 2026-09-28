@@ -5,8 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Big data analysis in the Republic of Kazakhstan</title>
   
+  <!-- Основные стили проекта и кастомные правила Tailwind -->
   <link rel="stylesheet" href="style.css">
   
+  <!-- Библиотеки графиков и таблиц -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highcharts/11.3.0/highcharts.js"></script>
@@ -14,6 +16,7 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="./node_modules/xlsx/xlsx.js"></script>
 
+  <!-- Скрипт Google Translate -->
   <script type="text/javascript">
     function googleTranslateElementInit() {
       new google.translate.TranslateElement({
@@ -25,64 +28,6 @@
     }
   </script>
   <script type="text/javascript" src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
-
-  <style>
-    .goog-te-banner-frame.skiptranslate { display: none !important; }
-    body { top: 0px !important; }
-    #goog-gt-tt, .goog-te-balloon-frame { display: none !important; }
-    .goog-text-highlight { background-color: none !important; box-shadow: none !important; }
-    
-    .cat-header {
-      cursor: pointer;
-      padding: 10px 15px;
-      font-size: 14px;
-      font-weight: 500;
-      color: var(--text-color, #475569);
-      border-radius: 6px;
-      transition: background 0.2s, color 0.2s;
-    }
-    .cat-header:hover {
-      background: rgba(59, 130, 246, 0.1);
-      color: var(--primary-color, #3b82f6);
-    }
-    .cat-header.active {
-      background: var(--primary-color, #3b82f6);
-      color: #ffffff !important;
-      border-radius: 6px;
-    }
-
-    /* Стили для увеличенного экрана аналитики */
-    #detailedViewSection {
-      display: none;
-      box-sizing: border-box;
-    }
-    #detailedViewSection.active {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
-    .detailed-chart-container {
-      width: 100%;
-      height: 550px;
-      background: var(--card-bg, #ffffff);
-      border-radius: 12px;
-      padding: 20px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-      box-sizing: border-box;
-    }
-    #realDetailedChart {
-      width: 100%;
-      height: 100%;
-    }
-    .detailed-analytics-container {
-      width: 100%;
-      background: var(--card-bg, #ffffff);
-      border-radius: 12px;
-      padding: 24px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-      box-sizing: border-box;
-    }
-  </style>
 </head>
 <body>
 
@@ -100,11 +45,11 @@
           <span class="sidebar-title-text" id="sidebarTitleText">Категории данных</span>
         </div>
 
-        <div class="sidebar-search-box" style="padding: 10px 15px 10px 15px;">
-          <input type="text" id="categorySearchInput" placeholder="Поиск категорий..." oninput="filterCategoriesSidebar()" style="width: 100%; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border-color, #cbd5e1); background: var(--bg-input, #f8fafc); font-size: 13px; outline: none; box-sizing: border-box;">
+        <div class="sidebar-search-box">
+          <input type="text" id="categorySearchInput" placeholder="Поиск категорий..." oninput="filterCategoriesSidebar()">
         </div>
 
-        <div class="category-tree" id="categoryTree" style="padding: 0 10px;">
+        <div class="category-tree" id="categoryTree">
           <div class="cat-group">
             <div class="cat-header active" onclick="selectCategoryDashboard('Население', this)">
               <span class="cat-text">Население</span>
@@ -137,8 +82,7 @@
         <div class="sidebar-buttons-row">
           <div class="settings-dropdown-container">
             <button id="settingsToggleBtn" class="settings-toggle-btn" title="Настройки"><span>⚙️</span></button>
-            <div id="settingsDropdown" class="settings-dropdown-menu">
-            </div>
+            <div id="settingsDropdown" class="settings-dropdown-menu"></div>
           </div>
           <button id="langToggleBtn" class="lang-toggle-btn" title="Сменить язык">RU</button>
           <button id="themeToggleBtn" class="theme-toggle-btn" title="Сменить тему">🌙</button>
@@ -149,21 +93,18 @@
     <main class="main-content-area">
       <div class="container">
         
-        <header class="app-header">
-          <h2 id="mainTitleText">Анализ больших данных</h2>
-        </header>
+        <header class="app-header"></header>
 
         <!-- Главный дашборд -->
         <div id="mainDashboardContent" class="main-dashboard-content">
 
           <div class="ticker-container">
-            <!--<div class="ticker-label">Красивый ползунок</div>-->
             <div class="ticker-wrap">
               <div class="ticker-track" id="tickerTrack"></div>
             </div>
           </div>
 
-          <div class="tabs" style="margin-bottom: 20px;">
+          <div class="tabs">
             <button class="tab-btn active" onclick="switchTab('year')">По областям</button>
             <button class="tab-btn" onclick="switchTab('summary')">Итоговый</button>
           </div>
@@ -180,124 +121,121 @@
               </div>
             </div>
 
-            <div class="charts-grid-4" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 20px; margin-top: 20px;">
+            <div class="charts-grid-4">
               
               <!-- Карточка 1 -->
               <div class="sub-chart-card">
                 <div class="card-header-controls">
-                  <div class="left-local-controls" style="display: flex; gap: 8px; width: 100%; align-items: center;">
-                    <select class="mini-select" id="card1Indicator" style="flex: 1;" onchange="onCardFilterChange(1)"></select>
-                    <select class="mini-select" id="card1Year" style="width: 110px;" onchange="onCardFilterChange(1)"></select>
+                  <div class="left-local-controls">
+                    <select class="mini-select" id="card1Indicator" onchange="onCardFilterChange(1)"></select>
+                    <select class="mini-select" id="card1Year" onchange="onCardFilterChange(1)"></select>
                     <button class="custom-analytics-btn" onclick="openAnalyticsFromCard(this)" title="Открыть детальный анализ графика">📊</button>
                   </div>
                 </div>
-                <div id="chartTypeBar" style="height: 330px;"></div>
+                <div id="chartTypeBar" class="chart-box-h330"></div>
               </div>
 
               <!-- Карточка 2 -->
               <div class="sub-chart-card">
                 <div class="card-header-controls">
-                  <div class="left-local-controls" style="display: flex; gap: 8px; width: 100%; align-items: center;">
-                    <select class="mini-select" id="card2Indicator" style="flex: 1;" onchange="onCardFilterChange(2)"></select>
-                    <select class="mini-select" id="card2Year" style="width: 110px;" onchange="onCardFilterChange(2)"></select>
+                  <div class="left-local-controls">
+                    <select class="mini-select" id="card2Indicator" onchange="onCardFilterChange(2)"></select>
+                    <select class="mini-select" id="card2Year" onchange="onCardFilterChange(2)"></select>
                     <button class="custom-analytics-btn" onclick="openAnalyticsFromCard(this)" title="Открыть детальный анализ графика">📊</button>
                   </div>
                 </div>
-                <div id="chartTypeLine" style="height: 330px;"></div>
+                <div id="chartTypeLine" class="chart-box-h330"></div>
               </div>
 
               <!-- Карточка 3 -->
               <div class="sub-chart-card">
                 <div class="card-header-controls">
-                  <div class="left-local-controls" style="display: flex; gap: 8px; width: 100%; align-items: center;">
-                    <select class="mini-select" id="card3Indicator" style="flex: 1;" onchange="onCardFilterChange(3)"></select>
-                    <select class="mini-select" id="card3Year" style="width: 110px;" onchange="onCardFilterChange(3)"></select>
+                  <div class="left-local-controls">
+                    <select class="mini-select" id="card3Indicator" onchange="onCardFilterChange(3)"></select>
+                    <select class="mini-select" id="card3Year" onchange="onCardFilterChange(3)"></select>
                     <button class="custom-analytics-btn" onclick="openAnalyticsFromCard(this)" title="Открыть детальный анализ графика">📊</button>
                   </div>
                 </div>
-                <div id="chartTypePie" style="height: 330px;"></div>
+                <div id="chartTypePie" class="chart-box-h330"></div>
               </div>
 
               <!-- Карточка 4 -->
               <div class="sub-chart-card">
                 <div class="card-header-controls">
-                  <div class="left-local-controls" style="display: flex; gap: 8px; width: 100%; align-items: center;">
-                    <select class="mini-select" id="card4Indicator" style="flex: 1;" onchange="onCardFilterChange(4)"></select>
-                    <select class="mini-select" id="card4Year" style="width: 110px;" onchange="onCardFilterChange(4)"></select>
+                  <div class="left-local-controls">
+                    <select class="mini-select" id="card4Indicator" onchange="onCardFilterChange(4)"></select>
+                    <select class="mini-select" id="card4Year" onchange="onCardFilterChange(4)"></select>
                     <button class="custom-analytics-btn" onclick="openAnalyticsFromCard(this)" title="Открыть детальный анализ графика">📊</button>
                   </div>
                 </div>
-                <div id="chartTypeHBar" style="height: 330px;"></div>
+                <div id="chartTypeHBar" class="chart-box-h330"></div>
               </div>
 
               <!-- Карточка 5 -->
               <div class="sub-chart-card">
                 <div class="card-header-controls">
-                  <div class="left-local-controls" style="display: flex; gap: 8px; width: 100%; align-items: center;">
-                    <select class="mini-select" id="card5Indicator" style="flex: 1;" onchange="onCardFilterChange(5)"></select>
-                    <select class="mini-select" id="card5Year" style="width: 110px;" onchange="onCardFilterChange(5)"></select>
+                  <div class="left-local-controls">
+                    <select class="mini-select" id="card5Indicator" onchange="onCardFilterChange(5)"></select>
+                    <select class="mini-select" id="card5Year" onchange="onCardFilterChange(5)"></select>
                     <button class="custom-analytics-btn" onclick="openAnalyticsFromCard(this)" title="Открыть детальный анализ графика">📊</button>
                   </div>
                 </div>
-                <div id="barAnimationChart" style="height: 330px;"></div>
+                <div id="barAnimationChart" class="chart-box-h330"></div>
               </div>
 
               <!-- Карточка 6 -->
-              <!-- Карточка 6: Добавление своего графика -->
               <div class="sub-chart-card custom-add-card" id="customCardContainer">
-                <div class="card-header-controls" id="customCardHeader" style="display: none;">
-                  <div class="left-local-controls" style="display: flex; gap: 8px; width: 100%; align-items: center;">
-                    <select class="mini-select" id="card6Indicator" style="flex: 1;" onchange="onCardFilterChange(6)"></select>
-                    <select class="mini-select" id="card6Year" style="width: 110px;" onchange="onCardFilterChange(6)"></select>
+                <div class="card-header-controls" id="customCardHeader">
+                  <div class="left-local-controls">
+                    <select class="mini-select" id="card6Indicator" onchange="onCardFilterChange(6)"></select>
+                    <select class="mini-select" id="card6Year" onchange="onCardFilterChange(6)"></select>
                     <button class="custom-analytics-btn" onclick="openAnalyticsFromCard(this)" title="Открыть детальный анализ графика">📊</button>
-                    <button class="custom-analytics-btn" onclick="resetCustomCard()" title="Сбросить график" style="background: #ef4444;">✕</button>
+                    <button class="custom-analytics-btn btn-danger-custom" onclick="resetCustomCard()" title="Сбросить график">✕</button>
                   </div>
                 </div>
                 
-                <!-- Состояние до добавления -->
-                <div id="customCardPrompt" class="center-add-prompt" style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; gap: 12px; cursor: pointer;" onclick="openAddChartModal()">
-                  <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(37, 99, 235, 0.1); color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold;">+</div>
-                  <span style="font-size: 14px; font-weight: 600; color: #475569;">Добавить свой график</span>
+                <div id="customCardPrompt" class="center-add-prompt" onclick="openAddChartModal()">
+                  <div class="add-circle-icon">+</div>
+                  <span>Добавить свой график</span>
                 </div>
 
-                <!-- Сам график (появляется после настройки) -->
-                <div id="chartTypeCustom" style="height: 330px; display: none;"></div>
+                <div id="chartTypeCustom" class="chart-box-h330" style="display: none;"></div>
               </div>
 
               <!-- Модальное окно настройки пользовательского графика -->
-              <div id="addChartModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center;">
-                <div style="background: var(--card-bg, #ffffff); padding: 24px; border-radius: 16px; width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); border: 1px solid var(--border-color, #e2e8f0);">
-                  <h3 style="margin-top: 0; margin-bottom: 16px; font-size: 18px; color: var(--text-color, #1e293b);">Настройка своего графика</h3>
+              <div id="addChartModal" class="modal-backdrop">
+                <div class="modal-card">
+                  <h3>Настройка своего графика</h3>
                   
-                  <div style="margin-bottom: 14px;">
-                    <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #475569;">Выберите показатель:</label>
-                    <select id="modalIndicatorSelect" style="width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #cbd5e1; outline: none; background: var(--bg-input, #fff); color: var(--text-color, #1e293b);"></select>
+                  <div class="modal-field">
+                    <label>Выберите показатель:</label>
+                    <select id="modalIndicatorSelect"></select>
                   </div>
 
-                  <div style="margin-bottom: 14px;">
-                    <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #475569;">Выберите год:</label>
-                    <select id="modalYearSelect" style="width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #cbd5e1; outline: none; background: var(--bg-input, #fff); color: var(--text-color, #1e293b);"></select>
+                  <div class="modal-field">
+                    <label>Выберите год:</label>
+                    <select id="modalYearSelect"></select>
                   </div>
 
-                  <div style="margin-bottom: 20px;">
-                    <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #475569;">Тип визуализации:</label>
-                    <select id="modalChartType" style="width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #cbd5e1; outline: none; background: var(--bg-input, #fff); color: var(--text-color, #1e293b);">
+                  <div class="modal-field-last">
+                    <label>Тип визуализации:</label>
+                    <select id="modalChartType">
                       <option value="bar">Столбчатая диаграмма (Bar)</option>
                       <option value="line">Линейный график (Line)</option>
                       <option value="pie">Круговая диаграмма (Pie)</option>
                     </select>
                   </div>
 
-                  <div style="display: flex; justify-content: flex-end; gap: 10px;">
-                    <button onclick="closeAddChartModal()" style="padding: 8px 16px; border-radius: 8px; border: 1px solid #cbd5e1; background: transparent; cursor: pointer; font-weight: 500; color: #475569;">Отмена</button>
-                    <button onclick="saveCustomCard()" style="padding: 8px 16px; border-radius: 8px; border: none; background: #2563eb; color: white; cursor: pointer; font-weight: 500;">Создать график</button>
+                  <div class="modal-buttons">
+                    <button class="btn-secondary" onclick="closeAddChartModal()">Отмена</button>
+                    <button class="btn-primary" onclick="saveCustomCard()">Создать график</button>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <div id="mapChartSection" class="chart-section-block" style="margin-top: 25px;">
+          <div id="mapChartSection" class="chart-section-block map-section-spacing">
             <div class="widget-controls">
               <div class="control-group">
                 <label>Показатель карты:</label>
@@ -308,13 +246,13 @@
                 <select id="mapYearSelect" onchange="onMapFilterChange()"></select>
               </div>
             </div>
-            <div class="map-container-wrapper" id="mapWrapper" onclick="activateMapZoom()" style="margin-top: 10px;">
+            <div class="map-container-wrapper" id="mapWrapper" onclick="activateMapZoom()">
               <div class="map-overlay-hint" id="mapHint">Нажмите, чтобы включить карту</div>
-              <div id="kazakhstanMapChart" class="chart-container" style="height: 500px;"></div>
+              <div id="kazakhstanMapChart" class="chart-container map-h500"></div>
             </div>
           </div>
 
-          <div id="summaryChartWrapper" class="chart-section-block hidden" style="margin-top: 20px;">
+          <div id="summaryChartWrapper" class="chart-section-block hidden summary-wrapper-spacing">
             <div class="widget-controls">
               <div class="control-group">
                 <label>Показатель:</label>
@@ -322,24 +260,14 @@
               </div>
             </div>
             
-            <!-- Контейнер для двух графиков во вкладке "Итоговый" -->
-            <div class="summary-charts-container" style="display: flex; flex-direction: column; gap: 24px; margin-top: 15px;">
-              
-              <!-- Первый график (Одиночный по выбранному показателю) -->
-              <div class="chart-card" style="background: var(--card-bg, #ffffff); padding: 16px; border-radius: 12px; height: 400px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); box-sizing: border-box;">
-                <canvas id="summaryChart" style="width: 100%; height: 100%;"></canvas>
+            <div class="summary-charts-container">
+              <div class="chart-card summary-card-box">
+                <div id="summaryChart" class="summary-chart-inner"></div>
               </div>
-
-              <!-- Второй график (Все показатели вместе) -->
-              <div class="chart-card" style="background: var(--card-bg, #ffffff); padding: 16px; border-radius: 12px; height: 450px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); box-sizing: border-box;">
-                <h3 style="text-align: center; font-size: 14px; margin-top: 0; margin-bottom: 10px; color: var(--text-color, #1e293b);">Сравнение всех показателей по годам</h3>
-                <div id="multiSummaryChart" style="width: 100%; height: calc(100% - 25px);"></div>
-              </div>
-
             </div>
           </div>
 
-          <div class="table-section" style="margin-top: 30px;">
+          <div class="table-section table-section-spacing">
             <div class="table-toolbar">
               <div class="table-toolbar-left">
                 <button class="toggle-table-btn" onclick="toggleTableVisibility()">
@@ -347,10 +275,10 @@
                 </button>
                 <span id="counter">Записей в базе: 0</span>
               </div>
-              <div class="table-toolbar-right" style="display: flex; gap: 8px; align-items: center;">
+              <div class="table-toolbar-right">
                 <input type="text" id="searchInput" placeholder="Поиск по регионам..." oninput="filterTable()">
-                <button onclick="exportTableToCSV()" class="tab-btn" style="padding: 6px 12px; font-size: 12px; cursor: pointer;">CSV</button>
-                <button onclick="exportTableToExcel()" class="tab-btn" style="padding: 6px 12px; font-size: 12px; cursor: pointer; background: #10b981; color: white; border: none;">Excel</button>
+                <button onclick="exportTableToCSV()" class="tab-btn csv-btn">CSV</button>
+                <button onclick="exportTableToExcel()" class="tab-btn excel-btn">Excel</button>
               </div>
             </div>
 
@@ -366,24 +294,20 @@
 
         </div><!-- /mainDashboardContent -->
 
-        <!-- Секция детального просмотра (График сверху крупный, ИИ снизу) -->
+        <!-- Секция детального просмотра -->
         <div id="detailedViewSection" class="detailed-section">
-          <div class="detailed-header" style="display: flex; align-items: center; gap: 15px;">
+          <div class="detailed-header">
             <button id="backToDashBtn" class="back-btn">← Назад к дашборду</button>
-            <h2 id="detailedChartTitle" style="margin: 0; font-size: 20px;">Название показателя</h2>
+            <h2 id="detailedChartTitle">Название показателя</h2>
           </div>
 
-          <!-- 1. Большой график сверху -->
           <div class="detailed-chart-container">
             <div id="realDetailedChart"></div>
           </div>
 
-          <!-- 2. Блок ИИ-аналитики снизу -->
           <div class="detailed-analytics-container">
-            <h3 style="margin-top: 0; display: flex; align-items: center; gap: 8px;">
-              🤖 ИИ Аналитика
-            </h3>
-            <div id="aiAnalyticsDescription" style="line-height: 1.6; white-space: pre-line; font-size: 14px;">
+            <h3>🤖 ИИ Аналитика</h3>
+            <div id="aiAnalyticsDescription">
               ⏳ Загрузка анализа...
             </div>
           </div>

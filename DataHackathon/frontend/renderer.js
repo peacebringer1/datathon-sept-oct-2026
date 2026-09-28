@@ -28,7 +28,6 @@ import { fetchAIAnalysisForChart } from './src/components/geminiService.js';
 let activeTab = 'year';
 const API_BASE_URL = 'http://127.0.0.1:5000';
 
-// Наборы показателей для каждой категории (распределяются по 6 карточкам при клике)
 const categoryDashboards = {
   "Население": [
     "Естественный прирост населения, человек",
