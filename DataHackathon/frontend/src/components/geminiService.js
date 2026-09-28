@@ -1,4 +1,5 @@
 
+
 export async function fetchAIAnalysisForChart(chartTitle, categoryName, retries = 2, delay = 2000) {
   const prompt = `Проанализируй данные по Республике Казахстан. ` +
                  `Категория: "${categoryName}". Показатель: "${chartTitle}". ` +
