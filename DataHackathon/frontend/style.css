@@ -603,11 +603,17 @@ aside.category-sidebar-hover.pinned .sidebar-settings-footer {
 #chartTypeLine,
 #chartTypePie,
 #chartTypeHBar,
-#barAnimationChart,
+#barAnimationChart {
+  width: 100% !important;
+  height: 600px !important;
+  min-height: 340px;
+}
+
+/* Увеличение высоты div карты Казахстана ровно в 2 раза (было 600px -> стало 1200px) */
 #kazakhstanMapChart {
   width: 100% !important;
-  height: 340px !important;
-  min-height: 340px;
+  height: 1200px !important;
+  min-height: 680px;
 }
 
 /* Таблицы */
@@ -767,7 +773,7 @@ th {
   z-index: 1000;
 }
 
-/* Темная тема */
+/* УЛУЧШЕННАЯ ТЕМНАЯ ТЕМА ДЛЯ ВСЕХ СТРАНИЦ И ЭЛЕМЕНТОВ */
 body.dark-theme {
   background-color: #0f172a;
   color: #f8fafc;
@@ -785,19 +791,23 @@ body.dark-theme .cat-header,
 body.dark-theme .sidebar-header,
 body.dark-theme .sub-chart-card,
 body.dark-theme .detailed-chart-container,
-body.dark-theme .detailed-analytics-container {
+body.dark-theme .detailed-analytics-container,
+body.dark-theme .settings-dropdown-menu,
+body.dark-theme .ai-notification-bubble {
   background-color: #1e293b !important;
   color: #f8fafc !important;
   border-color: #334155 !important;
 }
 
 body.dark-theme h2,
+body.dark-theme h3,
 body.dark-theme .app-header h2,
 body.dark-theme .sidebar-title-text,
 body.dark-theme .cat-text,
 body.dark-theme .control-group label,
 body.dark-theme th,
-body.dark-theme #counter {
+body.dark-theme #counter,
+body.dark-theme .ai-notification-content {
   color: #f8fafc !important;
 }
 
@@ -807,10 +817,16 @@ body.dark-theme th {
 
 body.dark-theme select,
 body.dark-theme input,
-body.dark-theme textarea {
+body.dark-theme textarea,
+body.dark-theme .mini-select {
   background-color: #0f172a !important;
   color: #f8fafc !important;
   border-color: #475569 !important;
+}
+
+body.dark-theme select option {
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
 }
 
 body.dark-theme .tab-btn,
@@ -820,10 +836,15 @@ body.dark-theme .toggle-table-btn {
   border-color: #475569 !important;
 }
 
-body.dark-theme .settings-dropdown-menu {
-  background: #1e293b !important;
-  border-color: #334155 !important;
-  color: #f8fafc !important;
+body.dark-theme .tab-btn.active {
+  background-color: #2563eb !important;
+  color: #ffffff !important;
+  border-color: #2563eb !important;
+}
+
+body.dark-theme td {
+  border-bottom-color: #334155 !important;
+  color: #cbd5e1 !important;
 }
 
 .custom-add-card {
@@ -840,4 +861,25 @@ body.dark-theme .settings-dropdown-menu {
 .center-add-prompt {
   width: 100%;
   height: 100%;
+}
+
+#multiSummaryChart {
+  width: 100%;
+  height: 450px; /* Фиксированная высота обязательна для ECharts */
+  margin-top: 15px;
+}
+
+#addChartModal {
+  display: none; /* Переключается на flex через JavaScript при открытии */
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5); /* Затемнение фона */
+  
+  /* Главные свойства для идеального центрирования */
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
 }

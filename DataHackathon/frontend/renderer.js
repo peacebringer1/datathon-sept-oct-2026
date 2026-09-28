@@ -9,8 +9,10 @@ import {
   activateMapZoom,
   yearChartInstance,
   lineChartInstance,
+  updateMultiSummaryChart,
   pieChartInstance,
   hBarChartInstance,
+  multiSummaryChartInstance,
   summaryChartInstance,
   kzMapInstance,
   updateStackedAreaChart,
@@ -287,7 +289,7 @@ function switchTab(tab) {
     toggleVisibility(yearSection, true);
     toggleVisibility(mapSection, true);
     toggleVisibility(summaryWrapper, false);
-    
+
     setTimeout(() => {
       if (yearChartInstance) yearChartInstance.resize();
       if (kzMapInstance) kzMapInstance.resize();
@@ -296,9 +298,15 @@ function switchTab(tab) {
     toggleVisibility(yearSection, false);
     toggleVisibility(mapSection, false);
     toggleVisibility(summaryWrapper, true);
-    
+
     setTimeout(() => {
       if (summaryChartInstance) summaryChartInstance.resize();
+      // Добавьте обновление и ресайз мульти-графика:
+      if (typeof multiSummaryChartInstance !== 'undefined' && multiSummaryChartInstance) {
+        multiSummaryChartInstance.resize();
+      } else {
+        updateMultiSummaryChart(API_BASE_URL);
+      }
     }, 50);
   }
 }
@@ -536,8 +544,12 @@ window.addEventListener('resize', () => {
   if (hBarChartInstance) hBarChartInstance.resize();
   if (stackedAreaChartInstance) stackedAreaChartInstance.resize();
   if (summaryChartInstance) summaryChartInstance.resize();
+  if (typeof multiSummaryChartInstance !== 'undefined' && multiSummaryChartInstance) {
+    multiSummaryChartInstance.resize(); // <--- Добавьте ресайз для мульти-графика
+  }
   if (kzMapInstance) kzMapInstance.resize();
   if (detailedEChartInstance) detailedEChartInstance.resize();
+  
 });
 
 const themeToggleBtn = document.getElementById('themeToggleBtn');
@@ -586,6 +598,14 @@ if (themeToggleBtn) {
     window.dispatchEvent(new Event('resize'));
   });
 }
+
+// Корректный вызов сводных графиков при старте приложения
+const summaryIndEl = document.getElementById('summaryIndicatorSelect');
+if (summaryIndEl && summaryIndEl.value) {
+  await updateSummaryChart(API_BASE_URL, summaryIndEl.value);
+  await updateMultiSummaryChart(API_BASE_URL);
+}
+
 
 // Запуск приложения
 initApp();

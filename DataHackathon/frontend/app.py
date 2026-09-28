@@ -14,6 +14,19 @@ DB_FILE = os.path.abspath(os.path.join(FRONTEND_DIR, '..', 'database.sqlite'))
 
 print(f"[Flask DB]: Используется база данных по пути -> {DB_FILE}")
 
+from flask import jsonify
+
+@app.route('/api/indicators', methods=['GET'])
+def get_indicators():
+    # Возвратите список ваших показателей (например, из базы данных или массива)
+    indicators_list = [
+        "Естественный прирост населения, человек",
+        "ВРП, млн тенге",
+        "Средняя зарплата, тенге",
+        # ... остальные показатели
+    ]
+    return jsonify(indicators_list)
+
 def get_db_connection():
     conn = sqlite3.connect(DB_FILE)
     conn.row_factory = sqlite3.Row
