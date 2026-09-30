@@ -6,6 +6,7 @@ import pandas as pd
 from core.duplicates import DuplicateReport, remove_duplicates
 from core.profiler import DatasetProfile, _detect_column_type, profile_dataset
 from core.text_utils import to_datetime_safe, to_numeric_safe
+from core.decodings import DecodingRule, apply_decoding_rules
 
 
 MISSING_MARKERS = {
@@ -16,7 +17,11 @@ MISSING_MARKERS = {
 
 @dataclass
 class CleaningOptions:
+    """Настройки пользовательской очистки."""
+
     missing_mode: str = "drop_all"
+    # Пользовательские расшифровки применяются после удаления дубликатов.
+    decoding_rules: list[DecodingRule] = field(default_factory=list)
     fill_value: str = "Не указано"
     duplicate_mode: str = "none"
     duplicate_columns: list[str] = field(default_factory=list)
@@ -41,6 +46,7 @@ class CleaningReport:
         default_factory=DuplicateReport
     )
     missing_mode: str = "drop_all"
+    decoding_changes: dict[str, int] = field(default_factory=dict)
 
     @property
     def changed_columns(self) -> list[ColumnCleaningResult]:
@@ -53,6 +59,7 @@ class CleaningReport:
             or self.empty_columns_removed
             or self.changed_columns
             or self.duplicate_report.removed
+            or bool(self.decoding_changes)
         )
 
 
@@ -63,6 +70,16 @@ def clean_dataset(
     compute_profile: bool = True,
     column_type_overrides: dict[str, str] | None = None,
 ) -> tuple[pd.DataFrame, DatasetProfile | None, CleaningReport]:
+    """Очищает датафрейм.
+
+    compute_profile=False пропускает построение полного DatasetProfile
+    (уникальные значения, статистика дубликатов и т.д. по каждому столбцу)
+    на промежуточных шагах и оставляет только лёгкое определение ТИПА
+    столбца, нужное для приведения типов. Используется при обработке
+    chunks большого CSV в core/large_file.py, где полный профиль чанка
+    всё равно выбрасывается вызывающим кодом (профиль строится один раз
+    по итоговой выборке в _build_large_column_profiles) - раньше он
+    считался там впустую три раза на каждый chunk."""
     options = options or CleaningOptions()
     df = dataframe.copy()
 
@@ -175,9 +192,23 @@ def clean_dataset(
         columns=options.duplicate_columns,
     )
 
+    # 8. Пользовательские расшифровки применяются к фактическим данным
+    # после удаления дубликатов, чтобы они не меняли критерий дедупликации.
+    decoding_changes: dict[str, int] = {}
+    if options.decoding_rules:
+        df, decoding_changes = apply_decoding_rules(
+            df, options.decoding_rules
+        )
+
+    final_type_by_column = dict(type_by_column)
+    for column in decoding_changes:
+        # После замены кодов на поясняющий текст такой столбец по смыслу
+        # является категориальным, даже если до замены был числовым.
+        final_type_by_column[column] = "Категориальный"
+
     # Итоговый профиль соответствует данным, которые пользователь видит.
     profile = (
-        profile_dataset(df, type_overrides=type_by_column)
+        profile_dataset(df, type_overrides=final_type_by_column)
         if compute_profile
         else None
     )
@@ -189,6 +220,7 @@ def clean_dataset(
         columns=column_results,
         duplicate_report=duplicate_report,
         missing_mode=options.missing_mode,
+        decoding_changes=decoding_changes,
     )
 
     return df, profile, report
