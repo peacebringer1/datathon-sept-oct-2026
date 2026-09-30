@@ -1,0 +1,164 @@
+// frontend/src/components/householdComponent.js
+
+export async function initHouseholdSection(apiBaseUrl) {
+  try {
+    const response = await fetch(`${apiBaseUrl}/api/household-radar`);
+    const data = await response.json();
+
+    if (!data || data.error) {
+      console.error('Ошибка получения данных домохозяйств');
+      return;
+    }
+
+    const blocksConfig = [
+      { id: 'householdRadarQuestion1', title: '1. Первый вопрос (GR1)', rawBlockData: data.block1 },
+      { id: 'householdRadarQuestion2', title: '2. Второй вопрос (GR4)', rawBlockData: data.block2 },
+      { id: 'householdRadarQuestion3', title: '3. Третий вопрос (GR7)', rawBlockData: data.block3 },
+      { id: 'householdRadarQuestion4', title: '4. Четвертый вопрос (GR10)', rawBlockData: data.block4 },
+      { id: 'householdRadarQuestion5', title: '5. Пятый вопрос (GR13)', rawBlockData: data.block5 }
+    ];
+
+    const scoresRange = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
+
+    blocksConfig.forEach((block) => {
+      const dom = document.getElementById(block.id);
+      if (dom) {
+        dom.style.width = '100%';
+        dom.style.height = '100%';
+
+        const bData = block.rawBlockData || {};
+        const values = scoresRange.map(score => Number(bData[`score_${score}`] || 0));
+
+        const maxCount = Math.max(...values, 10);
+        const indicators = scoresRange.map(score => ({
+          name: `${score} баллов`,
+          max: maxCount
+        }));
+
+        const chart = echarts.getInstanceByDom(dom) || echarts.init(dom);
+        
+        const option = {
+          title: {
+            text: block.title,
+            left: 'center',
+            top: '10px',
+            textStyle: { fontSize: 13, fontWeight: '600', color: '#1e293b' }
+          },
+          tooltip: {
+            trigger: 'item',
+            formatter: function () {
+              let res = `<b>${block.title}</b><br/>`;
+              scoresRange.forEach((score, i) => {
+                res += `Оценка ${score}: <b>${values[i]} чел.</b><br/>`;
+              });
+              return res;
+            }
+          },
+          radar: {
+            indicator: indicators,
+            radius: '50%',
+            center: ['50%', '58%'],
+            splitNumber: 4,
+            axisName: { color: '#475569', fontSize: 11 },
+            splitLine: { lineStyle: { color: ['#e2e8f0', '#cbd5e1', '#94a3b8', '#64748b'] } },
+            splitArea: { areaStyle: { color: ['rgba(248,250,252,0.6)', 'rgba(241,245,249,0.6)'] } }
+          },
+          series: [{
+            type: 'radar',
+            data: [{ value: values, name: 'Кол-во людей' }],
+            areaStyle: { color: 'rgba(59, 130, 246, 0.4)' },
+            lineStyle: { color: '#2563eb', width: 2 },
+            itemStyle: { color: '#1d4ed8' }
+          }]
+        };
+
+        chart.setOption(option);
+        setTimeout(() => chart.resize(), 100);
+        window.addEventListener('resize', () => chart.resize());
+      }
+    });
+
+  } catch (e) {
+    console.error('Ошибка загрузки радарных диаграмм:', e);
+  }
+}
+
+window.switchMainSection = function(sectionName, element) {
+  document.querySelectorAll('.cat-header').forEach(el => el.classList.remove('active'));
+  if (element) element.classList.add('active');
+
+  const dashboard = document.getElementById('mainDashboardContent');
+  const household = document.getElementById('householdSection');
+  const detailed = document.getElementById('detailedViewSection');
+
+  if (detailed) detailed.style.display = 'none';
+
+  if (sectionName === 'household') {
+    dashboard.style.display = 'none';
+    household.style.display = 'block';
+    initHouseholdSection('http://127.0.0.1:5000');
+  } else {
+    household.style.display = 'none';
+    dashboard.style.display = 'block';
+  }
+};
+
+export function initHouseholdComponent(dataset) {
+    renderGeneralCharts(dataset);
+    populateTable(dataset);
+}
+
+function parseRowValues(row) {
+    return {
+        year: Number(row['Год'] || 0),
+        territoryCode: Number(row['Код территории'] || 0),
+        age: Number(row['Возраст лица'] || 0),
+        id: row['ID']
+    };
+}
+
+function renderGeneralCharts(rawData) {
+    const data = rawData.map(parseRowValues);
+    const ages = data.map(item => item.age);
+    const canvasEl = document.getElementById('realDetailedChart');
+    if (!canvasEl) return;
+
+    if (window.myDetailedChartInstance) window.myDetailedChartInstance.destroy();
+
+    const ctx = canvasEl.getContext('2d');
+    window.myDetailedChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: data.map((_, index) => `Респондент ${index + 1}`),
+            datasets: [{
+                label: 'Возраст респондентов',
+                data: ages,
+                backgroundColor: '#2563eb',
+                borderColor: '#1d4ed8',
+                borderWidth: 1
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+    });
+}
+
+function populateTable(rawData) {
+    const tableBody = document.querySelector('#datasetTableBody');
+    if (!tableBody) return;
+    tableBody.innerHTML = '';
+
+    rawData.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${row['Год'] || ''}</td>
+            <td>${row['Код территории'] || ''}</td>
+            <td>${row['Пол'] == 1 ? 'Мужской' : 'Женский'}</td>
+            <td>${row['Возраст лица'] || ''}</td>
+            <td>${row['GR1'] || ''}</td>
+            <td>${row['GR2'] || ''}</td>
+            <td>${row['GR3'] || ''}</td>
+            <td>${row['ID'] || ''}</td>
+        `;
+        tableBody.appendChild(tr);
+    });
+}
