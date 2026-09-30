@@ -5,3 +5,4 @@ node_modules
 __MACOSX
 DataHackathon/data/raw
 *.sqlite
+__pycache__
