@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Big data analysis in the Republic of Kazakhstan</title>
 
-  <!-- Основные стили проекта и кастомные правила Tailwind -->
+  <!-- Основные стили проекта -->
   <link rel="stylesheet" href="style.css">
 
   <!-- Библиотеки графиков и таблиц -->
@@ -55,28 +55,34 @@
 
         <div class="category-tree" id="categoryTree">
           <div class="cat-group">
-            <div class="cat-header active" onclick="selectCategoryDashboard('Население', this)">
+            <div class="cat-header active" onclick="switchMainSection('dashboard', this)">
               <span class="cat-text">Население</span>
             </div>
           </div>
           <div class="cat-group">
-            <div class="cat-header" onclick="selectCategoryDashboard('Экономика', this)">
+            <div class="cat-header" onclick="switchMainSection('dashboard', this)">
               <span class="cat-text">Экономика</span>
             </div>
           </div>
           <div class="cat-group">
-            <div class="cat-header" onclick="selectCategoryDashboard('Образование', this)">
+            <div class="cat-header" onclick="switchMainSection('dashboard', this)">
               <span class="cat-text">Образование</span>
             </div>
           </div>
           <div class="cat-group">
-            <div class="cat-header" onclick="selectCategoryDashboard('Промышленность', this)">
+            <div class="cat-header" onclick="switchMainSection('dashboard', this)">
               <span class="cat-text">Промышленность</span>
             </div>
           </div>
           <div class="cat-group">
-            <div class="cat-header" onclick="selectCategoryDashboard('Сельское хозяйство', this)">
+            <div class="cat-header" onclick="switchMainSection('dashboard', this)">
               <span class="cat-text">Сельское хозяйство</span>
+            </div>
+          </div>
+          <!-- Категория Домохозяйство -->
+          <div class="cat-group">
+            <div class="cat-header" onclick="switchMainSection('household', this)">
+              <span class="cat-text">Домохозяйство</span>
             </div>
           </div>
         </div>
@@ -305,6 +311,63 @@
 
         </div><!-- /mainDashboardContent -->
 
+
+        <!-- Динамическая страница: Домохозяйство -->
+        <div id="householdSection" class="chart-section-block" style="display: none;">
+          <div class="app-header">
+            <h2>Анализ сектора «Домохозяйство»</h2>
+            <p>Многофакторная оценка ключевых параметров домохозяйств по шкале от 1 до 10 с помощью радарных диаграмм.</p>
+          </div>
+
+          <div class="household-radar-grid">
+            <!-- Блок 1 -->
+            <div class="household-radar-card">
+              <h4>1. Первый вопрос. Итоговые оценки</h4>
+              <div id="householdRadarQuestion1" class="radar-box"></div>
+              <div class="household-description-card">
+                Оценка домохозяйств по ключевым критериям комфорта и материального обеспечения (шкала 1–10). Анализ показывает высокую стабильность в городской среде и необходимость модернизации инфраструктуры в отдельных регионах.
+              </div>
+            </div>
+
+            <!-- Блок 2 -->
+            <div class="household-radar-card">
+              <h4>2. Второй вопрос. Итоговые оценки</h4>
+              <div id="householdRadarQuestion2" class="radar-box"></div>
+              <div class="household-description-card">
+                Детальный срез распределения семейного бюджета по баллам от 1 до 10. Соотношение обязательных трат (питание, ЖКХ) и инвестиций в развитие показывает уровень финансовой устойчивости населения.
+              </div>
+            </div>
+
+            <!-- Блок 3 -->
+            <div class="household-radar-card">
+              <h4>3. Третий вопрос. Итоговые оценки</h4>
+              <div id="householdRadarQuestion3" class="radar-box"></div>
+              <div class="household-description-card">
+                Изучение уровня проникновения цифровых услуг, интернета и смарт-устройств по 10-балльной шкале. Отмечается рост вовлеченности во всех возрастных категориях.
+              </div>
+            </div>
+
+            <!-- Блок 4 -->
+            <div class="household-radar-card">
+              <h4>4. Четвертый вопрос. Итоговые оценки</h4>
+              <div id="householdRadarQuestion4" class="radar-box"></div>
+              <div class="household-description-card">
+                Анализ площади жилья, степени износа коммуникаций и доступности ипотечных программ по шкале 1–10. Показывает динамику улучшения жилищного фонда по регионам страны.
+              </div>
+            </div>
+
+            <!-- Блок 5 -->
+            <div class="household-radar-card">
+              <h4>5. Пятый вопрос. Итоговые оценки</h4>
+              <div id="householdRadarQuestion5" class="radar-box"></div>
+              <div class="household-description-card">
+                Оценка уровня занятости, стресса и здоровья членов домохозяйств по 10-балльной шкале. Отражает адаптивность населения к изменениям рынка труда.
+              </div>
+            </div>
+          </div>
+        </div>
+
+
         <!-- Секция детального просмотра -->
         <div id="detailedViewSection" class="detailed-section">
           <div class="detailed-header">
@@ -351,8 +414,7 @@
         </div>
       </div>
       <div class="chat-messages" id="chatMessages">
-        <div class="chat-bubble ai">Здравствуйте! Я ваш ИИ-помощник по анализу данных Казахстана. Задайте мне вопрос по
-          графикам или показателям.</div>
+        <div class="chat-bubble ai">Здравствуйте! Я ваш ИИ-помощник по анализу данных Казахстана. Задайте мне вопрос по графикам или показателям.</div>
       </div>
       <div class="chat-input-area">
         <textarea id="chatInput" rows="1" placeholder="Спросите о данных..."
@@ -363,6 +425,7 @@
   </div>
 
   <script src="./src/components/translator.js"></script>
+  <script type="module" src="./src/components/householdComponent.js"></script>
   <script type="module" src="renderer.js"></script>
 </body>
 
