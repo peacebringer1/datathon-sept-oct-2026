@@ -31,41 +31,76 @@ export function appendMessage(text, type) {
   return bubble;
 }
 
-export function initAIChat() {
-    const chatContainer = document.getElementById('ai-chat-container');
-    const sendButton = document.getElementById('ai-send-btn');
-    const inputField = document.getElementById('ai-input-field');
-    const messagesList = document.getElementById('ai-messages-list');
+export function initAIChat(apiBaseUrl) {
+  window.sendMessageToAI = () => sendMessageToAI(apiBaseUrl);
+  window.handleChatKeyDown = (event) => handleChatKeyDown(event, window.sendMessageToAI);
+}
 
-    if (!chatContainer || !sendButton || !inputField || !messagesList) return;
+function getDashboardContext() {
+  const getSelection = (id) => {
+    const select = document.getElementById(id);
+    return select?.selectedOptions?.[0]?.textContent?.trim() || '';
+  };
 
-    function appendMessage(sender, text) {
-        const messageElement = document.createElement('div');
-        messageElement.className = `ai-message ${sender}`;
-        messageElement.textContent = text;
-        messagesList.appendChild(messageElement);
-        messagesList.scrollTop = messagesList.scrollHeight;
-    }
+  const activeCategory = document.querySelector('.cat-header.active .cat-text');
+  const context = {
+    category: activeCategory?.textContent?.trim() || '',
+    indicator: getSelection('regionIndicatorSelect'),
+    year: getSelection('regionYearSelect'),
+    mapIndicator: getSelection('mapIndicatorSelect'),
+    mapYear: getSelection('mapYearSelect'),
+    summaryIndicator: getSelection('summaryIndicatorSelect')
+  };
 
-    async function handleSendMessage() {
-        const text = inputField.value.trim();
-        if (!text) return;
+  for (let card = 1; card <= 6; card += 1) {
+    const indicator = getSelection(`card${card}Indicator`);
+    const year = getSelection(`card${card}Year`);
+    if (indicator || year) context[`card${card}`] = { indicator, year };
+  }
 
-        appendMessage('user', text);
-        inputField.value = '';
+  return context;
+}
 
-        try {
-            const response = await window.electronAPI.sendAIQuery(text);
-            appendMessage('assistant', response);
-        } catch (error) {
-            appendMessage('assistant', 'Ошибка при обработке запроса.');
-        }
-    }
+export async function sendMessageToAI(apiBaseUrl) {
+  const input = document.getElementById('chatInput');
+  const sendButton = document.querySelector('.chat-input-area button');
+  const message = input?.value.trim();
+  if (!message || !input) return;
 
-    sendButton.addEventListener('click', handleSendMessage);
-    inputField.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            handleSendMessage();
-        }
+  appendMessage(message, 'user');
+  input.value = '';
+  input.disabled = true;
+  if (sendButton) sendButton.disabled = true;
+
+  const nextHistory = [...chatHistory, { role: 'user', text: message }].slice(-10);
+
+  try {
+    const response = await fetch(`${apiBaseUrl}/api/ai-chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messages: nextHistory,
+        dashboard_context: getDashboardContext()
+      })
     });
+    const responseText = await response.text();
+    let result;
+    try {
+      result = JSON.parse(responseText);
+    } catch {
+      throw new Error(
+        `Сервер вернул не JSON (HTTP ${response.status}). Полностью перезапустите приложение, чтобы обновить Flask API.`
+      );
+    }
+    if (!response.ok) throw new Error(result.error || 'Не удалось получить ответ ИИ.');
+
+    chatHistory = [...nextHistory, { role: 'model', text: result.answer }].slice(-10);
+    appendMessage(result.answer, 'ai');
+  } catch (error) {
+    appendMessage(error.message || 'Не удалось связаться с ИИ-помощником.', 'ai');
+  } finally {
+    input.disabled = false;
+    if (sendButton) sendButton.disabled = false;
+    input.focus();
+  }
 }

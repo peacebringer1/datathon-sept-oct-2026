@@ -58,7 +58,7 @@ export async function updateBarChart(apiBaseUrl, indicator, year) {
         title: { text: 'Распределение по регионам', left: 'center', textStyle: { fontSize: 13, color: getThemeColors().textColor } },
         toolbox: commonToolbox,
         tooltip: { trigger: 'axis', formatter: (p) => `<b>${p[0].name}</b><br/>${indicator}: <b>${p[0].value.toLocaleString('ru-RU')}</b>` },
-        grid: { top: '20%', bottom: '30%', left: '10%', right: '5%' },
+        grid: { top: '20%', bottom: '8%', left: '10%', right: '5%', containLabel: true },
         xAxis: { type: 'category', data: labels, axisLabel: { interval: 0, rotate: 35, fontSize: 9, color: getThemeColors().textColor } },
         yAxis: { type: 'value', axisLabel: { fontSize: 10, color: getThemeColors().textColor }, splitLine: { lineStyle: { color: '#f1f5f9' } } },
         series: [{
@@ -95,7 +95,7 @@ export async function updateLineChart(apiBaseUrl, indicator, year) {
         title: { text: 'Динамика показателей', left: 'center', textStyle: { fontSize: 13, color: getThemeColors().textColor } },
         toolbox: commonToolbox,
         tooltip: { trigger: 'axis' },
-        grid: { top: '20%', bottom: '30%', left: '10%', right: '5%' },
+        grid: { top: '20%', bottom: '8%', left: '10%', right: '5%', containLabel: true },
         xAxis: { type: 'category', data: labels, axisLabel: { interval: 0, rotate: 35, fontSize: 9, color: getThemeColors().textColor } },
         yAxis: { type: 'value', axisLabel: { fontSize: 10, color: getThemeColors().textColor }, splitLine: { lineStyle: { color: '#f1f5f9' } } },
         series: [{
@@ -226,7 +226,7 @@ export async function updateStackedAreaChart(apiBaseUrl, indicator, year) {
         legend: { data: ['bar', 'bar2'], top: '10%', textStyle: { fontSize: 10, color: getThemeColors().textColor } },
         toolbox: { feature: { magicType: { type: ['stack'] }, dataView: { readOnly: true }, saveAsImage: { pixelRatio: 2 } } },
         tooltip: { trigger: 'axis' },
-        grid: { top: '25%', bottom: '25%', left: '10%', right: '5%' },
+        grid: { top: '25%', bottom: '8%', left: '10%', right: '5%', containLabel: true },
         xAxis: { data: xAxisData, splitLine: { show: false }, axisLabel: { interval: 0, rotate: 35, fontSize: 9, color: getThemeColors().textColor } },
         yAxis: { type: 'value', axisLabel: { fontSize: 10, color: getThemeColors().textColor }, splitLine: { lineStyle: { color: '#f1f5f9' } } },
         series: [
@@ -273,7 +273,7 @@ export async function updateCustomChart(apiBaseUrl, indicator, year, chartType) 
         animation: true,
         animationDuration: 1000,
         toolbox: commonToolbox,
-        grid: { top: '20%', bottom: '30%', left: '10%', right: '5%' },
+        grid: { top: '20%', bottom: '8%', left: '10%', right: '5%', containLabel: true },
         xAxis: { type: 'category', data: labels, axisLabel: { interval: 0, rotate: 35, fontSize: 9, color: getThemeColors().textColor } },
         yAxis: { type: 'value', axisLabel: { fontSize: 10, color: getThemeColors().textColor }, splitLine: { lineStyle: { color: '#f1f5f9' } } }
       };
