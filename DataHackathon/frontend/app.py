@@ -2,15 +2,20 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import sqlite3
 import os
+import json
+import urllib.error
+import urllib.request
 
 app = Flask(__name__)
 CORS(app)
+app.config['MAX_CONTENT_LENGTH'] = 128 * 1024
 
 # Путь к папке frontend/
 FRONTEND_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Путь к файлу database.sqlite в корневом каталоге DataHackathon/
 DB_FILE = os.path.abspath(os.path.join(FRONTEND_DIR, '..', 'database.sqlite'))
+GEMINI_MODEL = os.environ.get('GEMINI_MODEL', 'gemini-3.8-flash')
 
 print(f"[Flask DB]: Используется база данных по пути -> {DB_FILE}")
 
@@ -29,7 +34,264 @@ def get_indicators():
 def get_db_connection():
     conn = sqlite3.connect(DB_FILE)
     conn.row_factory = sqlite3.Row
+    conn.create_function('casefold', 1, lambda value: str(value).casefold() if value is not None else '')
     return conn
+
+
+AI_TOOLS = [{
+    'functionDeclarations': [
+        {
+            'name': 'get_dataset_overview',
+            'description': 'Получить каталог таблицы demographics: показатели, годы, регионы и количество записей.',
+            'parameters': {'type': 'OBJECT', 'properties': {}}
+        },
+        {
+            'name': 'query_demographics',
+            'description': 'Прочитать агрегированные данные по показателям Казахстана. Вызывай для вычислений, сравнений, трендов и любых числовых выводов.',
+            'parameters': {
+                'type': 'OBJECT',
+                'properties': {
+                    'indicator': {'type': 'STRING', 'description': 'Название показателя или его уникальная часть.'},
+                    'province': {'type': 'STRING', 'description': 'Название области/города или его уникальная часть.'},
+                    'start_year': {'type': 'INTEGER', 'description': 'Начальный год включительно.'},
+                    'end_year': {'type': 'INTEGER', 'description': 'Конечный год включительно.'},
+                    'group_by': {
+                        'type': 'STRING',
+                        'enum': ['none', 'indicator', 'year', 'province', 'province_year'],
+                        'description': 'Группировка результата.'
+                    },
+                    'limit': {'type': 'INTEGER', 'description': 'Максимум строк результата, от 1 до 200.'}
+                }
+            }
+        }
+    ]
+}]
+
+AI_SYSTEM_INSTRUCTION = '''Ты аналитический помощник дашборда статистики Казахстана.
+Отвечай на русском языке, ясно и по существу. Для фактов, чисел, сравнений, рейтингов и трендов из базы обязательно вызывай query_demographics; не придумывай значения и не делай выводы по памяти.
+Если не знаешь точное название показателя или региона, сначала вызови get_dataset_overview. Учитывай, что база содержит агрегированные записи demographics: indicator, year, province, value. Объясняй, какие фильтры и годы использованы. Если запрос нельзя подтвердить данными, прямо скажи об этом.
+Контекст выбранных фильтров дашборда и история сообщений помогают понять вопрос, но не заменяют проверку базы.'''
+
+
+def _escape_like(value):
+    return str(value).replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_')
+
+
+def get_dataset_overview():
+    conn = get_db_connection()
+    try:
+        row_count = conn.execute('SELECT COUNT(*) FROM demographics').fetchone()[0]
+        indicators = [row[0] for row in conn.execute(
+            'SELECT DISTINCT indicator FROM demographics ORDER BY indicator'
+        ).fetchall()]
+        years = [row[0] for row in conn.execute(
+            'SELECT DISTINCT year FROM demographics WHERE year > 0 ORDER BY year'
+        ).fetchall()]
+        provinces = [row[0] for row in conn.execute(
+            'SELECT DISTINCT province FROM demographics ORDER BY province'
+        ).fetchall()]
+        return {
+            'table': 'demographics',
+            'columns': ['indicator', 'year', 'province', 'value'],
+            'record_count': row_count,
+            'indicators': indicators,
+            'years': years,
+            'provinces': provinces
+        }
+    finally:
+        conn.close()
+
+
+def query_demographics(arguments):
+    group_by = arguments.get('group_by', 'none')
+    group_columns = {
+        'none': [],
+        'indicator': ['indicator'],
+        'year': ['year'],
+        'province': ['province'],
+        'province_year': ['province', 'year']
+    }
+    if group_by not in group_columns:
+        return {'error': 'Недопустимая группировка.'}
+
+    conditions = []
+    params = []
+    for field, column in [('indicator', 'indicator'), ('province', 'province')]:
+        value = arguments.get(field)
+        if value:
+            value = str(value).strip()[:120]
+            conditions.append(f"casefold({column}) LIKE ? ESCAPE '\\'")
+            params.append(f"%{_escape_like(value).casefold()}%")
+
+    start_year = arguments.get('start_year')
+    end_year = arguments.get('end_year')
+    if start_year is not None:
+        start_year = int(start_year)
+        if start_year < 1900 or start_year > 2100:
+            return {'error': 'Начальный год вне допустимого диапазона.'}
+        conditions.append('year >= ?')
+        params.append(start_year)
+    if end_year is not None:
+        end_year = int(end_year)
+        if end_year < 1900 or end_year > 2100:
+            return {'error': 'Конечный год вне допустимого диапазона.'}
+        conditions.append('year <= ?')
+        params.append(end_year)
+    if start_year is not None and end_year is not None and start_year > end_year:
+        return {'error': 'Начальный год больше конечного.'}
+
+    limit = max(1, min(int(arguments.get('limit', 100)), 200))
+    columns = group_columns[group_by]
+    select_columns = ', '.join(columns)
+    group_clause = f' GROUP BY {select_columns}' if columns else ''
+    order_clause = ' ORDER BY ' + ', '.join(
+        f'{column} ASC' for column in columns
+    ) if columns else ''
+    where_clause = ' WHERE ' + ' AND '.join(conditions) if conditions else ''
+
+    if columns:
+        query = (
+            f'SELECT {select_columns}, SUM(value) AS total, COUNT(*) AS records '
+            f'FROM demographics{where_clause}{group_clause}{order_clause} LIMIT ?'
+        )
+    else:
+        query = (
+            f'SELECT SUM(value) AS total, COUNT(*) AS records '
+            f'FROM demographics{where_clause}'
+        )
+
+    conn = get_db_connection()
+    try:
+        rows = [dict(row) for row in conn.execute(query, [*params, *([limit] if columns else [])]).fetchall()]
+        return {
+            'filters': {
+                'indicator': arguments.get('indicator'),
+                'province': arguments.get('province'),
+                'start_year': start_year,
+                'end_year': end_year,
+                'group_by': group_by
+            },
+            'rows': rows
+        }
+    finally:
+        conn.close()
+
+
+@app.route('/api/ai-chat', methods=['POST'])
+def ai_chat():
+    payload = request.get_json(silent=True) or {}
+    if not isinstance(payload, dict):
+        return jsonify({'error': 'Ожидался JSON-объект.'}), 400
+    messages = payload.get('messages')
+    if not isinstance(messages, list) or not messages:
+        return jsonify({'error': 'Добавьте сообщение для анализа.'}), 400
+
+    contents = []
+    for message in messages[-10:]:
+        if not isinstance(message, dict) or message.get('role') not in ('user', 'model'):
+            return jsonify({'error': 'Некорректная история чата.'}), 400
+        text = message.get('text')
+        if not isinstance(text, str) or not text.strip():
+            return jsonify({'error': 'Сообщения должны содержать текст.'}), 400
+        contents.append({
+            'role': message['role'],
+            'parts': [{'text': text.strip()[:3000]}]
+        })
+
+    if contents[-1]['role'] != 'user':
+        return jsonify({'error': 'Последнее сообщение должно быть вопросом пользователя.'}), 400
+
+    dashboard_context = payload.get('dashboard_context') or {}
+    if not isinstance(dashboard_context, dict):
+        dashboard_context = {}
+    dashboard_context = {
+        str(key)[:50]: value[:1000] if isinstance(value, str) else value
+        for key, value in list(dashboard_context.items())[:12]
+    }
+    if len(json.dumps(dashboard_context, ensure_ascii=False)) > 12000:
+        return jsonify({'error': 'Контекст дашборда слишком большой.'}), 400
+
+    try:
+        dataset_overview = get_dataset_overview()
+        answer = call_gemini(contents, dataset_overview, dashboard_context)
+        return jsonify({'answer': answer})
+    except RuntimeError as error:
+        return jsonify({'error': str(error)}), 503
+    except (sqlite3.Error, OSError) as error:
+        app.logger.exception('Не удалось прочитать аналитическую базу данных')
+        return jsonify({'error': f'Не удалось прочитать базу данных: {error}'}), 503
+
+
+def call_gemini(contents, dataset_overview, dashboard_context):
+    api_key = os.environ.get('GEMINI_API_KEY')
+    if not api_key:
+        raise RuntimeError('Не задан GEMINI_API_KEY. Добавьте ключ Gemini в переменные окружения и перезапустите приложение.')
+
+    context_text = json.dumps({
+        'dataset': dataset_overview,
+        'dashboard_filters': dashboard_context
+    }, ensure_ascii=False)
+    system_instruction = f'{AI_SYSTEM_INSTRUCTION}\n\nФактический каталог базы и выбранные фильтры: {context_text}'
+    endpoint = f'https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent'
+
+    for _ in range(4):
+        body = {
+            'systemInstruction': {'parts': [{'text': system_instruction}]},
+            'contents': contents,
+            'tools': AI_TOOLS,
+            'generationConfig': {'temperature': 0.2, 'maxOutputTokens': 1200}
+        }
+        req = urllib.request.Request(
+            endpoint,
+            data=json.dumps(body, ensure_ascii=False).encode('utf-8'),
+            headers={'Content-Type': 'application/json', 'x-goog-api-key': api_key},
+            method='POST'
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=45) as response:
+                result = json.loads(response.read().decode('utf-8'))
+        except urllib.error.HTTPError as error:
+            details = error.read().decode('utf-8', errors='replace')
+            try:
+                details = json.loads(details).get('error', {}).get('message', details)
+            except json.JSONDecodeError:
+                pass
+            raise RuntimeError(f'Gemini API ({error.code}): {details}') from error
+        except urllib.error.URLError as error:
+            raise RuntimeError(f'Не удалось подключиться к Gemini API: {error.reason}') from error
+
+        candidate = (result.get('candidates') or [{}])[0]
+        model_content = candidate.get('content', {})
+        parts = model_content.get('parts', [])
+        function_calls = [part['functionCall'] for part in parts if 'functionCall' in part]
+        if not function_calls:
+            answer = '\n'.join(part.get('text', '') for part in parts if part.get('text'))
+            if answer:
+                return answer
+            raise RuntimeError('Gemini вернул пустой ответ.')
+
+        contents.append(model_content)
+        for function_call in function_calls:
+            name = function_call.get('name')
+            arguments = function_call.get('args') or {}
+            try:
+                if name == 'get_dataset_overview':
+                    tool_result = dataset_overview
+                elif name == 'query_demographics' and isinstance(arguments, dict):
+                    tool_result = query_demographics(arguments)
+                else:
+                    tool_result = {'error': 'Запрошена неизвестная функция или переданы неверные параметры.'}
+            except (AttributeError, TypeError, ValueError):
+                tool_result = {'error': 'Переданы некорректные параметры фильтрации.'}
+            function_response = {
+                'name': name,
+                'response': tool_result
+            }
+            if function_call.get('id'):
+                function_response['id'] = function_call['id']
+            contents.append({'role': 'function', 'parts': [{'functionResponse': function_response}]})
+
+    raise RuntimeError('ИИ не завершил анализ после нескольких запросов к базе. Попробуйте уточнить вопрос.')
 
 @app.route('/api/init-filters', methods=['GET'])
 def init_filters():
