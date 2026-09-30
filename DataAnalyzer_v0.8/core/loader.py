@@ -105,6 +105,12 @@ def load_dataset(
 
 
 def detect_csv_format(path: Path) -> tuple[str, str]:
+    """Определяет кодировку и разделитель по небольшой выборке.
+
+    Кандидаты оцениваются по фактической структуре CSV с учётом кавычек,
+    а не только по количеству получившихся pandas-столбцов. Это снижает
+    вероятность принять неправильный разделитель за корректный.
+    """
     errors = []
     candidates = []
     raw_sample = path.read_bytes()[:512_000]
@@ -281,6 +287,7 @@ def _looks_like_valid_dataframe(dataframe: pd.DataFrame) -> bool:
 
 
 def _normalize_column_names(columns) -> list[str]:
+    """Обрезает пробелы и делает имена столбцов уникальными."""
     result: list[str] = []
     used: set[str] = set()
     counters: dict[str, int] = {}

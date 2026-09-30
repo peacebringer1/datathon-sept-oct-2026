@@ -18,6 +18,8 @@ class DuplicateReport:
 
 @dataclass
 class ColumnDuplicateProfile:
+    """Предварительная статистика дубликатов для одного столбца."""
+
     name: str
     non_empty_count: int
     duplicate_count: int
@@ -28,6 +30,11 @@ class ColumnDuplicateProfile:
 def analyze_column_duplicates(
     dataframe: pd.DataFrame,
 ) -> list[ColumnDuplicateProfile]:
+    """Считает повторные значения отдельно по каждому столбцу.
+
+    Пустые значения не считаются дубликатами. Для значения, встретившегося
+    один раз, duplicate_count = 0; для трёх одинаковых значений - 2.
+    """
     result = []
 
     for column in dataframe.columns:
@@ -60,6 +67,15 @@ def remove_duplicates(
     mode: str = "none",
     columns: Iterable[str] | None = None,
 ) -> tuple[pd.DataFrame, DuplicateReport]:
+    """Удаляет дубликаты из DataFrame.
+
+    mode:
+      - none: ничего не делать;
+      - all: сравнивать все столбцы;
+      - selected: сравнивать только выбранные столбцы.
+
+    Сохраняется первое вхождение каждой строки.
+    """
     if mode == "none":
         return dataframe, DuplicateReport(mode="none")
 

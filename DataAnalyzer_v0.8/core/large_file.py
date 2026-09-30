@@ -1,14 +1,19 @@
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass
+import gc
+import csv
 import os
 from pathlib import Path
+import shutil
 import sqlite3
 import tempfile
+import time
 
 import numpy as np
 import pandas as pd
 
 from core.cleaner import CleaningOptions, clean_dataset
+from core.decodings import apply_decoding_rules
 from core.loader import detect_csv_format, _normalize_column_names
 from core.profiler import ColumnProfile
 
@@ -16,6 +21,11 @@ from core.profiler import ColumnProfile
 LARGE_FILE_BYTES = 128 * 1024 * 1024
 CHUNK_SIZE = 100_000
 PREVIEW_ROWS = 1_000
+# Раньше ограничивала ещё и анализ дубликатов по столбцам - теперь
+# дубликаты по столбцам считаются точно по всему файлу (см.
+# disk-backed hash files в process_large_csv), а эта константа используется
+# только для сэмпла, по которому дёшево определяется ТИП столбца и
+# числовая статистика (min/max/среднее/медиана).
 TYPE_SAMPLE_ROWS = 200_000
 DEFAULT_WORKERS = max(2, min(4, os.cpu_count() or 2))
 
@@ -33,6 +43,9 @@ class LargeFileResult:
     column_profiles: list[ColumnProfile]
     duplicate_analysis_scope: str
     profile_row_count: int
+    decoding_changes: dict[str, int]
+    source_column_types: dict[str, str]
+    absolute_duplicate_count: int
 
 
 def should_use_large_mode(file_path: str) -> bool:
@@ -45,6 +58,15 @@ def _process_chunk(
     options: CleaningOptions,
     column_type_overrides: dict[str, str] | None = None,
 ):
+    """Выполняется в отдельном ПРОЦЕССЕ (см. process_large_csv).
+
+    compute_profile=False: полный DatasetProfile чанка вызывающему коду
+    не нужен (он использует только очищенный DataFrame - см. распаковку
+    `cleaned, _, _ = future.result()` ниже), а раньше он на каждый chunk
+    считался трижды и выбрасывался. Само по себе это не зависело от
+    количества потоков/процессов и одинаково замедляло обработку что
+    в 1, что в 4 воркера.
+    """
     cleaned, _, _ = clean_dataset(
         chunk,
         CleaningOptions(
@@ -67,6 +89,15 @@ def _build_large_column_profiles(
     full_duplicate_by_column: dict,
     type_by_column: dict[str, str] | None = None,
 ) -> list[ColumnProfile]:
+    """Строит профиль столбцов.
+
+    Количество строк, пропусков и ДУБЛИКАТОВ считается по всему
+    обработанному файлу (full_duplicate_by_column - точный подсчёт,
+    см. process_large_csv). Тип столбца и числовая статистика
+    (min/max/среднее/медиана) по-прежнему берутся из ограниченной
+    выборки - для них точный проход по многогигабайтному файлу не
+    нужен и стоил бы намного дороже.
+    """
     profiles = []
     for column in sample.columns:
         series = sample[column]
@@ -80,8 +111,8 @@ def _build_large_column_profiles(
             else 0.0
         )
 
-        # Тип и числовая статистика берутся из выборки
-        # Полные row/missing значения при этом рассчитаны по всему файлу
+        # Тип и числовая статистика берутся из выборки. Полные row/missing
+        # значения при этом рассчитаны по всему файлу.
         from core.profiler import _detect_column_type
         data_type = (
             type_by_column.get(str(column))
@@ -125,6 +156,8 @@ def _build_large_column_profiles(
 
 
 class _DiskHashStore:
+    """Глобальное множество hash-ключей на диске, а не в RAM."""
+
     def __init__(self):
         self._tmp = tempfile.NamedTemporaryFile(
             prefix="data_analyzer_seen_",
@@ -178,6 +211,24 @@ class _DiskHashStore:
             except OSError:
                 pass
 
+def _count_csv_data_rows(file_path: str, encoding: str, separator: str) -> int:
+    """Точно считает CSV-записи без загрузки DataFrame в память.
+
+    Заголовок не учитывается. csv.reader корректно обрабатывает поля в кавычках
+    и переводы строк внутри одного CSV-поля.
+    """
+    count = 0
+    with open(file_path, "r", encoding=encoding, newline="") as csv_file:
+        reader = csv.reader(csv_file, delimiter=separator, quotechar='"')
+        try:
+            next(reader)  # заголовок
+        except StopIteration:
+            return 0
+        for _ in reader:
+            count += 1
+    return count
+
+
 def process_large_csv(
     file_path: str,
     options: CleaningOptions,
@@ -188,7 +239,40 @@ def process_large_csv(
     progress_callback=None,
     is_cancelled=None,
 ) -> LargeFileResult:
+    """Потоково обрабатывает большой CSV.
+
+    Чтение CSV выполняется одним parser-итератором в основном процессе,
+    а очистка отдельных chunks выполняется параллельно в нескольких
+    ОТДЕЛЬНЫХ ПРОЦЕССАХ (ProcessPoolExecutor), а не потоках. Это важно:
+    сама очистка (clean_dataset) - это в основном CPU-связанный Python-код
+    (например, `.map()` с обычной функцией на Python в _normalize_missing,
+    поэлементные .str-операции над колонками с текстом) и из-за GIL
+    в CPython несколько ПОТОКОВ на таком коде не работают параллельно -
+    в любой момент времени реально исполняется только один поток,
+    остальные ждут. Поэтому раньше рост числа потоков с 1 до 4 не давал
+    прироста скорости. Процессы у GIL не делят и реально грузят
+    несколько ядер CPU одновременно; за это платится накладными
+    расходами на pickle-сериализацию chunk'а туда и обратно между
+    процессами, но при chunk размером в десятки/сотни тысяч строк
+    выигрыш от параллельной очистки для больших файлов существенно
+    перекрывает эти расходы.
+    Для самого CSV используется быстрый C parser pandas.
+    """
     encoding, separator = detect_csv_format(Path(file_path))
+
+    # Для истинного процента заранее считаем количество строк входного CSV.
+    # Один блок = chunksize строк (по умолчанию 100 000).
+    # На этом этапе обработка ещё не началась, поэтому прогресс остаётся 0%.
+    if progress_callback:
+        progress_callback(0, "Подсчёт общего количества строк датасета...")
+    input_total_rows = _count_csv_data_rows(
+        file_path, encoding, separator
+    )
+    total_blocks = (
+        (input_total_rows + chunksize - 1) // chunksize
+        if input_total_rows > 0
+        else 0
+    )
 
     temp = tempfile.NamedTemporaryFile(
         prefix="data_analyzer_",
@@ -203,6 +287,7 @@ def process_large_csv(
         if options.duplicate_mode != "none"
         else None
     )
+    absolute_seen_hash_store = _DiskHashStore()
     type_sample = pd.read_csv(
         file_path,
         encoding=encoding,
@@ -227,6 +312,7 @@ def process_large_csv(
     total_rows = 0
     pre_duplicate_rows = 0
     duplicate_count = 0
+    absolute_duplicate_count = 0
     missing_count = 0
     pre_duplicate_missing_by_column: dict = {}
     hash_temp_dir = tempfile.TemporaryDirectory(
@@ -238,6 +324,7 @@ def process_large_csv(
     analysis_rows = 0
     first_write = True
     chunks_processed = 0
+    decoding_changes_total: dict[str, int] = {}
 
     def submit_chunk(executor, chunk):
         if is_cancelled and is_cancelled():
@@ -254,6 +341,10 @@ def process_large_csv(
             engine="c",
             chunksize=chunksize,
         )
+
+        # Пул ПРОЦЕССОВ: реальная параллельная загрузка нескольких ядер
+        # CPU для очистки chunks. Пул потоков здесь не подходит - см.
+        # docstring выше про GIL.
         with ProcessPoolExecutor(max_workers=max(1, workers)) as executor:
             pending = []
             exhausted = False
@@ -285,6 +376,14 @@ def process_large_csv(
                     )
                 missing_count += int(missing_series.sum())
                 pre_duplicate_rows += len(cleaned)
+
+                # Точный анализ дубликатов по каждому столбцу - по ВСЕМ
+                # строкам файла, а не по ограниченной выборке. Храним не
+                # сами значения, а их 64-битные хэши (dropna до хэширования,
+                # иначе все NaN считались бы одинаковым "повторяющимся"
+                # значением) - это на порядки компактнее, чем держать в
+                # памяти реальные строки/числа всех строк файла, и в конце
+                # даёт точное (а не оценочное) число дубликатов по столбцу.
                 for column in cleaned.columns:
                     non_empty = cleaned[column].dropna()
                     if non_empty.empty:
@@ -305,6 +404,10 @@ def process_large_csv(
                     column_hash_files[column_name] = (
                         hash_path, count + len(hashes)
                     )
+
+                # Отдельная, ограниченная выборка - только для определения
+                # ТИПА столбца и числовой статистики (min/max/среднее),
+                # это не влияет на точность анализа дубликатов выше.
                 if analysis_rows < TYPE_SAMPLE_ROWS:
                     remaining = TYPE_SAMPLE_ROWS - analysis_rows
                     sample_part = cleaned.head(remaining)
@@ -343,6 +446,30 @@ def process_large_csv(
                     duplicate_count += int((~keep_mask).sum())
                     cleaned = cleaned.loc[keep_mask]
 
+                # Расшифровки применяются после глобального удаления
+                # дубликатов, поэтому они не меняют критерий дедупликации.
+                if options.decoding_rules:
+                    cleaned, changed = apply_decoding_rules(
+                        cleaned, options.decoding_rules
+                    )
+                    for column, count in changed.items():
+                        decoding_changes_total[column] = (
+                            decoding_changes_total.get(column, 0) + count
+                        )
+
+                # Точный подсчёт абсолютных дубликатов по итоговому состоянию
+                # каждой строки. В отличие от column-level duplicate analysis
+                # здесь учитываются все столбцы сразу. Хэш-хранилище на диске
+                # позволяет не держать ключи многогигабайтного файла в RAM.
+                row_hashes = pd.util.hash_pandas_object(
+                    cleaned,
+                    index=False,
+                ).astype("uint64")
+                absolute_keep_mask = absolute_seen_hash_store.filter_new(
+                    row_hashes.to_numpy()
+                )
+                absolute_duplicate_count += int((~absolute_keep_mask).sum())
+
                 total_rows += len(cleaned)
 
                 if sum(len(part) for part in preview_parts) < PREVIEW_ROWS:
@@ -363,14 +490,24 @@ def process_large_csv(
                 chunks_processed += 1
 
                 if progress_callback:
-                    percent = min(99, 5 + min(94, chunks_processed))
+                    # Истинный процент по количеству входных блоков.
+                    # Последний неполный блок считается одним блоком.
+                    percent = (
+                        int(chunks_processed / total_blocks * 100)
+                        if total_blocks
+                        else 100
+                    )
+                    percent = min(100, max(0, percent))
                     progress_callback(
                         percent,
-                        f"Параллельная обработка: блоков {chunks_processed}, "
-                        f"строк {total_rows:,}, процессов {max(1, workers)}",
+                        f"Обработка: блок {chunks_processed} из {total_blocks}, "
+                        f"строк обработано {total_rows:,}, "
+                        f"процессов {max(1, workers)}",
                     )
 
         if first_write:
+            # Все строки могли быть удалены очисткой (например, drop_any).
+            # В этом случае всё равно создаём корректный CSV с заголовком.
             pd.DataFrame(columns=type_sample.columns).to_csv(
                 output_path,
                 index=False,
@@ -389,6 +526,9 @@ def process_large_csv(
             else preview.copy()
         )
 
+        # Финальный точный подсчёт дубликатов по каждому столбцу - по
+        # всем накопленным хэшам сразу (один проход np.unique на столбец),
+        # без Python-циклов по отдельным значениям.
         full_duplicate_by_column: dict[str, int] = {}
         for column, (hash_path, hash_count) in column_hash_files.items():
             if hash_count <= 0:
@@ -401,36 +541,67 @@ def process_large_csv(
                 mode="r+",
                 shape=(hash_count,),
             )
-            hashes.sort(kind="quicksort")
+            try:
+                # На Windows np.memmap держит открытый дескриптор файла.
+                # Нельзя полагаться только на del hashes: последний срез
+                # `block` тоже может сохранять ссылку на mmap. Закрываем
+                # отображение явно до удаления временной директории.
+                hashes.sort(kind="quicksort")
 
-            unique_count = 0
-            block_size = 1_000_000
-            previous = None
-            for start in range(0, hash_count, block_size):
-                block = hashes[start:start + block_size]
-                if len(block) == 0:
-                    continue
-                first = int(block[0])
-                if previous is None or first != previous:
-                    unique_count += 1
-                unique_count += int(
-                    np.count_nonzero(block[1:] != block[:-1])
+                unique_count = 0
+                block_size = 1_000_000
+                previous = None
+                block = None
+                for start in range(0, hash_count, block_size):
+                    block = hashes[start:start + block_size]
+                    if len(block) == 0:
+                        continue
+                    first = int(block[0])
+                    if previous is None or first != previous:
+                        unique_count += 1
+                    unique_count += int(
+                        np.count_nonzero(block[1:] != block[:-1])
+                    )
+                    previous = int(block[-1])
+                    del block
+                    block = None
+
+                missing = pre_duplicate_missing_by_column.get(column, 0)
+                non_empty_count = max(0, pre_duplicate_rows - missing)
+                full_duplicate_by_column[column] = max(
+                    0, non_empty_count - unique_count
                 )
-                previous = int(block[-1])
+            finally:
+                # Явно освобождаем все views перед удалением .bin на Windows.
+                try:
+                    if block is not None:
+                        del block
+                except UnboundLocalError:
+                    pass
+                mmap_obj = getattr(hashes, "_mmap", None)
+                if mmap_obj is not None:
+                    try:
+                        mmap_obj.close()
+                    except (BufferError, OSError):
+                        pass
+                del hashes
+                gc.collect()
 
-            missing = pre_duplicate_missing_by_column.get(column, 0)
-            non_empty_count = max(0, pre_duplicate_rows - missing)
-            full_duplicate_by_column[column] = max(
-                0, non_empty_count - unique_count
+        final_type_by_column = dict(type_by_column)
+        for column in decoding_changes_total:
+            final_type_by_column[column] = "Категориальный"
+
+        if options.decoding_rules and not analysis_sample.empty:
+            analysis_sample, _ = apply_decoding_rules(
+                analysis_sample, options.decoding_rules
             )
-            del hashes
 
         column_profiles = _build_large_column_profiles(
             analysis_sample,
             pre_duplicate_rows,
             pre_duplicate_missing_by_column,
             full_duplicate_by_column,
-            type_by_column,
+            final_type_by_column,
         )
 
         return LargeFileResult(
@@ -445,6 +616,9 @@ def process_large_csv(
             column_profiles=column_profiles,
             duplicate_analysis_scope=f"весь файл ({pre_duplicate_rows:,} строк)",
             profile_row_count=pre_duplicate_rows,
+            decoding_changes=decoding_changes_total,
+            source_column_types=dict(type_by_column),
+            absolute_duplicate_count=absolute_duplicate_count,
         )
 
     except Exception:
@@ -456,4 +630,25 @@ def process_large_csv(
     finally:
         if seen_hash_store is not None:
             seen_hash_store.close()
-        hash_temp_dir.cleanup()
+        absolute_seen_hash_store.close()
+
+        # На Windows временный .bin может ещё кратковременно оставаться
+        # заблокированным антивирусом или системой после закрытия mmap.
+        # Очистка временных данных не должна превращать успешно обработанный
+        # датасет в ошибку PermissionError. Делаем несколько попыток, а при
+        # остаточной блокировке оставляем мусор для последующей очистки, но
+        # не скрываем ошибку самого чтения/обработки CSV.
+        temp_hash_dir_path = hash_temp_dir.name
+        hash_temp_dir = None
+        gc.collect()
+        for attempt in range(5):
+            try:
+                shutil.rmtree(temp_hash_dir_path)
+                break
+            except FileNotFoundError:
+                break
+            except PermissionError:
+                if attempt == 4:
+                    break
+                time.sleep(0.15 * (attempt + 1))
+                gc.collect()
