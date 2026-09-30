@@ -1,4 +1,4 @@
-import { yearChartInstance, lineChartInstance, pieChartInstance, hBarChartInstance, stackedAreaChartInstance, summaryChartInstance, multiSummaryChartInstance, kzMapInstance, updateMultiSummaryChart } from './chartsMap.js';
+import { yearChartInstance, lineChartInstance, pieChartInstance, hBarChartInstance, stackedAreaChartInstance, summaryChartInstance, multiSummaryChartInstance, kzMapInstance, updateMultiSummaryChart, updateChartThemeColors } from './chartsMap.js';
 import { getDetailedInstance } from './detailedView.js';
 
 let activeTab = 'year';
@@ -61,15 +61,15 @@ export function openAddChartModal() {
   const modal = document.getElementById('addChartModal');
   const indSelect = document.getElementById('modalIndicatorSelect');
   const yearSelect = document.getElementById('modalYearSelect');
-  
+
   const sourceIndicator = document.getElementById('card1Indicator');
   const sourceYear = document.getElementById('card1Year');
-  
+
   if (sourceIndicator && sourceYear) {
     indSelect.innerHTML = sourceIndicator.innerHTML;
     yearSelect.innerHTML = sourceYear.innerHTML;
   }
-  
+
   modal.style.display = 'flex';
 }
 
@@ -86,7 +86,7 @@ export async function saveCustomCard(onCardFilterChangeCallback) {
 
   document.getElementById('customCardPrompt').style.display = 'none';
   document.getElementById('customCardHeader').style.display = 'flex';
-  
+
   const customCard = document.getElementById('chartTypeCustom');
   customCard.style.display = 'block';
 
@@ -148,6 +148,7 @@ export function initThemeToggle() {
 
       themeToggleBtn.textContent = nextDark ? '☀️' : '🌙';
       localStorage.setItem('theme', nextDark ? 'dark' : 'light');
+      updateChartThemeColors();
       window.dispatchEvent(new Event('resize'));
     });
   }
@@ -165,7 +166,7 @@ export function initGlobalResizeListener() {
       multiSummaryChartInstance.resize();
     }
     if (kzMapInstance) kzMapInstance.resize();
-    
+
     const detailedEChartInstance = getDetailedInstance();
     if (detailedEChartInstance) detailedEChartInstance.resize();
   });

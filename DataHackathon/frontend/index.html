@@ -1,13 +1,14 @@
 <!DOCTYPE html>
 <html lang="ru">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Big data analysis in the Republic of Kazakhstan</title>
-  
+
   <!-- Основные стили проекта и кастомные правила Tailwind -->
   <link rel="stylesheet" href="style.css">
-  
+
   <!-- Библиотеки графиков и таблиц -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
@@ -27,12 +28,14 @@
       }, 'google_translate_element');
     }
   </script>
-  <script type="text/javascript" src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+  <script type="text/javascript"
+    src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 </head>
+
 <body>
 
   <div class="app-layout">
-    
+
     <aside class="category-sidebar-hover" id="categorySidebar">
       <div class="sidebar-collapsed-indicator">
         <div class="collapsed-icon-bar"></div>
@@ -46,7 +49,8 @@
         </div>
 
         <div class="sidebar-search-box">
-          <input type="text" id="categorySearchInput" placeholder="Поиск категорий..." oninput="filterCategoriesSidebar()">
+          <input type="text" id="categorySearchInput" placeholder="Поиск категорий..."
+            oninput="filterCategoriesSidebar()">
         </div>
 
         <div class="category-tree" id="categoryTree">
@@ -92,7 +96,7 @@
 
     <main class="main-content-area">
       <div class="container">
-        
+
         <header class="app-header"></header>
 
         <!-- Главный дашборд -->
@@ -122,14 +126,15 @@
             </div>
 
             <div class="charts-grid-4">
-              
+
               <!-- Карточка 1 -->
               <div class="sub-chart-card">
                 <div class="card-header-controls">
                   <div class="left-local-controls">
                     <select class="mini-select" id="card1Indicator" onchange="onCardFilterChange(1)"></select>
                     <select class="mini-select" id="card1Year" onchange="onCardFilterChange(1)"></select>
-                    <button class="custom-analytics-btn" onclick="openAnalyticsFromCard(this)" title="Открыть детальный анализ графика">📊</button>
+                    <button class="custom-analytics-btn" onclick="openAnalyticsFromCard(this)"
+                      title="Открыть детальный анализ графика">📊</button>
                   </div>
                 </div>
                 <div id="chartTypeBar" class="chart-box-h330"></div>
@@ -141,7 +146,8 @@
                   <div class="left-local-controls">
                     <select class="mini-select" id="card2Indicator" onchange="onCardFilterChange(2)"></select>
                     <select class="mini-select" id="card2Year" onchange="onCardFilterChange(2)"></select>
-                    <button class="custom-analytics-btn" onclick="openAnalyticsFromCard(this)" title="Открыть детальный анализ графика">📊</button>
+                    <button class="custom-analytics-btn" onclick="openAnalyticsFromCard(this)"
+                      title="Открыть детальный анализ графика">📊</button>
                   </div>
                 </div>
                 <div id="chartTypeLine" class="chart-box-h330"></div>
@@ -153,7 +159,8 @@
                   <div class="left-local-controls">
                     <select class="mini-select" id="card3Indicator" onchange="onCardFilterChange(3)"></select>
                     <select class="mini-select" id="card3Year" onchange="onCardFilterChange(3)"></select>
-                    <button class="custom-analytics-btn" onclick="openAnalyticsFromCard(this)" title="Открыть детальный анализ графика">📊</button>
+                    <button class="custom-analytics-btn" onclick="openAnalyticsFromCard(this)"
+                      title="Открыть детальный анализ графика">📊</button>
                   </div>
                 </div>
                 <div id="chartTypePie" class="chart-box-h330"></div>
@@ -165,7 +172,8 @@
                   <div class="left-local-controls">
                     <select class="mini-select" id="card4Indicator" onchange="onCardFilterChange(4)"></select>
                     <select class="mini-select" id="card4Year" onchange="onCardFilterChange(4)"></select>
-                    <button class="custom-analytics-btn" onclick="openAnalyticsFromCard(this)" title="Открыть детальный анализ графика">📊</button>
+                    <button class="custom-analytics-btn" onclick="openAnalyticsFromCard(this)"
+                      title="Открыть детальный анализ графика">📊</button>
                   </div>
                 </div>
                 <div id="chartTypeHBar" class="chart-box-h330"></div>
@@ -177,7 +185,8 @@
                   <div class="left-local-controls">
                     <select class="mini-select" id="card5Indicator" onchange="onCardFilterChange(5)"></select>
                     <select class="mini-select" id="card5Year" onchange="onCardFilterChange(5)"></select>
-                    <button class="custom-analytics-btn" onclick="openAnalyticsFromCard(this)" title="Открыть детальный анализ графика">📊</button>
+                    <button class="custom-analytics-btn" onclick="openAnalyticsFromCard(this)"
+                      title="Открыть детальный анализ графика">📊</button>
                   </div>
                 </div>
                 <div id="barAnimationChart" class="chart-box-h330"></div>
@@ -189,11 +198,13 @@
                   <div class="left-local-controls">
                     <select class="mini-select" id="card6Indicator" onchange="onCardFilterChange(6)"></select>
                     <select class="mini-select" id="card6Year" onchange="onCardFilterChange(6)"></select>
-                    <button class="custom-analytics-btn" onclick="openAnalyticsFromCard(this)" title="Открыть детальный анализ графика">📊</button>
-                    <button class="custom-analytics-btn btn-danger-custom" onclick="resetCustomCard()" title="Сбросить график">✕</button>
+                    <button class="custom-analytics-btn" onclick="openAnalyticsFromCard(this)"
+                      title="Открыть детальный анализ графика">📊</button>
+                    <button class="custom-analytics-btn btn-danger-custom" onclick="resetCustomCard()"
+                      title="Сбросить график">✕</button>
                   </div>
                 </div>
-                
+
                 <div id="customCardPrompt" class="center-add-prompt" onclick="openAddChartModal()">
                   <div class="add-circle-icon">+</div>
                   <span>Добавить свой график</span>
@@ -206,7 +217,7 @@
               <div id="addChartModal" class="modal-backdrop">
                 <div class="modal-card">
                   <h3>Настройка своего графика</h3>
-                  
+
                   <div class="modal-field">
                     <label>Выберите показатель:</label>
                     <select id="modalIndicatorSelect"></select>
@@ -259,7 +270,7 @@
                 <select id="summaryIndicatorSelect" onchange="onSummaryFilterChange()"></select>
               </div>
             </div>
-            
+
             <div class="summary-charts-container">
               <div class="chart-card summary-card-box">
                 <div id="summaryChart" class="summary-chart-inner"></div>
@@ -326,7 +337,8 @@
   </div>
 
   <button id="aiToggleBtn" class="ai-toggle-btn" onclick="toggleAIChat()" title="Открыть AI-ассистента">
-    <img src="img/icon Ai.png" alt="AI" class="ai-btn-icon" onerror="this.style.display='none'; this.innerText='AI'">
+    <img src="img/icon AI robotcat.png" alt="AI" class="ai-btn-icon"
+      onerror="this.style.display='none'; this.innerText='AI'">
   </button>
 
   <div class="ai-popup-sidebar" id="aiPopupSidebar">
@@ -339,10 +351,12 @@
         </div>
       </div>
       <div class="chat-messages" id="chatMessages">
-        <div class="chat-bubble ai">Здравствуйте! Я ваш ИИ-помощник по анализу данных Казахстана. Задайте мне вопрос по графикам или показателям.</div>
+        <div class="chat-bubble ai">Здравствуйте! Я ваш ИИ-помощник по анализу данных Казахстана. Задайте мне вопрос по
+          графикам или показателям.</div>
       </div>
       <div class="chat-input-area">
-        <textarea id="chatInput" rows="1" placeholder="Спросите о данных..." onkeydown="handleChatKeyDown(event)"></textarea>
+        <textarea id="chatInput" rows="1" placeholder="Спросите о данных..."
+          onkeydown="handleChatKeyDown(event)"></textarea>
         <button onclick="sendMessageToAI()">Отправить</button>
       </div>
     </div>
@@ -351,4 +365,5 @@
   <script src="./src/components/translator.js"></script>
   <script type="module" src="renderer.js"></script>
 </body>
+
 </html>

@@ -55,12 +55,12 @@ export async function updateBarChart(apiBaseUrl, indicator, year) {
       yearChartInstance.setOption({
         animation: true,
         animationDuration: 1000,
-        title: { text: 'Распределение по регионам', left: 'center', textStyle: { fontSize: 13, color: '#1e293b' } },
+        title: { text: 'Распределение по регионам', left: 'center', textStyle: { fontSize: 13, color: getThemeColors().textColor } },
         toolbox: commonToolbox,
         tooltip: { trigger: 'axis', formatter: (p) => `<b>${p[0].name}</b><br/>${indicator}: <b>${p[0].value.toLocaleString('ru-RU')}</b>` },
         grid: { top: '20%', bottom: '30%', left: '10%', right: '5%' },
-        xAxis: { type: 'category', data: labels, axisLabel: { interval: 0, rotate: 35, fontSize: 9, color: '#475569' } },
-        yAxis: { type: 'value', axisLabel: { fontSize: 10, color: '#475569' }, splitLine: { lineStyle: { color: '#f1f5f9' } } },
+        xAxis: { type: 'category', data: labels, axisLabel: { interval: 0, rotate: 35, fontSize: 9, color: getThemeColors().textColor } },
+        yAxis: { type: 'value', axisLabel: { fontSize: 10, color: getThemeColors().textColor }, splitLine: { lineStyle: { color: '#f1f5f9' } } },
         series: [{
           data: values,
           type: 'bar',
@@ -92,12 +92,12 @@ export async function updateLineChart(apiBaseUrl, indicator, year) {
       lineChartInstance.setOption({
         animation: true,
         animationDuration: 1000,
-        title: { text: 'Динамика показателей', left: 'center', textStyle: { fontSize: 13, color: '#1e293b' } },
+        title: { text: 'Динамика показателей', left: 'center', textStyle: { fontSize: 13, color: getThemeColors().textColor } },
         toolbox: commonToolbox,
         tooltip: { trigger: 'axis' },
         grid: { top: '20%', bottom: '30%', left: '10%', right: '5%' },
-        xAxis: { type: 'category', data: labels, axisLabel: { interval: 0, rotate: 35, fontSize: 9, color: '#475569' } },
-        yAxis: { type: 'value', axisLabel: { fontSize: 10, color: '#475569' }, splitLine: { lineStyle: { color: '#f1f5f9' } } },
+        xAxis: { type: 'category', data: labels, axisLabel: { interval: 0, rotate: 35, fontSize: 9, color: getThemeColors().textColor } },
+        yAxis: { type: 'value', axisLabel: { fontSize: 10, color: getThemeColors().textColor }, splitLine: { lineStyle: { color: '#f1f5f9' } } },
         series: [{
           data: values,
           type: 'line',
@@ -133,10 +133,10 @@ export async function updatePieChart(apiBaseUrl, indicator, year) {
       pieChartInstance.setOption({
         animation: true,
         animationDuration: 1000,
-        title: { text: 'Доли по регионам', left: 'center', textStyle: { fontSize: 13, color: '#1e293b' } },
+        title: { text: 'Доли по регионам', left: 'center', textStyle: { fontSize: 13, color: getThemeColors().textColor } },
         toolbox: commonToolbox,
         tooltip: { trigger: 'item', formatter: '{b}: <b>{c}</b> ({d}%)' },
-        legend: { type: 'scroll', orient: 'vertical', left: 'left', textStyle: { fontSize: 9 } },
+        legend: { type: 'scroll', orient: 'vertical', left: 'left', textStyle: { fontSize: 9, color: getThemeColors().textColor } },
         series: [{
           type: 'pie',
           radius: ['40%', '65%'],
@@ -174,13 +174,13 @@ export async function updateHBarChart(apiBaseUrl, indicator, year) {
       hBarChartInstance.setOption({
         animation: true,
         animationDuration: 1000,
-        title: { text: 'Рейтинг регионов', left: 'center', textStyle: { fontSize: 13, color: '#1e293b' } },
+        title: { text: 'Рейтинг регионов', left: 'center', textStyle: { fontSize: 13, color: getThemeColors().textColor } },
         toolbox: commonToolbox,
         tooltip: { trigger: 'axis', formatter: (p) => `<b>${p[0].data[1]}</b><br/>${indicator}: <b>${p[0].data[0].toLocaleString('ru-RU')}</b>` },
         dataset: { source: sourceData },
         grid: { containLabel: true, top: '20%', bottom: '15%', left: '5%', right: '5%' },
-        xAxis: { type: 'value', axisLabel: { fontSize: 9, color: '#475569' }, splitLine: { lineStyle: { color: '#f1f5f9' } } },
-        yAxis: { type: 'category', axisLabel: { fontSize: 9, color: '#475569' } },
+        xAxis: { type: 'value', axisLabel: { fontSize: 9, color: getThemeColors().textColor }, splitLine: { lineStyle: { color: '#f1f5f9' } } },
+        yAxis: { type: 'category', axisLabel: { fontSize: 9, color: getThemeColors().textColor } },
         visualMap: {
           orient: 'horizontal',
           left: 'center',
@@ -222,13 +222,13 @@ export async function updateStackedAreaChart(apiBaseUrl, indicator, year) {
 
       stackedAreaChartInstance.setOption({
         animation: true,
-        title: { text: `Bar Animation Delay: ${indicator} (${year})`, left: 'center', textStyle: { fontSize: 13, color: '#1e293b' } },
-        legend: { data: ['bar', 'bar2'], top: '10%', textStyle: { fontSize: 10, color: '#475569' } },
+        title: { text: `Bar Animation Delay: ${indicator} (${year})`, left: 'center', textStyle: { fontSize: 13, color: getThemeColors().textColor } },
+        legend: { data: ['bar', 'bar2'], top: '10%', textStyle: { fontSize: 10, color: getThemeColors().textColor } },
         toolbox: { feature: { magicType: { type: ['stack'] }, dataView: { readOnly: true }, saveAsImage: { pixelRatio: 2 } } },
         tooltip: { trigger: 'axis' },
         grid: { top: '25%', bottom: '25%', left: '10%', right: '5%' },
-        xAxis: { data: xAxisData, splitLine: { show: false }, axisLabel: { interval: 0, rotate: 35, fontSize: 9, color: '#475569' } },
-        yAxis: { type: 'value', axisLabel: { fontSize: 10, color: '#475569' }, splitLine: { lineStyle: { color: '#f1f5f9' } } },
+        xAxis: { data: xAxisData, splitLine: { show: false }, axisLabel: { interval: 0, rotate: 35, fontSize: 9, color: getThemeColors().textColor } },
+        yAxis: { type: 'value', axisLabel: { fontSize: 10, color: getThemeColors().textColor }, splitLine: { lineStyle: { color: '#f1f5f9' } } },
         series: [
           {
             name: 'bar',
@@ -274,24 +274,24 @@ export async function updateCustomChart(apiBaseUrl, indicator, year, chartType) 
         animationDuration: 1000,
         toolbox: commonToolbox,
         grid: { top: '20%', bottom: '30%', left: '10%', right: '5%' },
-        xAxis: { type: 'category', data: labels, axisLabel: { interval: 0, rotate: 35, fontSize: 9, color: '#475569' } },
-        yAxis: { type: 'value', axisLabel: { fontSize: 10, color: '#475569' }, splitLine: { lineStyle: { color: '#f1f5f9' } } }
+        xAxis: { type: 'category', data: labels, axisLabel: { interval: 0, rotate: 35, fontSize: 9, color: getThemeColors().textColor } },
+        yAxis: { type: 'value', axisLabel: { fontSize: 10, color: getThemeColors().textColor }, splitLine: { lineStyle: { color: '#f1f5f9' } } }
       };
 
       if (chartType === 'line') {
-        option.title = { text: `Динамика: ${indicator}`, left: 'center', textStyle: { fontSize: 13, color: '#1e293b' } };
+        option.title = { text: `Динамика: ${indicator}`, left: 'center', textStyle: { fontSize: 13, color: getThemeColors().textColor } };
         option.tooltip = { trigger: 'axis' };
         option.series = [{ data: values, type: 'line', smooth: true, itemStyle: { color: '#0770FF' }, areaStyle: { color: 'rgba(7, 112, 255, 0.2)' } }];
       } else if (chartType === 'pie') {
         const pieData = labels.map((lbl, idx) => ({ name: lbl, value: values[idx] })).filter(item => item.value > 0);
-        option.title = { text: `Доли: ${indicator}`, left: 'center', textStyle: { fontSize: 13, color: '#1e293b' } };
+        option.title = { text: `Доли: ${indicator}`, left: 'center', textStyle: { fontSize: 13, color: getThemeColors().textColor } };
         option.tooltip = { trigger: 'item', formatter: '{b}: <b>{c}</b> ({d}%)' };
-        option.legend = { type: 'scroll', orient: 'vertical', left: 'left', textStyle: { fontSize: 9 } };
+        option.legend = { type: 'scroll', orient: 'vertical', left: 'left', textStyle: { fontSize: 9, color: getThemeColors().textColor } };
         option.series = [{ type: 'pie', radius: ['40%', '65%'], center: ['60%', '55%'], data: pieData }];
         delete option.xAxis;
         delete option.yAxis;
       } else {
-        option.title = { text: `Распределение: ${indicator}`, left: 'center', textStyle: { fontSize: 13, color: '#1e293b' } };
+        option.title = { text: `Распределение: ${indicator}`, left: 'center', textStyle: { fontSize: 13, color: getThemeColors().textColor } };
         option.tooltip = { trigger: 'axis', formatter: (p) => `<b>${p[0].name}</b><br/>${indicator}: <b>${p[0].value.toLocaleString('ru-RU')}</b>` };
         option.series = [{ data: values, type: 'bar', itemStyle: { color: '#3b82f6', borderRadius: [4, 4, 0, 0] } }];
       }
@@ -333,7 +333,7 @@ export async function updateSummaryChart(apiBaseUrl, indicator) {
       title: {
         text: `Итоговый показатель: ${indicator}`,
         left: 'center',
-        textStyle: { fontSize: 13, color: isDarkMode() ? '#f8fafc' : '#1e293b' }
+        textStyle: { fontSize: 13, color: getThemeColors().textColor }
       },
       toolbox: commonToolbox,
       tooltip: {
@@ -350,11 +350,11 @@ export async function updateSummaryChart(apiBaseUrl, indicator) {
       xAxis: {
         type: 'category',
         data: labels && labels.length ? labels : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-        axisLabel: { fontSize: 9, color: isDarkMode() ? '#cbd5e1' : '#475569' }
+        axisLabel: { fontSize: 9, color: getThemeColors().textColor }
       },
       yAxis: {
         type: 'value',
-        axisLabel: { fontSize: 10, color: isDarkMode() ? '#cbd5e1' : '#475569' },
+        axisLabel: { fontSize: 10, color: getThemeColors().textColor },
         splitLine: { lineStyle: { color: isDarkMode() ? '#334155' : '#f1f5f9' } }
       },
       series: [
@@ -391,10 +391,44 @@ function isDarkMode() {
 function getThemeColors() {
   const dark = isDarkMode();
   return {
-    textColor: dark ? '#f8fafc' : '#1e293b',
-    subTextColor: dark ? '#cbd5e1' : '#475569',
+    textColor: dark ? '#ffffff' : '#000000',
+    subTextColor: dark ? '#ffffff' : '#000000',
     splitLineColor: dark ? '#334155' : '#f1f5f9'
   };
+}
+
+export function updateChartThemeColors() {
+  const textColor = getThemeColors().textColor;
+  const chartInstances = [
+    yearChartInstance,
+    lineChartInstance,
+    pieChartInstance,
+    hBarChartInstance,
+    stackedAreaChartInstance,
+    customChartInstance,
+    summaryChartInstance,
+    multiSummaryChartInstance,
+    kzMapInstance
+  ];
+
+  chartInstances.forEach((chart) => {
+    if (!chart) return;
+
+    const currentOption = chart.getOption();
+    const option = { title: { textStyle: { color: textColor } } };
+
+    if (currentOption.legend?.length) {
+      option.legend = currentOption.legend.map(() => ({ textStyle: { color: textColor } }));
+    }
+    if (currentOption.xAxis?.length) {
+      option.xAxis = currentOption.xAxis.map(() => ({ axisLabel: { color: textColor } }));
+    }
+    if (currentOption.yAxis?.length) {
+      option.yAxis = currentOption.yAxis.map(() => ({ axisLabel: { color: textColor } }));
+    }
+
+    chart.setOption(option);
+  });
 }
 
 // 8. Сводный мульти-график: Улучшенный линейный график с заливкой (ECharts)
@@ -426,7 +460,7 @@ export async function updateMultiSummaryChart(apiBaseUrl) {
   ];
 
   try {
-    const requests = indicators.map(ind => 
+    const requests = indicators.map(ind =>
       fetch(`${apiBaseUrl}/api/chart-summary?indicator=${encodeURIComponent(ind)}`).then(res => res.json())
     );
     const results = await Promise.all(requests);
@@ -466,7 +500,7 @@ export async function updateMultiSummaryChart(apiBaseUrl) {
       title: {
         text: 'Сравнение всех показателей по годам',
         left: 'center',
-        textStyle: { fontSize: 13, color: isDarkMode() ? '#f8fafc' : '#1e293b' }
+        textStyle: { fontSize: 13, color: getThemeColors().textColor }
       },
       tooltip: {
         trigger: 'axis',
@@ -476,7 +510,7 @@ export async function updateMultiSummaryChart(apiBaseUrl) {
         type: 'scroll',
         data: indicators,
         top: '8%',
-        textStyle: { fontSize: 10, color: isDarkMode() ? '#cbd5e1' : '#475569' }
+        textStyle: { fontSize: 10, color: getThemeColors().textColor }
       },
       toolbox: commonToolbox,
       grid: {
@@ -490,11 +524,11 @@ export async function updateMultiSummaryChart(apiBaseUrl) {
         type: 'category',
         boundaryGap: false,
         data: labels,
-        axisLabel: { fontSize: 10, color: isDarkMode() ? '#cbd5e1' : '#475569' }
+        axisLabel: { fontSize: 10, color: getThemeColors().textColor }
       },
       yAxis: {
         type: 'value',
-        axisLabel: { fontSize: 10, color: isDarkMode() ? '#cbd5e1' : '#475569' },
+        axisLabel: { fontSize: 10, color: getThemeColors().textColor },
         splitLine: { lineStyle: { color: isDarkMode() ? '#334155' : '#f1f5f9' } }
       },
       series: series
@@ -542,19 +576,19 @@ export async function initKazakhstanMap(apiBaseUrl, indicator, year) {
 
     const option = {
       animation: false,
-      title: { text: `Географическое распределение: ${indicator} (${year})`, left: 'center', textStyle: { fontSize: 14, color: '#1e293b' } },
+      title: { text: `Географическое распределение: ${indicator} (${year})`, left: 'center', textStyle: { fontSize: 14, color: getThemeColors().textColor } },
       toolbox: commonToolbox,
       tooltip: { trigger: 'item', formatter: (params) => `<b>${params.name}</b><br/>Значение: <b>${params.value !== undefined ? params.value.toLocaleString('ru-RU') : 'Нет данных'}</b>` },
       visualMap: { left: 'right', min: minVal, max: maxVal, inRange: { color: ['#e0f3f8', '#abd9e9', '#74add1', '#4575b4', '#313695'] }, text: ['Макс', 'Мин'], calculable: true },
-      series: [{ 
-        type: 'map', 
-        map: 'KZ', 
-        roam: isMapActive ? true : 'move', 
-        center: [67.0, 48.0], 
-        zoom: 2.5, 
-        data: formattedData, 
+      series: [{
+        type: 'map',
+        map: 'KZ',
+        roam: isMapActive ? true : 'move',
+        center: [67.0, 48.0],
+        zoom: 2.5,
+        data: formattedData,
         label: { show: true, fontSize: 8 },
-        universalTransition: true 
+        universalTransition: true
       }]
     };
 
