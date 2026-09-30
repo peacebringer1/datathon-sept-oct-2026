@@ -1135,3 +1135,68 @@ body.dark-theme .custom-add-card:hover {
   color: var(--text-primary);
   line-height: 1.5;
 }
+
+/* ========================================================================== */
+/* УЛУЧШЕНИЯ КАСТОМИЗАЦИИ И ДИЗАЙНА                                          */
+/* ========================================================================== */
+
+/* Плавные переходы для всех интерактивных элементов */
+button, input, select, .tab-btn, .cat-header, .sub-chart-card, .household-radar-card {
+  transition: all 0.25s ease-in-out;
+}
+
+/* Более мягкие и глубокие тени для карточек в светлой и темной теме */
+.chart-section-block,
+.summary-card-box,
+.household-radar-card,
+.sub-chart-card,
+.table-section {
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+}
+
+body.dark-theme .chart-section-block,
+body.dark-theme .summary-card-box,
+body.dark-theme .household-radar-card,
+body.dark-theme .sub-chart-card,
+body.dark-theme .table-section {
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+}
+
+/* Эффект при наведении на карточки с радарными диаграммами */
+.household-radar-card:hover,
+.sub-chart-card:hover {
+  border-color: var(--accent-color);
+  transform: translateY(-2px);
+}
+
+/* Стилизация скроллбаров для таблиц и бокового меню */
+.category-tree::-webkit-scrollbar,
+.table-wrapper::-webkit-scrollbar,
+.chat-messages::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.category-tree::-webkit-scrollbar-track,
+.table-wrapper::-webkit-scrollbar-track,
+.chat-messages::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.category-tree::-webkit-scrollbar-thumb,
+.table-wrapper::-webkit-scrollbar-thumb,
+.chat-messages::-webkit-scrollbar-thumb {
+  background-color: var(--border-color);
+  border-radius: 10px;
+}
+
+.category-tree::-webkit-scrollbar-thumb:hover,
+.table-wrapper::-webkit-scrollbar-thumb:hover {
+  background-color: var(--text-secondary);
+}
+
+/* Дополнительная подсветка активного инпута при фокусе */
+input:focus, select:focus, textarea:focus {
+  border-color: var(--accent-color) !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
