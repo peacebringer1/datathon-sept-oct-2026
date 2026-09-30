@@ -248,14 +248,14 @@ aside.category-sidebar-hover.pinned .sidebar-settings-footer {
     position: fixed;
     bottom: 25px;
     right: 25px;
-    width: 55px;
-    height: 55px;
-    background-color: #2563eb;
-    color: #fff;
+    width: 96px;
+    height: 112px;
+    background-color: transparent;
+    color: inherit;
     border: none;
-    border-radius: 50%;
+    border-radius: 0;
     cursor: pointer;
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+    box-shadow: none;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -264,15 +264,15 @@ aside.category-sidebar-hover.pinned .sidebar-settings-footer {
 }
 
 .ai-toggle-btn:hover {
-    background-color: #1d4ed8;
+    background-color: transparent;
     transform: scale(1.05);
 }
 
 .ai-toggle-btn .ai-btn-icon {
-    width: 24px;
-    height: 24px;
+    width: 100%;
+    height: 100%;
     object-fit: contain;
-    filter: brightness(0) invert(1);
+    filter: drop-shadow(0 3px 8px rgba(15, 23, 42, 0.24));
 }
 
 .ai-notification-bubble {
@@ -1020,6 +1020,8 @@ th {
     font-weight: 500;
 }
 
+/* ===================== DARK THEME ===================== */
+
 body.dark-theme {
     background-color: #0f172a;
     color: #f8fafc;
@@ -1098,6 +1100,93 @@ body.dark-theme td {
     color: #cbd5e1 !important;
 }
 
+/* --- Плашки с селектами (общие и над картой): убираем белый градиент --- */
+body.dark-theme .widget-controls {
+    background: #1e293b !important;
+    background-image: none !important;
+    border-color: #334155 !important;
+    box-shadow: none !important;
+}
+
+/* Подписи внутри плашек («Общий показатель», «Общий год», «Показатель карты») */
+body.dark-theme .widget-controls .control-group,
+body.dark-theme .widget-controls .control-group label,
+body.dark-theme .widget-controls .control-group span {
+    color: #f8fafc !important;
+}
+
+/* --- Карточки итоговой вкладки и карточка "добавить график" --- */
+body.dark-theme .summary-card-box,
+body.dark-theme .custom-add-card {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+}
+
+body.dark-theme .custom-add-card:hover {
+    background: rgba(37, 99, 235, 0.08) !important;
+    border-color: #2563eb !important;
+}
+
+body.dark-theme .center-add-prompt span {
+    color: #cbd5e1 !important;
+}
+
+/* --- Чат ИИ --- */
+body.dark-theme .chat-messages {
+    background-color: #0f172a !important;
+}
+
+body.dark-theme .chat-input-area {
+    background-color: #1e293b !important;
+    border-top-color: #334155 !important;
+}
+
+body.dark-theme .chat-bubble.ai {
+    background-color: #334155 !important;
+    color: #f8fafc !important;
+}
+
+/* --- Сайдбар --- */
+body.dark-theme .sidebar-header {
+    background-color: #0f172a !important;
+    border-bottom-color: #334155 !important;
+}
+
+/* --- ЦВЕТ ТЕКСТА: светлая тема = чёрный, тёмная тема = белый --- */
+/* Кнопки с синим фоном сюда не входят, у них текст остаётся белым */
+body:not(.dark-theme) .app-header h2,
+body:not(.dark-theme) h2,
+body:not(.dark-theme) h3,
+body:not(.dark-theme) label,
+body:not(.dark-theme) th,
+body:not(.dark-theme) td,
+body:not(.dark-theme) .cat-text,
+body:not(.dark-theme) .sidebar-title-text,
+body:not(.dark-theme) .widget-controls .control-group,
+body:not(.dark-theme) .ticker-track,
+body:not(.dark-theme) .ticker-track *,
+body:not(.dark-theme) .center-add-prompt span,
+body:not(.dark-theme) .modal-card h3,
+body:not(.dark-theme) .modal-card label,
+body:not(.dark-theme) .ai-notification-content,
+body:not(.dark-theme) #aiAnalyticsDescription,
+body:not(.dark-theme) #counter {
+    color: #0f172a;
+}
+
+body.dark-theme .ticker-track,
+body.dark-theme .ticker-track *,
+body.dark-theme .center-add-prompt span,
+body.dark-theme td,
+body.dark-theme #aiAnalyticsDescription,
+body.dark-theme .detailed-analytics-container,
+body.dark-theme .detailed-analytics-container *,
+body.dark-theme .table-toolbar,
+body.dark-theme .table-toolbar span {
+    color: #f8fafc !important;
+}
+
+/* --- Google Translate --- */
 .goog-te-banner-frame.skiptranslate {
     display: none !important;
 }
