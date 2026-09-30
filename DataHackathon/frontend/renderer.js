@@ -1,22 +1,22 @@
 import { initApp } from './src/components/appInit.js';
-import { 
-  selectCategoryDashboard, 
-  onRegionFilterChange, 
-  onCardFilterChange, 
-  onMapFilterChange, 
-  onSummaryFilterChange 
+import {
+  selectCategoryDashboard,
+  onRegionFilterChange,
+  onCardFilterChange,
+  onMapFilterChange,
+  onSummaryFilterChange
 } from './src/components/dashboardController.js';
 import { toggleCategory, initSidebarSearch } from './src/components/sidebar.js';
 import { filterTable, toggleTableVisibility } from './src/components/table.js';
-import { initAIChat, toggleAIChat, handleChatKeyDown } from './src/components/aiChat.js';
-import { 
-  switchTab, 
-  openAddChartModal, 
-  closeAddChartModal, 
-  saveCustomCard, 
-  resetCustomCard, 
-  initThemeToggle, 
-  initGlobalResizeListener 
+import { initAIChat, toggleAIChat } from './src/components/aiChat.js';
+import {
+  switchTab,
+  openAddChartModal,
+  closeAddChartModal,
+  saveCustomCard,
+  resetCustomCard,
+  initThemeToggle,
+  initGlobalResizeListener
 } from './src/components/uiInteractions.js';
 import { openDetailedAnalytics, openAnalyticsFromCard, initDetailedViewClose } from './src/components/detailedView.js';
 import { updateSummaryChart, updateMultiSummaryChart } from './src/components/chartsMap.js';
@@ -25,7 +25,6 @@ const API_BASE_URL = 'http://127.0.0.1:5000';
 
 // Связываем глобальные обработчики для HTML-атрибутов (onclick и т.д.)
 window.toggleAIChat = toggleAIChat;
-window.handleChatKeyDown = handleChatKeyDown;
 window.toggleCategory = toggleCategory;
 window.selectCategoryDashboard = (cat, el) => selectCategoryDashboard(cat, el, API_BASE_URL);
 window.switchTab = (tab) => switchTab(tab, API_BASE_URL);
@@ -40,7 +39,7 @@ window.closeAddChartModal = closeAddChartModal;
 window.saveCustomCard = () => saveCustomCard((num, type) => onCardFilterChange(num, API_BASE_URL, type));
 window.resetCustomCard = resetCustomCard;
 window.openDetailedAnalytics = openDetailedAnalytics;
-window.openAnalyticsFromCard = openAnalyticsFromCard;
+window.openAnalyticsFromCard = (button) => openAnalyticsFromCard(button, API_BASE_URL);
 
 // Инициализация при загрузке DOM
 document.addEventListener('DOMContentLoaded', () => {
@@ -51,13 +50,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const settingsBtn = document.getElementById('settingsToggleBtn');
   const settingsMenu = document.getElementById('settingsDropdown');
-  
+
   if (settingsBtn && settingsMenu) {
     settingsBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       settingsMenu.style.display = settingsMenu.style.display === 'block' ? 'none' : 'block';
     });
-    
+
     document.addEventListener('click', (e) => {
       if (!settingsMenu.contains(e.target) && !settingsBtn.contains(e.target)) {
         settingsMenu.style.display = 'none';
@@ -92,7 +91,7 @@ initApp(API_BASE_URL, {
   onSummaryFilterChange: () => onSummaryFilterChange(API_BASE_URL)
 });
 
-initAIChat();
+initAIChat(API_BASE_URL);
 
 // Корректный вызов сводных графиков при старте
 const summaryIndEl = document.getElementById('summaryIndicatorSelect');

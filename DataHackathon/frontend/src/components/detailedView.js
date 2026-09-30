@@ -31,14 +31,14 @@ function renderDetailedChart(sourceChartId) {
     const sourceChart = echarts.getInstanceByDom(sourceElement);
     if (sourceChart) {
       const option = sourceChart.getOption();
-      
+
       if (detailedEChartInstance) {
         detailedEChartInstance.dispose();
       }
 
       detailedEChartInstance = echarts.init(container);
       detailedEChartInstance.setOption(option);
-      
+
       setTimeout(() => {
         detailedEChartInstance.resize();
       }, 100);
@@ -47,18 +47,34 @@ function renderDetailedChart(sourceChartId) {
   }
 }
 
-export async function openAnalyticsFromCard(buttonElement) {
+export async function openAnalyticsFromCard(buttonElement, apiBaseUrl) {
   const card = buttonElement.closest('.sub-chart-card');
   if (!card) return;
 
   const select = card.querySelector('select');
   const indicatorName = select ? select.options[select.selectedIndex].text : 'График данных';
-  
+
   const activeCategoryEl = document.querySelector('.cat-header.active .cat-text');
   const categoryName = activeCategoryEl ? activeCategoryEl.innerText : 'Общие данные';
 
   const chartDiv = card.querySelector('[id^="chartType"], [id$="Chart"]');
   const chartId = chartDiv ? chartDiv.id : null;
+  const chartOption = chartDiv && window.echarts?.getInstanceByDom(chartDiv)?.getOption();
+  const chartContext = {
+    indicator: indicatorName,
+    category: categoryName,
+    year: card.querySelector('select[id$="Year"]')?.value || '',
+    chart: chartOption ? {
+      labels: chartOption.xAxis?.[0]?.data?.slice(0, 100) || [],
+      series: (chartOption.series || []).slice(0, 10).map(series => ({
+        name: series.name || '',
+        type: series.type || '',
+        values: (series.data || []).slice(0, 100).map(point => (
+          typeof point === 'object' && point !== null ? point.value ?? point[0] ?? null : point
+        ))
+      }))
+    } : {}
+  };
 
   openDetailedAnalytics(
     indicatorName,
@@ -66,7 +82,12 @@ export async function openAnalyticsFromCard(buttonElement) {
     chartId
   );
 
-  const realAnalysisText = await fetchAIAnalysisForChart(indicatorName, categoryName);
+  let realAnalysisText;
+  try {
+    realAnalysisText = await fetchAIAnalysisForChart(indicatorName, categoryName, apiBaseUrl, chartContext);
+  } catch (error) {
+    realAnalysisText = error.message || 'Не удалось получить анализ графика.';
+  }
 
   const descEl = document.getElementById('aiAnalyticsDescription');
   if (descEl) {
