@@ -3,6 +3,9 @@ from flask_cors import CORS
 import sqlite3
 import os
 import json
+import re
+import time
+from html import unescape
 import urllib.error
 import urllib.request
 
@@ -15,11 +18,21 @@ FRONTEND_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Путь к файлу database.sqlite в корневом каталоге DataHackathon/
 DB_FILE = os.path.abspath(os.path.join(FRONTEND_DIR, '..', 'database.sqlite'))
-GEMINI_MODEL = os.environ.get('GEMINI_MODEL', 'gemini-3.8-flash')
+GEMINI_MODEL = os.environ.get('GEMINI_MODEL', 'gemini-2.5-flash').strip()
+if GEMINI_MODEL.startswith('models/'):
+    GEMINI_MODEL = GEMINI_MODEL[len('models/'):]
+GEMINI_FALLBACK_MODEL = 'gemini-2.5-flash'
 
 print(f"[Flask DB]: Используется база данных по пути -> {DB_FILE}")
 
 from flask import jsonify
+
+
+class GeminiAPIError(RuntimeError):
+    def __init__(self, message, status=None, content_type=None):
+        super().__init__(message)
+        self.status = status
+        self.content_type = content_type
 
 
 @app.route('/api/household-radar', methods=['GET'])
@@ -272,24 +285,49 @@ def ai_chat():
         dataset_overview = get_dataset_overview()
         answer = call_gemini(contents, dataset_overview, dashboard_context)
         return jsonify({'answer': answer})
+    except GeminiAPIError as error:
+        upstream = {}
+        if error.status is not None:
+            upstream['status'] = error.status
+        if error.content_type:
+            upstream['content_type'] = error.content_type
+        return jsonify({
+            'error': {
+                'code': 'gemini_api_error',
+                'message': str(error),
+                'upstream': upstream
+            }
+        }), 503
     except RuntimeError as error:
-        return jsonify({'error': str(error)}), 503
+        return jsonify({
+            'error': {
+                'code': 'ai_service_error',
+                'message': str(error)
+            }
+        }), 503
     except (sqlite3.Error, OSError) as error:
         app.logger.exception('Не удалось прочитать аналитическую базу данных')
         return jsonify({'error': f'Не удалось прочитать базу данных: {error}'}), 503
 
 
 def call_gemini(contents, dataset_overview, dashboard_context):
-    api_key = os.environ.get('GEMINI_API_KEY')
+    api_key = os.environ.get('GEMINI_API_KEY', '').strip()
     if not api_key:
         raise RuntimeError('Не задан GEMINI_API_KEY. Добавьте ключ Gemini в переменные окружения и перезапустите приложение.')
+    if len(api_key) < 20:
+        raise RuntimeError(
+            'GEMINI_API_KEY задан, но выглядит неполным. '
+            'Вставьте полный API-ключ из Google AI Studio в том же PowerShell, '
+            'из которого запускаете приложение, затем полностью перезапустите его.'
+        )
 
+    model = GEMINI_MODEL
+    fallback_used = False
     context_text = json.dumps({
         'dataset': dataset_overview,
         'dashboard_filters': dashboard_context
     }, ensure_ascii=False)
     system_instruction = f'{AI_SYSTEM_INSTRUCTION}\n\nФактический каталог базы и выбранные фильтры: {context_text}'
-    endpoint = f'https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent'
 
     for _ in range(4):
         body = {
@@ -298,24 +336,81 @@ def call_gemini(contents, dataset_overview, dashboard_context):
             'tools': AI_TOOLS,
             'generationConfig': {'temperature': 0.2, 'maxOutputTokens': 1200}
         }
-        req = urllib.request.Request(
-            endpoint,
-            data=json.dumps(body, ensure_ascii=False).encode('utf-8'),
-            headers={'Content-Type': 'application/json', 'x-goog-api-key': api_key},
-            method='POST'
-        )
-        try:
-            with urllib.request.urlopen(req, timeout=45) as response:
-                result = json.loads(response.read().decode('utf-8'))
-        except urllib.error.HTTPError as error:
-            details = error.read().decode('utf-8', errors='replace')
+        retry = 0
+        while retry < 3:
+            endpoint = f'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent'
+            req = urllib.request.Request(
+                endpoint,
+                data=json.dumps(body, ensure_ascii=False).encode('utf-8'),
+                headers={
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'x-goog-api-key': api_key
+                },
+                method='POST'
+            )
             try:
-                details = json.loads(details).get('error', {}).get('message', details)
-            except json.JSONDecodeError:
-                pass
-            raise RuntimeError(f'Gemini API ({error.code}): {details}') from error
-        except urllib.error.URLError as error:
-            raise RuntimeError(f'Не удалось подключиться к Gemini API: {error.reason}') from error
+                with urllib.request.urlopen(req, timeout=45) as response:
+                    result = json.loads(response.read().decode('utf-8'))
+                break
+            except urllib.error.HTTPError as error:
+                details = error.read().decode('utf-8', errors='replace')
+                try:
+                    details = json.loads(details).get('error', {}).get('message', details)
+                except json.JSONDecodeError:
+                    if error.headers.get_content_type() == 'text/html':
+                        title_match = re.search(
+                            r'<title[^>]*>(.*?)</title\s*>',
+                            details,
+                            flags=re.IGNORECASE | re.DOTALL
+                        )
+                        title = unescape(title_match.group(1)).strip()[:160] if title_match else ''
+                        server = error.headers.get('Server')
+                        diagnostics = [f'HTTP {error.code}; Content-Type: text/html']
+                        if title:
+                            diagnostics.append(f'заголовок HTML: "{title}"')
+                        visible_details = re.sub(
+                            r'<(script|style)\b[^>]*>.*?</\1\s*>',
+                            ' ',
+                            details,
+                            flags=re.IGNORECASE | re.DOTALL
+                        )
+                        visible_details = re.sub(r'<[^>]*>', ' ', visible_details)
+                        visible_details = re.sub(r'\s+', ' ', unescape(visible_details)).strip()
+                        if visible_details and visible_details != title:
+                            diagnostics.append(f'текст ответа: "{visible_details[:400]}"')
+                        if server:
+                            diagnostics.append(f'Server: {server}')
+                        details = (
+                            'Вместо JSON API получен HTML-ответ ('
+                            + '; '.join(diagnostics)
+                            + '). Сам по себе HTML-ответ не позволяет определить, '
+                            'возникла ли ошибка в Google API или при сетевой обработке запроса. '
+                            'Проверьте прямой доступ к generativelanguage.googleapis.com, '
+                            'а также GEMINI_API_KEY и GEMINI_MODEL.'
+                        )
+                if error.code in (400, 404) and not fallback_used and model != GEMINI_FALLBACK_MODEL:
+                    app.logger.warning(
+                        'Gemini rejected model %s; retrying with %s',
+                        model,
+                        GEMINI_FALLBACK_MODEL
+                    )
+                    model = GEMINI_FALLBACK_MODEL
+                    fallback_used = True
+                    continue
+                if error.code == 503 and retry < 2:
+                    time.sleep(2 ** retry)
+                    retry += 1
+                    continue
+                raise GeminiAPIError(
+                    f'Gemini API ({error.code}): {details}',
+                    status=error.code,
+                    content_type=error.headers.get_content_type()
+                ) from error
+            except urllib.error.URLError as error:
+                raise GeminiAPIError(
+                    f'Не удалось подключиться к Gemini API: {error.reason}'
+                ) from error
 
         candidate = (result.get('candidates') or [{}])[0]
         model_content = candidate.get('content', {})
@@ -338,15 +433,12 @@ def call_gemini(contents, dataset_overview, dashboard_context):
                     tool_result = query_demographics(arguments)
                 else:
                     tool_result = {'error': 'Запрошена неизвестная функция или переданы неверные параметры.'}
-            except (AttributeError, TypeError, ValueError):
+            except (AttributeError, TypeError, ValueError, sqlite3.Error):
                 tool_result = {'error': 'Переданы некорректные параметры фильтрации.'}
-            function_response = {
-                'name': name,
-                'response': tool_result
-            }
+            function_response = {'name': name, 'response': tool_result}
             if function_call.get('id'):
                 function_response['id'] = function_call['id']
-            contents.append({'role': 'function', 'parts': [{'functionResponse': function_response}]})
+            contents.append({'role': 'user', 'parts': [{'functionResponse': function_response}]})
 
     raise RuntimeError('ИИ не завершил анализ после нескольких запросов к базе. Попробуйте уточнить вопрос.')
 
@@ -463,4 +555,4 @@ def ai_insights():
     return jsonify({'insights': insights})
 
 if __name__ == '__main__':
-    app.run(host='127.0.0.1', port=5000)
+    app.run(host='127.0.0.1', port=int(os.environ.get('FLASK_PORT', '5000')))
