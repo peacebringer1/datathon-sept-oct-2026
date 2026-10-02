@@ -16,9 +16,14 @@ export async function fetchAIAnalysisForChart(chartTitle, categoryName, apiBaseU
     result = JSON.parse(responseText);
   } catch {
     throw new Error(
-      `Сервер вернул не JSON (HTTP ${response.status}). Полностью перезапустите приложение, чтобы обновить Flask API.`
+      `Flask API вернул не JSON (HTTP ${response.status}). Проверьте, что запрос отправлен на актуальный сервер.`
     );
   }
-  if (!response.ok) throw new Error(result.error || 'Не удалось получить анализ графика.');
+  if (!response.ok) {
+    const errorMessage = typeof result.error === 'string'
+      ? result.error
+      : result.error?.message;
+    throw new Error(errorMessage || 'Не удалось получить анализ графика.');
+  }
   return result.answer;
 }
