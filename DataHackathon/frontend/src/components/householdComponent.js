@@ -96,7 +96,7 @@ window.switchMainSection = function(sectionName, element) {
   if (sectionName === 'household') {
     dashboard.style.display = 'none';
     household.style.display = 'block';
-    initHouseholdSection('http://127.0.0.1:5000');
+    initHouseholdSection(window.API_BASE_URL || 'http://127.0.0.1:5000');
   } else {
     household.style.display = 'none';
     dashboard.style.display = 'block';

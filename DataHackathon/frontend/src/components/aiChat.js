@@ -15,7 +15,7 @@ export function toggleAIChat() {
 
 export function handleChatKeyDown(event, sendMessageCallback) {
   if (event.key === 'Enter' && !event.shiftKey) {
-    event.preventDefault();
+    event.preventDefault()
     sendMessageCallback();
   }
 }
@@ -88,11 +88,20 @@ export async function sendMessageToAI(apiBaseUrl) {
     try {
       result = JSON.parse(responseText);
     } catch {
-      throw new Error(
-        `Сервер вернул не JSON (HTTP ${response.status}). Полностью перезапустите приложение, чтобы обновить Flask API.`
-      );
+      const message = response.status >= 500
+        ? `Ошибка Flask API (HTTP ${response.status}). Проверьте traceback в терминале backend.`
+        : `Flask API вернул не JSON (HTTP ${response.status}). Проверьте, что запрос отправлен на актуальный сервер.`;
+      throw new Error(message);
     }
-    if (!response.ok) throw new Error(result.error || 'Не удалось получить ответ ИИ.');
+    if (!response.ok) {
+      const errorMessage = typeof result.error === 'string'
+        ? result.error
+        : result.error?.message;
+      throw new Error(errorMessage || 'Не удалось получить ответ ИИ.');
+    }
+    if (typeof result.answer !== 'string' || !result.answer.trim()) {
+      throw new Error('Flask API не вернул текст ответа.');
+    }
 
     chatHistory = [...nextHistory, { role: 'model', text: result.answer }].slice(-10);
     appendMessage(result.answer, 'ai');

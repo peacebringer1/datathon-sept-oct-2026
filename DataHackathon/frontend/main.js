@@ -2,18 +2,19 @@ const { app, BrowserWindow } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
+const net = require('net');
 const { spawn } = require('child_process');
 
 let mainWindow;
 let flaskProcess = null;
 
-const PYTHON_SCRIPT_PATH = path.join(__dirname, 'app.py'); 
+const PYTHON_SCRIPT_PATH = path.join(__dirname, 'app.py');
 const INDEX_HTML_PATH = path.join(__dirname, 'index.html');
 
 // Функция определения интерпретатора Python (поддерживает .venv для Windows и macOS/Linux)
 function getPythonPath() {
   const isWin = os.platform() === 'win32';
-  
+
   // Путь к виртуальному окружению .venv на уровень выше от frontend/ (в корне DataHackathon/)
   const venvPython = isWin
     ? path.join(__dirname, '..', '.venv', 'Scripts', 'python.exe')
@@ -26,14 +27,26 @@ function getPythonPath() {
   return isWin ? 'python' : 'python3';
 }
 
-function startFlaskServer() {
+function getAvailablePort() {
+  return new Promise((resolve, reject) => {
+    const server = net.createServer();
+    server.unref();
+    server.once('error', reject);
+    server.listen(0, '127.0.0.1', () => {
+      const { port } = server.address();
+      server.close((error) => error ? reject(error) : resolve(port));
+    });
+  });
+}
+
+function startFlaskServer(port) {
   const pythonCmd = getPythonPath();
 
   console.log('Запуск Flask сервера:', pythonCmd, PYTHON_SCRIPT_PATH);
 
   flaskProcess = spawn(pythonCmd, [PYTHON_SCRIPT_PATH], {
-    cwd: path.dirname(PYTHON_SCRIPT_PATH), 
-    env: { ...process.env, PYTHONUNBUFFERED: '1' } 
+    cwd: path.dirname(PYTHON_SCRIPT_PATH),
+    env: { ...process.env, PYTHONUNBUFFERED: '1', FLASK_PORT: String(port) }
   });
 
   flaskProcess.stdout.on('data', (data) => {
@@ -50,7 +63,7 @@ function startFlaskServer() {
   });
 }
 
-function createWindow() {
+function createWindow(apiPort) {
   mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
@@ -62,14 +75,15 @@ function createWindow() {
     }
   });
 
-  mainWindow.loadFile(INDEX_HTML_PATH);
-  
+  mainWindow.loadFile(INDEX_HTML_PATH, { query: { apiPort: String(apiPort) } });
+
 
 }
 
-app.whenReady().then(() => {
-  startFlaskServer();
-  createWindow();
+app.whenReady().then(async () => {
+  const apiPort = await getAvailablePort();
+  startFlaskServer(apiPort);
+  createWindow(apiPort);
 });
 
 app.on('window-all-closed', () => {
