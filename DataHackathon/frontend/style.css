@@ -1304,3 +1304,30 @@ input:focus, select:focus, textarea:focus {
   border-color: var(--accent-color) !important;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
 }
+
+/* Обертка модального окна (темный фон или оверлей) */
+.modal-overlay, .modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5); /* затемнение фона */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999; /* чтобы перекрывало сайдбар и графики */
+}
+
+/* Само белое окошко настройки графика */
+.modal-dialog, .modal-content {
+  position: relative;
+  background: #ffffff; /* или под вашу тему */
+  border-radius: 12px;
+  padding: 24px;
+  width: 100%;
+  max-width: 500px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  /* Уберите любые отступы top/left в процентах или px, которые сдвигают окно вниз */
+  margin: auto; 
+}

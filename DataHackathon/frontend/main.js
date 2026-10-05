@@ -19,6 +19,8 @@ require('electron-reload')(__dirname, {
   electron: require(`${__dirname}/node_modules/electron`)
 });
 
+
+
 // Функция определения интерпретатора Python (поддерживает .venv для Windows и macOS/Linux)
 function getPythonPath() {
   const isWin = os.platform() === 'win32';
