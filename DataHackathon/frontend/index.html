@@ -9,6 +9,9 @@
   <!-- Основные стили проекта -->
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="aidana.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Raleway:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
 
   <!-- Библиотеки графиков и таблиц -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -109,6 +112,14 @@
         <!-- Главный дашборд -->
         <div id="mainDashboardContent" class="main-dashboard-content">
 
+          <div class="wrapper-header">
+            <div class="header">
+              <div class="header-left">
+                Аналитика Республики Казахстан
+              </div>
+            </div>
+          </div>
+
           <div class="ticker-container">
             <div class="ticker-wrap">
               <div class="ticker-track" id="tickerTrack"></div>
@@ -118,6 +129,7 @@
           <div class="tabs">
             <button class="tab-btn active" onclick="switchTab('year')">По областям</button>
             <button class="tab-btn" onclick="switchTab('summary')">Итоговый</button>
+            <button class="tab-btn" onclick="switchTab('summary')">Аналитика</button>
           </div>
 
           <div id="yearChartSection" class="chart-section-block">
@@ -265,7 +277,7 @@
               </div>
             </div>
             <div class="map-container-wrapper" id="mapWrapper" onclick="activateMapZoom()">
-              <div class="map-overlay-hint" id="mapHint">Нажмите, чтобы включить карту</div>
+              <button id="enableMapBtn" onclick="activateMapZoom()">Нажмите, чтобы включить карту</button>
               <div id="kazakhstanMapChart" class="chart-container map-h500"></div>
             </div>
           </div>
@@ -435,6 +447,7 @@
   <script src="./src/components/translator.js"></script>
   <script type="module" src="./src/components/householdComponent.js"></script>
   <script type="module" src="renderer.js"></script>
+  <script type="module" src="./src/components/sidebarAI.js"></script>
 </body>
 
 </html>
