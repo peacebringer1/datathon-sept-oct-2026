@@ -101,3 +101,5 @@ if (summaryIndEl && summaryIndEl.value) {
   await updateSummaryChart(API_BASE_URL, summaryIndEl.value);
   await updateMultiSummaryChart(API_BASE_URL);
 }
+
+

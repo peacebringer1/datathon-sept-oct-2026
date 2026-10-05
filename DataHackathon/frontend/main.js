@@ -11,6 +11,14 @@ let flaskProcess = null;
 const PYTHON_SCRIPT_PATH = path.join(__dirname, 'app.py');
 const INDEX_HTML_PATH = path.join(__dirname, 'index.html');
 
+const electron = require('electron');
+
+// Указываем путь к вашему основному файлу или папке с проектом
+require('electron-reload')(__dirname, {
+  // Указываем путь до electron (если папка с node_modules находится рядом)
+  electron: require(`${__dirname}/node_modules/electron`)
+});
+
 // Функция определения интерпретатора Python (поддерживает .venv для Windows и macOS/Linux)
 function getPythonPath() {
   const isWin = os.platform() === 'win32';
