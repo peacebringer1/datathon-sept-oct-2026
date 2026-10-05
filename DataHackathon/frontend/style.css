@@ -375,8 +375,13 @@ aside.category-sidebar-hover.pinned .sidebar-settings-footer {
 }
 
 @keyframes tickerScroll {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
 }
 
 .widget-controls {
@@ -472,7 +477,12 @@ aside.category-sidebar-hover.pinned .sidebar-settings-footer {
   cursor: pointer;
 }
 
-#card1Year, #card2Year, #card3Year, #card4Year, #card5Year, #card6Year {
+#card1Year,
+#card2Year,
+#card3Year,
+#card4Year,
+#card5Year,
+#card6Year {
   width: 110px;
   flex: unset;
 }
@@ -623,7 +633,8 @@ table {
   font-size: 0.88rem;
 }
 
-th, td {
+th,
+td {
   padding: 12px 14px;
   border-bottom: 1px solid var(--border-color);
 }
@@ -743,7 +754,9 @@ th {
   bottom: 25px;
   right: 25px;
   width: 80px;
-  height: 90px;
+  height: 80px;
+  border-radius: 50%;
+  overflow: hidden;
   background-color: transparent;
   color: inherit;
   border: none;
@@ -763,6 +776,7 @@ th {
   width: 100%;
   height: 100%;
   object-fit: contain;
+  border-radius: 50%;
   filter: drop-shadow(0 4px 10px rgba(15, 23, 42, 0.3));
 }
 
