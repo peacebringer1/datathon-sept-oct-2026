@@ -21,7 +21,9 @@ import {
 import { openDetailedAnalytics, openAnalyticsFromCard, initDetailedViewClose } from './src/components/detailedView.js';
 import { updateSummaryChart, updateMultiSummaryChart } from './src/components/chartsMap.js';
 
-const API_BASE_URL = 'http://127.0.0.1:5000';
+const apiPort = new URLSearchParams(window.location.search).get('apiPort') || '5000';
+const API_BASE_URL = `http://127.0.0.1:${apiPort}`;
+window.API_BASE_URL = API_BASE_URL;
 
 // Связываем глобальные обработчики для HTML-атрибутов (onclick и т.д.)
 window.toggleAIChat = toggleAIChat;
