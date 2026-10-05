@@ -115,3 +115,4 @@ export function initSidebarSearch() {
 
 window.toggleCategory = toggleCategory;
 window.filterCategoriesSidebar = filterCategoriesSidebar;
+
