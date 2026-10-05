@@ -3,9 +3,7 @@ from flask_cors import CORS
 import sqlite3
 import os
 import json
-import re
 import time
-from html import unescape
 import urllib.error
 import urllib.request
 
@@ -18,10 +16,9 @@ FRONTEND_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Путь к файлу database.sqlite в корневом каталоге DataHackathon/
 DB_FILE = os.path.abspath(os.path.join(FRONTEND_DIR, '..', 'database.sqlite'))
-GEMINI_MODEL = os.environ.get('GEMINI_MODEL', 'gemini-2.5-flash').strip()
+GEMINI_MODEL = os.environ.get('GEMINI_MODEL', 'gemini-3.8-flash').strip()
 if GEMINI_MODEL.startswith('models/'):
     GEMINI_MODEL = GEMINI_MODEL[len('models/'):]
-GEMINI_FALLBACK_MODEL = 'gemini-2.5-flash'
 
 print(f"[Flask DB]: Используется база данных по пути -> {DB_FILE}")
 
@@ -314,15 +311,15 @@ def call_gemini(contents, dataset_overview, dashboard_context):
     api_key = os.environ.get('GEMINI_API_KEY', '').strip()
     if not api_key:
         raise RuntimeError('Не задан GEMINI_API_KEY. Добавьте ключ Gemini в переменные окружения и перезапустите приложение.')
-    if len(api_key) < 20:
+    try:
+        api_key.encode('ascii')
+    except UnicodeEncodeError as error:
         raise RuntimeError(
-            'GEMINI_API_KEY задан, но выглядит неполным. '
-            'Вставьте полный API-ключ из Google AI Studio в том же PowerShell, '
-            'из которого запускаете приложение, затем полностью перезапустите его.'
-        )
+            'GEMINI_API_KEY содержит недопустимые символы. Скопируйте только ASCII-ключ Gemini '
+            'и перезапустите приложение.'
+        ) from error
 
     model = GEMINI_MODEL
-    fallback_used = False
     context_text = json.dumps({
         'dataset': dataset_overview,
         'dashboard_filters': dashboard_context
@@ -354,52 +351,30 @@ def call_gemini(contents, dataset_overview, dashboard_context):
                     result = json.loads(response.read().decode('utf-8'))
                 break
             except urllib.error.HTTPError as error:
-                details = error.read().decode('utf-8', errors='replace')
+                response_body = error.read().decode('utf-8', errors='replace')
                 try:
-                    details = json.loads(details).get('error', {}).get('message', details)
+                    error_payload = json.loads(response_body)
                 except json.JSONDecodeError:
-                    if error.headers.get_content_type() == 'text/html':
-                        title_match = re.search(
-                            r'<title[^>]*>(.*?)</title\s*>',
-                            details,
-                            flags=re.IGNORECASE | re.DOTALL
-                        )
-                        title = unescape(title_match.group(1)).strip()[:160] if title_match else ''
-                        server = error.headers.get('Server')
-                        diagnostics = [f'HTTP {error.code}; Content-Type: text/html']
-                        if title:
-                            diagnostics.append(f'заголовок HTML: "{title}"')
-                        visible_details = re.sub(
-                            r'<(script|style)\b[^>]*>.*?</\1\s*>',
-                            ' ',
-                            details,
-                            flags=re.IGNORECASE | re.DOTALL
-                        )
-                        visible_details = re.sub(r'<[^>]*>', ' ', visible_details)
-                        visible_details = re.sub(r'\s+', ' ', unescape(visible_details)).strip()
-                        if visible_details and visible_details != title:
-                            diagnostics.append(f'текст ответа: "{visible_details[:400]}"')
-                        if server:
-                            diagnostics.append(f'Server: {server}')
-                        details = (
-                            'Вместо JSON API получен HTML-ответ ('
-                            + '; '.join(diagnostics)
-                            + '). Сам по себе HTML-ответ не позволяет определить, '
-                            'возникла ли ошибка в Google API или при сетевой обработке запроса. '
-                            'Проверьте прямой доступ к generativelanguage.googleapis.com, '
-                            'а также GEMINI_API_KEY и GEMINI_MODEL.'
-                        )
-                if error.code in (400, 404) and not fallback_used and model != GEMINI_FALLBACK_MODEL:
-                    app.logger.warning(
-                        'Gemini rejected model %s; retrying with %s',
-                        model,
-                        GEMINI_FALLBACK_MODEL
+                    error_payload = None
+
+                api_error = error_payload.get('error') if isinstance(error_payload, dict) else None
+                if isinstance(api_error, dict) and isinstance(api_error.get('message'), str):
+                    details = api_error['message']
+                elif isinstance(api_error, str):
+                    details = api_error
+                else:
+                    details = (
+                        f'Gemini вернул HTTP {error.code} без JSON-описания '
+                        f'(Content-Type: {error.headers.get_content_type()}). '
+                        f'Диагностика backend: GEMINI_API_KEY получен, длина после удаления '
+                        f'внешних пробелов — {len(api_key)} символов; модель — {model}. '
+                        'Сам ключ не отображается. Если длина не совпадает с полным ключом, '
+                        'полностью закройте приложение и запустите его из PowerShell, '
+                        'в котором задан GEMINI_API_KEY. Если длина верная, проверьте '
+                        'ограничения ключа и сетевой доступ к generativelanguage.googleapis.com.'
                     )
-                    model = GEMINI_FALLBACK_MODEL
-                    fallback_used = True
-                    continue
                 if error.code == 503 and retry < 2:
-                    time.sleep(2 ** retry)
+                    time.sleep(2 ** (retry + 1))
                     retry += 1
                     continue
                 raise GeminiAPIError(
