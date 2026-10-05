@@ -53,8 +53,7 @@ window.addEventListener('resize', () => {
     customChartInstance,
     summaryChartInstance,
     multiSummaryChartInstance,
-    kzMapInstance,
-    activateMapZoom
+    kzMapInstance
   ];
   instances.forEach(chart => {
     if (chart && typeof chart.resize === 'function') {
@@ -576,7 +575,7 @@ export async function initKazakhstanMap(apiBaseUrl, indicator, year) {
   if (!kzMapInstance) {
     kzMapInstance = echarts.init(chartDom);
     
-    // Опционально: клик по самому графику карты тоже может её активировать
+    // Клик по самому графику карты тоже активирует зум
     chartDom.addEventListener('click', () => {
       activateMapZoom();
     });
@@ -615,7 +614,6 @@ export async function initKazakhstanMap(apiBaseUrl, indicator, year) {
       series: [{
         type: 'map',
         map: 'KZ',
-        // Управляем состоянием roam в зависимости от переменной активности
         roam: isMapActive ? true : false, 
         center: [67.0, 48.0],
         zoom: 2.5,
@@ -640,7 +638,6 @@ export function activateMapZoom() {
   const wrapper = document.getElementById('mapWrapper');
   if (wrapper) wrapper.classList.add('active');
   
-  // Включаем полный roam (зум и перетаскивание)
   kzMapInstance.setOption({ 
     series: [{ roam: true }] 
   });
@@ -651,18 +648,91 @@ document.addEventListener('click', (event) => {
   const wrapper = document.getElementById('mapWrapper');
   if (!wrapper || !kzMapInstance) return;
 
-  // Если клик был вне обертки карты и карта сейчас активна
   if (!wrapper.contains(event.target) && isMapActive) {
     isMapActive = false;
     wrapper.classList.remove('active');
     
-    // Блокируем зум/перемещение (false), чтобы страница снова нормально прокручивалась
     kzMapInstance.setOption({ 
       series: [{ roam: false }] 
     });
   }
 });
 
-
-// Делаем функцию глобальной, чтобы HTML-атрибут onclick мог её обнаружить
+// Делаем функцию глобальной для HTML-атрибута onclick
 window.activateMapZoom = activateMapZoom;
+
+// Функция управления сайдбаром с принудительным пересчетом размеров графиков
+export function toggleSidebar() {
+  const sidebar = document.getElementById('aiSidebar');
+  if (sidebar) {
+    sidebar.classList.toggle('open');
+  }
+
+  // Ожидание завершения анимации сайдбара (300мс) и вызов resize для графиков
+  setTimeout(() => {
+    const instances = [
+      yearChartInstance,
+      lineChartInstance,
+      pieChartInstance,
+      hBarChartInstance,
+      stackedAreaChartInstance,
+      customChartInstance,
+      summaryChartInstance,
+      multiSummaryChartInstance,
+      kzMapInstance
+    ];
+    instances.forEach(chart => {
+      if (chart && typeof chart.resize === 'function') {
+        chart.resize();
+      }
+    });
+  }, 300);
+}
+
+// Делаем toggleSidebar доступной глобально, если вызывается из HTML
+window.toggleSidebar = toggleSidebar;
+
+// Автоматический ресайз графиков при изменении размеров их контейнеров (ResizeObserver)
+export function initChartsResizeObserver() {
+  const chartDomIds = [
+    'chartTypeBar',
+    'chartTypeLine',
+    'chartTypePie',
+    'chartTypeHBar',
+    'barAnimationChart',
+    'chartTypeCustom',
+    'summaryChart',
+    'multiSummaryChart',
+    'kazakhstanMapChart'
+  ];
+
+  const resizeObserver = new ResizeObserver(entries => {
+    for (let entry of entries) {
+      const dom = entry.target;
+      let chartInstance = null;
+      if (dom.id === 'chartTypeBar') chartInstance = yearChartInstance;
+      else if (dom.id === 'chartTypeLine') chartInstance = lineChartInstance;
+      else if (dom.id === 'chartTypePie') chartInstance = pieChartInstance;
+      else if (dom.id === 'chartTypeHBar') chartInstance = hBarChartInstance;
+      else if (dom.id === 'barAnimationChart') chartInstance = stackedAreaChartInstance;
+      else if (dom.id === 'chartTypeCustom') chartInstance = customChartInstance;
+      else if (dom.id === 'summaryChart') chartInstance = summaryChartInstance;
+      else if (dom.id === 'multiSummaryChart') chartInstance = multiSummaryChartInstance;
+      else if (dom.id === 'kazakhstanMapChart') chartInstance = kzMapInstance;
+
+      if (chartInstance && typeof chartInstance.resize === 'function') {
+        chartInstance.resize();
+      }
+    }
+  });
+
+  chartDomIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) resizeObserver.observe(el);
+  });
+}
+
+// Инициализация наблюдателя размеров при загрузке DOM
+document.addEventListener('DOMContentLoaded', () => {
+  initChartsResizeObserver();
+});
