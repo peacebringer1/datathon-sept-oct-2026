@@ -9,6 +9,9 @@
   <!-- Основные стили проекта -->
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="aidana.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Raleway:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
 
   <!-- Библиотеки графиков и таблиц -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -18,19 +21,6 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="./node_modules/xlsx/xlsx.js"></script>
 
-  <!-- Скрипт Google Translate -->
-  <script type="text/javascript">
-    function googleTranslateElementInit() {
-      new google.translate.TranslateElement({
-        pageLanguage: 'ru',
-        includedLanguages: 'ru,kk,en',
-        layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
-        autoDisplay: false
-      }, 'google_translate_element');
-    }
-  </script>
-  <script type="text/javascript"
-    src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 </head>
 
 <body>
@@ -93,7 +83,19 @@
         <div class="sidebar-buttons-row">
           <div class="settings-dropdown-container">
             <button id="settingsToggleBtn" class="settings-toggle-btn" title="Настройки"><span>⚙️</span></button>
-            <div id="settingsDropdown" class="settings-dropdown-menu"></div>
+            <div id="settingsDropdown" class="settings-dropdown-menu">
+              <form id="geminiApiKeyForm">
+                <label for="geminiApiKeyInput">API-ключ Gemini</label>
+                <input id="geminiApiKeyInput" type="password" autocomplete="off"
+                  placeholder="Вставьте API-ключ" spellcheck="false">
+                <div class="settings-api-actions">
+                  <button type="submit" id="saveGeminiApiKeyBtn">Подключить</button>
+                  <button type="button" id="clearGeminiApiKeyBtn">Удалить</button>
+                </div>
+                <p id="geminiApiKeyStatus" role="status" aria-live="polite"></p>
+                <small>Ключ хранится зашифрованным на этом компьютере.</small>
+              </form>
+            </div>
           </div>
           <button id="langToggleBtn" class="lang-toggle-btn" title="Сменить язык">RU</button>
           <button id="themeToggleBtn" class="theme-toggle-btn" title="Сменить тему">🌙</button>
@@ -109,6 +111,14 @@
         <!-- Главный дашборд -->
         <div id="mainDashboardContent" class="main-dashboard-content">
 
+          <div class="wrapper-header">
+            <div class="header">
+              <div class="header-left">
+                Аналитика Республики Казахстан
+              </div>
+            </div>
+          </div>
+
           <div class="ticker-container">
             <div class="ticker-wrap">
               <div class="ticker-track" id="tickerTrack"></div>
@@ -118,6 +128,7 @@
           <div class="tabs">
             <button class="tab-btn active" onclick="switchTab('year')">По областям</button>
             <button class="tab-btn" onclick="switchTab('summary')">Итоговый</button>
+            <button class="tab-btn" onclick="switchTab('summary')">Аналитика</button>
           </div>
 
           <div id="yearChartSection" class="chart-section-block">
@@ -265,7 +276,7 @@
               </div>
             </div>
             <div class="map-container-wrapper" id="mapWrapper" onclick="activateMapZoom()">
-              <div class="map-overlay-hint" id="mapHint">Нажмите, чтобы включить карту</div>
+              <button id="enableMapBtn" onclick="activateMapZoom()">Нажмите, чтобы включить карту</button>
               <div id="kazakhstanMapChart" class="chart-container map-h500"></div>
             </div>
           </div>
@@ -435,6 +446,7 @@
   <script src="./src/components/translator.js"></script>
   <script type="module" src="./src/components/householdComponent.js"></script>
   <script type="module" src="renderer.js"></script>
+  <script type="module" src="./src/components/sidebarAI.js"></script>
 </body>
 
 </html>
