@@ -25,6 +25,73 @@ const apiPort = new URLSearchParams(window.location.search).get('apiPort') || '5
 const API_BASE_URL = `http://127.0.0.1:${apiPort}`;
 window.API_BASE_URL = API_BASE_URL;
 
+async function refreshGeminiApiKeyStatus() {
+  const status = document.getElementById('geminiApiKeyStatus');
+  if (!status) return;
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/settings/gemini-key`);
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || 'Не удалось проверить настройки ИИ.');
+    status.textContent = result.configured
+      ? 'Ключ подключён. Его действительность проверится при первом запросе.'
+      : 'Ключ не подключён.';
+    status.dataset.state = result.configured ? 'success' : 'info';
+  } catch (error) {
+    status.textContent = `Не удалось проверить backend: ${error.message}`;
+    status.dataset.state = 'error';
+  }
+}
+
+async function updateGeminiApiKey(method, apiKey) {
+  const status = document.getElementById('geminiApiKeyStatus');
+  const saveButton = document.getElementById('saveGeminiApiKeyBtn');
+  const clearButton = document.getElementById('clearGeminiApiKeyBtn');
+  if (saveButton) saveButton.disabled = true;
+  if (clearButton) clearButton.disabled = true;
+
+  try {
+    if (method === 'POST') {
+      if (!window.appSettings?.saveGeminiApiKey) {
+        throw new Error('Безопасное хранилище приложения недоступно. Перезапустите приложение.');
+      }
+      await window.appSettings.saveGeminiApiKey(apiKey);
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/settings/gemini-key`, {
+      method,
+      headers: method === 'POST' ? { 'Content-Type': 'application/json' } : undefined,
+      body: method === 'POST' ? JSON.stringify({ api_key: apiKey }) : undefined
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || 'Не удалось обновить настройки ИИ.');
+
+    if (method === 'DELETE') {
+      if (!window.appSettings?.clearGeminiApiKey) {
+        throw new Error('Ключ удалён из текущего сеанса, но безопасное хранилище недоступно.');
+      }
+      await window.appSettings.clearGeminiApiKey();
+    }
+
+    if (status) {
+      status.textContent = method === 'POST'
+        ? 'Ключ сохранён и подключён. Gemini проверит его при первом запросе.'
+        : 'Сохранённый ключ удалён.';
+      status.dataset.state = 'success';
+    }
+    const input = document.getElementById('geminiApiKeyInput');
+    if (input) input.value = '';
+  } catch (error) {
+    if (status) {
+      status.textContent = `Ошибка: ${error.message}`;
+      status.dataset.state = 'error';
+    }
+  } finally {
+    if (saveButton) saveButton.disabled = false;
+    if (clearButton) clearButton.disabled = false;
+  }
+}
+
 // Связываем глобальные обработчики для HTML-атрибутов (onclick и т.д.)
 window.toggleAIChat = toggleAIChat;
 window.toggleCategory = toggleCategory;
@@ -52,11 +119,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const settingsBtn = document.getElementById('settingsToggleBtn');
   const settingsMenu = document.getElementById('settingsDropdown');
+  const geminiApiKeyForm = document.getElementById('geminiApiKeyForm');
+  const clearGeminiApiKeyBtn = document.getElementById('clearGeminiApiKeyBtn');
 
   if (settingsBtn && settingsMenu) {
     settingsBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      settingsMenu.style.display = settingsMenu.style.display === 'block' ? 'none' : 'block';
+      const isOpen = settingsMenu.style.display === 'block';
+      settingsMenu.style.display = isOpen ? 'none' : 'block';
+      if (!isOpen) refreshGeminiApiKeyStatus();
     });
 
     document.addEventListener('click', (e) => {
@@ -64,6 +135,26 @@ document.addEventListener('DOMContentLoaded', () => {
         settingsMenu.style.display = 'none';
       }
     });
+  }
+
+  if (geminiApiKeyForm) {
+    geminiApiKeyForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const input = document.getElementById('geminiApiKeyInput');
+      if (!input?.value.trim()) {
+        const status = document.getElementById('geminiApiKeyStatus');
+        if (status) {
+          status.textContent = 'Вставьте API-ключ Gemini.';
+          status.dataset.state = 'error';
+        }
+        return;
+      }
+      updateGeminiApiKey('POST', input.value);
+    });
+  }
+
+  if (clearGeminiApiKeyBtn) {
+    clearGeminiApiKeyBtn.addEventListener('click', () => updateGeminiApiKey('DELETE'));
   }
 
   const sidebar = document.getElementById('categorySidebar');
@@ -101,5 +192,4 @@ if (summaryIndEl && summaryIndEl.value) {
   await updateSummaryChart(API_BASE_URL, summaryIndEl.value);
   await updateMultiSummaryChart(API_BASE_URL);
 }
-
 
