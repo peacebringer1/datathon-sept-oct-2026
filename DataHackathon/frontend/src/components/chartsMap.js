@@ -42,6 +42,26 @@ const regionNameMapping = {
   "г. Шымкент": "Шымкент"
 };
 
+// Функция для принудительного ресайза всех активных графиков при изменении размера окна
+window.addEventListener('resize', () => {
+  const instances = [
+    yearChartInstance,
+    lineChartInstance,
+    pieChartInstance,
+    hBarChartInstance,
+    stackedAreaChartInstance,
+    customChartInstance,
+    summaryChartInstance,
+    multiSummaryChartInstance,
+    kzMapInstance
+  ];
+  instances.forEach(chart => {
+    if (chart && typeof chart.resize === 'function') {
+      chart.resize();
+    }
+  });
+});
+
 // 1. Обновление первого графика (Карточка 1)
 export async function updateBarChart(apiBaseUrl, indicator, year) {
   if (!indicator || !year) return;
@@ -58,7 +78,7 @@ export async function updateBarChart(apiBaseUrl, indicator, year) {
         title: { text: 'Распределение по регионам', left: 'center', textStyle: { fontSize: 13, color: getThemeColors().textColor } },
         toolbox: commonToolbox,
         tooltip: { trigger: 'axis', formatter: (p) => `<b>${p[0].name}</b><br/>${indicator}: <b>${p[0].value.toLocaleString('ru-RU')}</b>` },
-        grid: { top: '20%', bottom: '8%', left: '10%', right: '5%', containLabel: true },
+        grid: { top: '22%', bottom: '15%', left: '8%', right: '5%', containLabel: true },
         xAxis: { type: 'category', data: labels, axisLabel: { interval: 0, rotate: 35, fontSize: 9, color: getThemeColors().textColor } },
         yAxis: { type: 'value', axisLabel: { fontSize: 10, color: getThemeColors().textColor }, splitLine: { lineStyle: { color: '#f1f5f9' } } },
         series: [{
@@ -73,6 +93,7 @@ export async function updateBarChart(apiBaseUrl, indicator, year) {
           barMaxWidth: 25
         }]
       });
+      yearChartInstance.resize();
     }
   } catch (e) {
     console.error('Ошибка загрузки первого графика:', e);
@@ -95,7 +116,7 @@ export async function updateLineChart(apiBaseUrl, indicator, year) {
         title: { text: 'Динамика показателей', left: 'center', textStyle: { fontSize: 13, color: getThemeColors().textColor } },
         toolbox: commonToolbox,
         tooltip: { trigger: 'axis' },
-        grid: { top: '20%', bottom: '8%', left: '10%', right: '5%', containLabel: true },
+        grid: { top: '22%', bottom: '15%', left: '8%', right: '5%', containLabel: true },
         xAxis: { type: 'category', data: labels, axisLabel: { interval: 0, rotate: 35, fontSize: 9, color: getThemeColors().textColor } },
         yAxis: { type: 'value', axisLabel: { fontSize: 10, color: getThemeColors().textColor }, splitLine: { lineStyle: { color: '#f1f5f9' } } },
         series: [{
@@ -113,6 +134,7 @@ export async function updateLineChart(apiBaseUrl, indicator, year) {
           }
         }]
       });
+      lineChartInstance.resize();
     }
   } catch (e) {
     console.error('Ошибка загрузки второго графика:', e);
@@ -136,16 +158,17 @@ export async function updatePieChart(apiBaseUrl, indicator, year) {
         title: { text: 'Доли по регионам', left: 'center', textStyle: { fontSize: 13, color: getThemeColors().textColor } },
         toolbox: commonToolbox,
         tooltip: { trigger: 'item', formatter: '{b}: <b>{c}</b> ({d}%)' },
-        legend: { type: 'scroll', orient: 'vertical', left: 'left', textStyle: { fontSize: 9, color: getThemeColors().textColor } },
+        legend: { type: 'scroll', orient: 'vertical', left: 'left', top: '15%', textStyle: { fontSize: 9, color: getThemeColors().textColor } },
         series: [{
           type: 'pie',
-          radius: ['40%', '65%'],
-          center: ['60%', '55%'],
+          radius: ['35%', '60%'],
+          center: ['65%', '55%'],
           avoidLabelOverlap: false,
           label: { show: false },
           data: pieData
         }]
       });
+      pieChartInstance.resize();
     }
   } catch (e) {
     console.error('Ошибка загрузки третьего графика:', e);
@@ -178,13 +201,16 @@ export async function updateHBarChart(apiBaseUrl, indicator, year) {
         toolbox: commonToolbox,
         tooltip: { trigger: 'axis', formatter: (p) => `<b>${p[0].data[1]}</b><br/>${indicator}: <b>${p[0].data[0].toLocaleString('ru-RU')}</b>` },
         dataset: { source: sourceData },
-        grid: { containLabel: true, top: '20%', bottom: '15%', left: '5%', right: '5%' },
+        grid: { containLabel: true, top: '18%', bottom: '22%', left: '5%', right: '5%' },
         xAxis: { type: 'value', axisLabel: { fontSize: 9, color: getThemeColors().textColor }, splitLine: { lineStyle: { color: '#f1f5f9' } } },
         yAxis: { type: 'category', axisLabel: { fontSize: 9, color: getThemeColors().textColor } },
         visualMap: {
           orient: 'horizontal',
           left: 'center',
-          bottom: '0%',
+          bottom: '2%',
+          itemWidth: 12,
+          itemHeight: 100,
+          textStyle: { fontSize: 9, color: getThemeColors().textColor },
           min: minVal,
           max: maxVal === minVal ? maxVal + 1 : maxVal,
           text: ['Макс', 'Мин'],
@@ -197,6 +223,7 @@ export async function updateHBarChart(apiBaseUrl, indicator, year) {
           itemStyle: { borderRadius: [0, 4, 4, 0] }
         }]
       });
+      hBarChartInstance.resize();
     }
   } catch (e) {
     console.error('Ошибка загрузки четвертого графика:', e);
@@ -222,11 +249,11 @@ export async function updateStackedAreaChart(apiBaseUrl, indicator, year) {
 
       stackedAreaChartInstance.setOption({
         animation: true,
-        title: { text: `Bar Animation Delay: ${indicator} (${year})`, left: 'center', textStyle: { fontSize: 13, color: getThemeColors().textColor } },
-        legend: { data: ['bar', 'bar2'], top: '10%', textStyle: { fontSize: 10, color: getThemeColors().textColor } },
+        title: { text: `Bar Animation Delay: ${indicator} (${year})`, left: 'center', textStyle: { fontSize: 12, color: getThemeColors().textColor } },
+        legend: { data: ['bar', 'bar2'], top: '12%', textStyle: { fontSize: 10, color: getThemeColors().textColor } },
         toolbox: { feature: { magicType: { type: ['stack'] }, dataView: { readOnly: true }, saveAsImage: { pixelRatio: 2 } } },
         tooltip: { trigger: 'axis' },
-        grid: { top: '25%', bottom: '8%', left: '10%', right: '5%', containLabel: true },
+        grid: { top: '25%', bottom: '15%', left: '8%', right: '5%', containLabel: true },
         xAxis: { data: xAxisData, splitLine: { show: false }, axisLabel: { interval: 0, rotate: 35, fontSize: 9, color: getThemeColors().textColor } },
         yAxis: { type: 'value', axisLabel: { fontSize: 10, color: getThemeColors().textColor }, splitLine: { lineStyle: { color: '#f1f5f9' } } },
         series: [
@@ -250,6 +277,7 @@ export async function updateStackedAreaChart(apiBaseUrl, indicator, year) {
         animationEasing: 'elasticOut',
         animationDelayUpdate: function (idx) { return idx * 5; }
       });
+      stackedAreaChartInstance.resize();
     }
   } catch (e) {
     console.error('Ошибка загрузки анимированного графика:', e);
@@ -273,7 +301,7 @@ export async function updateCustomChart(apiBaseUrl, indicator, year, chartType) 
         animation: true,
         animationDuration: 1000,
         toolbox: commonToolbox,
-        grid: { top: '20%', bottom: '8%', left: '10%', right: '5%', containLabel: true },
+        grid: { top: '22%', bottom: '15%', left: '8%', right: '5%', containLabel: true },
         xAxis: { type: 'category', data: labels, axisLabel: { interval: 0, rotate: 35, fontSize: 9, color: getThemeColors().textColor } },
         yAxis: { type: 'value', axisLabel: { fontSize: 10, color: getThemeColors().textColor }, splitLine: { lineStyle: { color: '#f1f5f9' } } }
       };
@@ -286,8 +314,8 @@ export async function updateCustomChart(apiBaseUrl, indicator, year, chartType) 
         const pieData = labels.map((lbl, idx) => ({ name: lbl, value: values[idx] })).filter(item => item.value > 0);
         option.title = { text: `Доли: ${indicator}`, left: 'center', textStyle: { fontSize: 13, color: getThemeColors().textColor } };
         option.tooltip = { trigger: 'item', formatter: '{b}: <b>{c}</b> ({d}%)' };
-        option.legend = { type: 'scroll', orient: 'vertical', left: 'left', textStyle: { fontSize: 9, color: getThemeColors().textColor } };
-        option.series = [{ type: 'pie', radius: ['40%', '65%'], center: ['60%', '55%'], data: pieData }];
+        option.legend = { type: 'scroll', orient: 'vertical', left: 'left', top: '15%', textStyle: { fontSize: 9, color: getThemeColors().textColor } };
+        option.series = [{ type: 'pie', radius: ['35%', '60%'], center: ['65%', '55%'], data: pieData }];
         delete option.xAxis;
         delete option.yAxis;
       } else {
@@ -297,6 +325,7 @@ export async function updateCustomChart(apiBaseUrl, indicator, year, chartType) 
       }
 
       customChartInstance.setOption(option, true);
+      customChartInstance.resize();
     }
   } catch (e) {
     console.error('Ошибка загрузки кастомного графика:', e);
@@ -320,7 +349,6 @@ export async function updateSummaryChart(apiBaseUrl, indicator) {
     const dom = document.getElementById('summaryChart');
     if (!dom) return;
 
-    // Убедимся, что у контейнера задана высота для ECharts
     dom.style.width = '100%';
     dom.style.height = '100%';
 
@@ -341,9 +369,9 @@ export async function updateSummaryChart(apiBaseUrl, indicator) {
         formatter: (p) => `<b>${p[0].name}</b><br/>${indicator}: <b>${p[0].value.toLocaleString('ru-RU')}</b>`
       },
       grid: {
-        top: '20%',
+        top: '22%',
         bottom: '15%',
-        left: '10%',
+        left: '8%',
         right: '5%',
         containLabel: true
       },
@@ -451,12 +479,11 @@ export async function updateMultiSummaryChart(apiBaseUrl) {
     "Число умерших"
   ];
 
-  // Четкие цвета линий и полупрозрачных заливок для каждого показателя
   const palette = [
-    { line: '#10b981', area: 'rgba(16, 185, 129, 0.2)' }, // Прирост - зеленый
-    { line: '#3b82f6', area: 'rgba(59, 130, 246, 0.2)' }, // Браки - синий
-    { line: '#f59e0b', area: 'rgba(245, 158, 11, 0.2)' }, // Разводы - желтый
-    { line: '#ef4444', area: 'rgba(239, 68, 68, 0.2)' }  // Умершие - красный
+    { line: '#10b981', area: 'rgba(16, 185, 129, 0.2)' },
+    { line: '#3b82f6', area: 'rgba(59, 130, 246, 0.2)' },
+    { line: '#f59e0b', area: 'rgba(245, 158, 11, 0.2)' },
+    { line: '#ef4444', area: 'rgba(239, 68, 68, 0.2)' }
   ];
 
   try {
@@ -479,7 +506,6 @@ export async function updateMultiSummaryChart(apiBaseUrl) {
       series.push({
         name: ind,
         type: 'line',
-        // Убрали stack: 'Total', чтобы убрать наложение и баги отображения
         smooth: true,
         showSymbol: true,
         symbolSize: 6,
@@ -548,6 +574,11 @@ export async function initKazakhstanMap(apiBaseUrl, indicator, year) {
 
   if (!kzMapInstance) {
     kzMapInstance = echarts.init(chartDom);
+    
+    // Клик по самому графику карты тоже активирует зум
+    chartDom.addEventListener('click', () => {
+      activateMapZoom();
+    });
   }
 
   if (!cachedKZJson) {
@@ -583,7 +614,7 @@ export async function initKazakhstanMap(apiBaseUrl, indicator, year) {
       series: [{
         type: 'map',
         map: 'KZ',
-        roam: isMapActive ? true : 'move',
+        roam: isMapActive ? true : false, 
         center: [67.0, 48.0],
         zoom: 2.5,
         data: formattedData,
@@ -593,20 +624,26 @@ export async function initKazakhstanMap(apiBaseUrl, indicator, year) {
     };
 
     kzMapInstance.setOption(option);
+    kzMapInstance.resize();
   } catch (error) {
     console.error('Ошибка карты:', error);
     kzMapInstance.hideLoading();
   }
 }
 
+// Активация зума и перемещения карты
 export function activateMapZoom() {
   if (!kzMapInstance) return;
   isMapActive = true;
   const wrapper = document.getElementById('mapWrapper');
   if (wrapper) wrapper.classList.add('active');
-  kzMapInstance.setOption({ series: [{ roam: true }] });
+  
+  kzMapInstance.setOption({ 
+    series: [{ roam: true }] 
+  });
 }
 
+// Глобальный клик для блокировки карты при клике вне её области
 document.addEventListener('click', (event) => {
   const wrapper = document.getElementById('mapWrapper');
   if (!wrapper || !kzMapInstance) return;
@@ -614,6 +651,88 @@ document.addEventListener('click', (event) => {
   if (!wrapper.contains(event.target) && isMapActive) {
     isMapActive = false;
     wrapper.classList.remove('active');
-    kzMapInstance.setOption({ series: [{ roam: 'move' }] });
+    
+    kzMapInstance.setOption({ 
+      series: [{ roam: false }] 
+    });
   }
+});
+
+// Делаем функцию глобальной для HTML-атрибута onclick
+window.activateMapZoom = activateMapZoom;
+
+// Функция управления сайдбаром с принудительным пересчетом размеров графиков
+export function toggleSidebar() {
+  const sidebar = document.getElementById('aiSidebar');
+  if (sidebar) {
+    sidebar.classList.toggle('open');
+  }
+
+  // Ожидание завершения анимации сайдбара (300мс) и вызов resize для графиков
+  setTimeout(() => {
+    const instances = [
+      yearChartInstance,
+      lineChartInstance,
+      pieChartInstance,
+      hBarChartInstance,
+      stackedAreaChartInstance,
+      customChartInstance,
+      summaryChartInstance,
+      multiSummaryChartInstance,
+      kzMapInstance
+    ];
+    instances.forEach(chart => {
+      if (chart && typeof chart.resize === 'function') {
+        chart.resize();
+      }
+    });
+  }, 300);
+}
+
+// Делаем toggleSidebar доступной глобально, если вызывается из HTML
+window.toggleSidebar = toggleSidebar;
+
+// Автоматический ресайз графиков при изменении размеров их контейнеров (ResizeObserver)
+export function initChartsResizeObserver() {
+  const chartDomIds = [
+    'chartTypeBar',
+    'chartTypeLine',
+    'chartTypePie',
+    'chartTypeHBar',
+    'barAnimationChart',
+    'chartTypeCustom',
+    'summaryChart',
+    'multiSummaryChart',
+    'kazakhstanMapChart'
+  ];
+
+  const resizeObserver = new ResizeObserver(entries => {
+    for (let entry of entries) {
+      const dom = entry.target;
+      let chartInstance = null;
+      if (dom.id === 'chartTypeBar') chartInstance = yearChartInstance;
+      else if (dom.id === 'chartTypeLine') chartInstance = lineChartInstance;
+      else if (dom.id === 'chartTypePie') chartInstance = pieChartInstance;
+      else if (dom.id === 'chartTypeHBar') chartInstance = hBarChartInstance;
+      else if (dom.id === 'barAnimationChart') chartInstance = stackedAreaChartInstance;
+      else if (dom.id === 'chartTypeCustom') chartInstance = customChartInstance;
+      else if (dom.id === 'summaryChart') chartInstance = summaryChartInstance;
+      else if (dom.id === 'multiSummaryChart') chartInstance = multiSummaryChartInstance;
+      else if (dom.id === 'kazakhstanMapChart') chartInstance = kzMapInstance;
+
+      if (chartInstance && typeof chartInstance.resize === 'function') {
+        chartInstance.resize();
+      }
+    }
+  });
+
+  chartDomIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) resizeObserver.observe(el);
+  });
+}
+
+// Инициализация наблюдателя размеров при загрузке DOM
+document.addEventListener('DOMContentLoaded', () => {
+  initChartsResizeObserver();
 });
