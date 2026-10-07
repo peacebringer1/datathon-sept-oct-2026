@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Data Analyzer</title>
+<style>
+:root{--bg:#f1ede6;--card:#fff;--soft:#f8fafc;--text:#1e293b;--mute:#64748b;--line:#e2e8f0;--acc:#fdb386;--acc2:#f97316;--dark:#1c1c1c;--violet:#c9b1d9;--blue:#3b82f6;--sh:0 8px 24px rgba(15,23,42,.07)}
+:root[data-theme=dark]{--bg:#14161b;--card:#1f232b;--soft:#272c36;--text:#e8ecf3;--mute:#94a3b8;--line:#343a46;--dark:#f1f1f1;--sh:0 8px 24px rgba(0,0,0,.4)}
+*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{font-family:Raleway,"Segoe UI",system-ui,sans-serif;background:var(--bg);color:var(--text);display:flex;gap:20px;padding:20px;overflow:hidden}
+.side{width:270px;flex:none;background:var(--card);border-radius:24px;box-shadow:var(--sh);display:flex;flex-direction:column;padding:20px 12px 12px}
+.side h2{margin:0 8px 14px;font-size:18px}
+.side input[type=search]{width:100%;padding:10px 12px;border:1px solid var(--line);background:var(--soft);color:var(--text);border-radius:12px;margin-bottom:12px;outline:none}
+.list{flex:1;overflow:auto;display:flex;flex-direction:column;gap:6px}
+.item{padding:12px 14px;border-radius:12px;cursor:pointer;color:var(--mute);font-weight:600;font-size:14px;display:flex;justify-content:space-between;gap:8px;align-items:center}
+.item small{display:block;font-weight:500;opacity:.8;margin-top:2px}
+.item:hover{background:var(--soft)}.item.on{background:var(--acc);color:#3b1d08;box-shadow:0 6px 14px rgba(253,179,134,.5)}
+.item .x{opacity:.5;border:0;background:none;cursor:pointer;color:inherit;font-size:16px}
+.tools{display:flex;gap:8px;padding-top:12px}
+.source-tools{padding-top:10px}
+.source-tools .btn{width:100%}
+.chart-controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;align-items:end}
+.chart-controls .btn{min-height:40px}
+.chart-frame{width:100%;overflow:auto}
+.dataset-chart{display:block;width:100%;min-width:520px;height:auto;max-height:520px}
+.chart-grid-line{stroke:var(--line);stroke-width:1}
+.chart-axis-label{fill:var(--mute);font-size:12px}
+.chart-bar{fill:var(--blue)}
+.chart-line{fill:none;stroke:var(--blue);stroke-width:3}
+.chart-point{fill:var(--blue)}
+@media(max-width:700px){body{gap:10px;padding:10px}.side{width:190px}.chart-controls{grid-template-columns:1fr}}
+.btn{border:0;border-radius:12px;padding:10px 14px;font:inherit;font-weight:700;font-size:13px;cursor:pointer;background:var(--acc);color:#3b1d08;box-shadow:0 4px 10px rgba(253,179,134,.4)}
+.btn.ghost{background:var(--soft);color:var(--text);box-shadow:none}.btn:disabled{opacity:.4;cursor:default}
+.tools .btn{width:46px;height:46px;padding:0}
+.main{flex:1;min-width:0;overflow:auto;padding-right:4px}
+h1{margin:4px 0 16px;font-size:26px}
+.strip{background:var(--card);border-radius:18px;box-shadow:var(--sh);padding:14px 20px;margin-bottom:16px;font-size:14px;color:var(--mute);display:flex;gap:28px;flex-wrap:wrap}
+.strip b{color:var(--text)}
+.tabs{display:flex;gap:10px;margin-bottom:16px}
+.tab{border:0;border-radius:12px;padding:10px 20px;font:inherit;font-weight:700;cursor:pointer;background:var(--card);color:var(--text);box-shadow:var(--sh)}
+.tab.on{background:var(--dark);color:var(--bg)}
+.card{background:var(--card);border-radius:22px;box-shadow:var(--sh);padding:22px;margin-bottom:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px}
+.stat{background:var(--soft);border-radius:14px;padding:14px}.stat span{font-size:12px;color:var(--mute);display:block}.stat b{font-size:22px}
+table{border-collapse:collapse;width:100%;font-size:13px}th,td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+th{color:var(--mute);font-weight:700;position:sticky;top:0;background:var(--card)}.scroll{overflow:auto;max-height:60vh}
+.bar{height:6px;border-radius:3px;background:var(--line);min-width:70px}.bar i{display:block;height:100%;border-radius:3px;background:var(--blue)}
+.form{display:grid;gap:14px;max-width:560px}label{font-weight:700;font-size:13px;display:grid;gap:6px}
+select,input[type=text]{padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--soft);color:var(--text);font:inherit}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.empty{color:var(--mute);text-align:center;padding:60px 0}
+.msg{background:var(--soft);border-radius:12px;padding:12px 14px;font-size:13px;margin-top:14px;line-height:1.6}
+.err{color:#dc2626}
+</style></head><body>
+<aside class="side">
+  <h2 id="t_ds"></h2><input type="search" id="q">
+  <div class="list" id="list"></div>
+  <div class="source-tools"><button class="btn ghost" id="importDemographics"></button></div>
+  <div class="tools">
+    <button class="btn" id="add">＋</button>
+    <button class="btn" id="lang">RU</button>
+    <button class="btn" id="theme">🌙</button>
+  </div>
+  <input type="file" id="file" multiple accept=".csv,.xlsx" hidden>
+</aside>
+<section class="main">
+  <div id="dashboardSyncNotice" class="msg" role="status" aria-live="polite" hidden></div>
+  <h1 id="t_title"></h1>
+  <div class="strip" id="strip"></div>
+  <div class="tabs" id="tabs"></div>
+  <div id="view"></div>
+</section>
+<script>
+const API=(window.DA_API||"")+"/api";
+const L={ru:{ds:"Наборы данных",search:"Поиск набора…",title:"Анализ и очистка данных",tabs:["Обзор","Очистка","Данные"],
+ empty:"Добавьте CSV или XLSX или импортируйте демографию, чтобы начать работу",rows:"строк",cols:"столбцов",enc:"Кодировка",sep:"Разделитель",state:"Состояние",cleaned:"очищен",raw:"исходный",importDemo:"Загрузить базу демографии",chart:"Графики",category:"Группировать по",measure:"Числовой показатель",aggregation:"Расчёт",sum:"Сумма",mean:"Среднее",bar:"Столбчатая",line:"Линейная",draw:"Построить график",noChart:"Для графика выберите категориальный и числовой столбцы.",indicator:"Показатель",allValues:"Все показатели",
+ miss:"Пропуски",dup:"Дубликаты",num:"Числовые",cat:"Категориальные",dt:"Даты",txt:"Текст",col:"Столбец",type:"Тип",empty_c:"Пусто",uniq:"Уник.",
+ missing:"Пустые ячейки",keep:"Оставить как есть",drop_all:"Удалить полностью пустые строки",drop_any:"Удалить строки с пропусками",fill_zero:"Заполнить нулём",fill_mean:"Заполнить средним",fill_median:"Заполнить медианой",fill_mode:"Заполнить модой",fill_value:"Заполнить значением",
+ fillv:"Значение для заполнения",dupm:"Дубликаты строк",none:"Не трогать",all:"Удалить по всем столбцам",dropE:"Удалить пустые столбцы",apply:"Применить",reset:"Сбросить",save:"Скачать CSV",
+ done:"Очистка выполнена",rr:"Удалено пустых строк",rc:"Удалено пустых столбцов",rd:"Удалено дубликатов",chg:"Изменено столбцов",prev:"Показано",of:"из",busy:"Загрузка…"},
+ en:{ds:"Datasets",search:"Search dataset…",title:"Data analysis & cleaning",tabs:["Overview","Cleaning","Data"],
+ empty:"Add a CSV or XLSX file or import demographics to get started",rows:"rows",cols:"columns",enc:"Encoding",sep:"Separator",state:"State",cleaned:"cleaned",raw:"raw",importDemo:"Import demographics database",chart:"Charts",category:"Group by",measure:"Numeric measure",aggregation:"Calculation",sum:"Sum",mean:"Average",bar:"Bar",line:"Line",draw:"Build chart",noChart:"Choose a category column and a numeric column.",indicator:"Indicator",allValues:"All indicators",
+ miss:"Missing",dup:"Duplicates",num:"Numeric",cat:"Categorical",dt:"Dates",txt:"Text",col:"Column",type:"Type",empty_c:"Empty",uniq:"Unique",
+ missing:"Empty cells",keep:"Keep as is",drop_all:"Drop fully empty rows",drop_any:"Drop rows with gaps",fill_zero:"Fill with zero",fill_mean:"Fill with mean",fill_median:"Fill with median",fill_mode:"Fill with mode",fill_value:"Fill with value",
+ fillv:"Fill value",dupm:"Row duplicates",none:"Leave",all:"Remove by all columns",dropE:"Drop empty columns",apply:"Apply",reset:"Reset",save:"Download CSV",
+ done:"Cleaning done",rr:"Empty rows removed",rc:"Empty columns removed",rd:"Duplicates removed",chg:"Columns changed",prev:"Showing",of:"of",busy:"Loading…"}};
+let lang=localStorage.da_lang||"ru",theme=localStorage.da_theme||"light",sets=[],cur=null,tab=0,cache={},filter="",lastReport=null;
+const $=s=>document.querySelector(s),t=k=>L[lang][k]||k,esc=s=>String(s??"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])),escAttr=s=>esc(s).replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+const num=n=>n==null?"—":Number(n).toLocaleString(lang=="ru"?"ru-RU":"en-US");
+async function api(p,o){const r=await fetch(API+p,o);if(!r.ok){let m=r.statusText;try{m=(await r.json()).detail||m}catch{}throw new Error(m)}return r.json()}
+function notifyDatasetSelection(){if(window.parent!==window)window.parent.postMessage({type:"da-selected-dataset",datasetId:cur},"*")}
+function applyTheme(){document.documentElement.dataset.theme=theme;$("#theme").textContent=theme=="dark"?"☀️":"🌙";localStorage.da_theme=theme}
+function chrome(){$("#t_ds").textContent=t("ds");$("#q").placeholder=t("search");$("#t_title").textContent=t("title");$("#lang").textContent=lang.toUpperCase();$("#importDemographics").textContent=t("importDemo");localStorage.da_lang=lang;
+ $("#tabs").innerHTML=t("tabs").map((x,i)=>`<button class="tab ${i==tab?"on":""}" data-i="${i}">${x}</button>`).join("")}
+function renderList(){const f=sets.filter(s=>s.name.toLowerCase().includes(filter));
+ $("#list").innerHTML=f.map(s=>`<div class="item ${s.id==cur?"on":""}" data-id="${s.id}"><div>${esc(s.name)}<small>${num(s.rows)} ${t("rows")} · ${s.cols} ${t("cols")}</small></div><button class="x" data-del="${s.id}">✕</button></div>`).join("")}
+function strip(){const s=sets.find(x=>x.id==cur);$("#strip").innerHTML=s?`<span><b>${num(s.rows)}</b> ${t("rows")}</span><span><b>${s.cols}</b> ${t("cols")}</span><span>${t("enc")}: <b>${s.encoding||"—"}</b></span><span>${t("sep")}: <b>${s.separator||"—"}</b></span><span>${t("state")}: <b>${s.cleaned?t("cleaned"):t("raw")}</b></span>`:""}
+async function refresh(){sets=await api("/datasets");if(!sets.find(s=>s.id==cur))cur=sets[0]?.id||null;renderList();strip();notifyDatasetSelection();await view()}
+async function view(){chrome();const v=$("#view");if(!cur){v.innerHTML=`<div class="card empty">${t("empty")}</div>`;return}
+ try{if(tab==0)await vOverview(v);else if(tab==1)vClean(v);else await vData(v)}catch(e){v.innerHTML=`<div class="card err">${esc(e.message)}</div>`}}
+async function vOverview(v){const p=await api(`/datasets/${cur}/profile`);
+ const st=[[t("rows"),p.row_count],[t("cols"),p.column_count],[t("miss"),p.missing_values],[t("dup"),p.duplicate_count],[t("num"),p.numeric_columns],[t("cat"),p.categorical_columns],[t("dt"),p.datetime_columns],[t("txt"),p.text_columns]];
+ v.innerHTML=`<div class="grid">${st.map(([a,b])=>`<div class="stat"><span>${a}</span><b>${num(b)}</b></div>`).join("")}</div>
+ <div class="card"><div class="scroll"><table><tr><th>${t("col")}</th><th>${t("type")}</th><th>${t("empty_c")}</th><th></th><th>${t("uniq")}</th><th>Min</th><th>Max</th></tr>
+ ${p.columns.map(c=>`<tr><td><b>${esc(c.name)}</b></td><td>${esc(c.data_type)}</td><td>${num(c.missing_count)} (${(c.missing_percent||0).toFixed(1)}%)</td><td><div class="bar"><i style="width:${Math.min(100,c.missing_percent||0)}%"></i></div></td><td>${num(c.unique_count)}</td><td>${esc(c.min_value)}</td><td>${esc(c.max_value)}</td></tr>`).join("")}</table></div></div>`}
+function vClean(v){const M=["keep","drop_all","drop_any","fill_zero","fill_mean","fill_median","fill_mode","fill_value"];
+ v.innerHTML=`<div class="card"><div class="form">
+ <label>${t("missing")}<select id="c_m">${M.map(m=>`<option value="${m}">${t(m)}</option>`).join("")}</select></label>
+ <label id="c_fvw" style="display:none">${t("fillv")}<input type="text" id="c_fv" value="Не указано"></label>
+ <label>${t("dupm")}<select id="c_d"><option value="none">${t("none")}</option><option value="all">${t("all")}</option></select></label>
+ <label class="row"><input type="checkbox" id="c_e" checked> ${t("dropE")}</label>
+ <div class="row"><button class="btn" id="c_go">${t("apply")}</button><button class="btn ghost" id="c_rs">${t("reset")}</button><button class="btn ghost" id="c_sv">${t("save")}</button></div></div>
+ <div id="c_rep"></div></div>`;
+ $("#c_m").onchange=e=>$("#c_fvw").style.display=e.target.value=="fill_value"?"grid":"none";
+ $("#c_go").onclick=async()=>{try{const r=await api(`/datasets/${cur}/clean`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({missing_mode:$("#c_m").value,fill_value:$("#c_fv").value,duplicate_mode:$("#c_d").value,drop_empty_columns:$("#c_e").checked})});lastReport=r.report;await refresh();tab=1;vClean($("#view"));showRep()}catch(e){$("#c_rep").innerHTML=`<div class="msg err">${esc(e.message)}</div>`}};
+ $("#c_rs").onclick=async()=>{await api(`/datasets/${cur}/reset`,{method:"POST"});lastReport=null;await refresh()};
+ $("#c_sv").onclick=()=>location.href=API+`/datasets/${cur}/export`;showRep()}
+function showRep(){const r=lastReport,el=$("#c_rep");if(!r||!el)return;const d=r.duplicate_report||{};
+ el.innerHTML=`<div class="msg"><b>${t("done")}</b><br>${t("rr")}: ${num(r.empty_rows_removed)}<br>${t("rc")}: ${num((r.empty_columns_removed||[]).length)}<br>${t("rd")}: ${num(d.removed_count??d.removed??0)}<br>${t("chg")}: ${num((r.columns||[]).length)}</div>`}
+async function vData(v){const d=await api(`/datasets/${cur}/data?limit=100`);
+ v.innerHTML=`<div class="card"><div class="scroll"><table><tr>${d.columns.map(c=>`<th>${esc(c)}</th>`).join("")}</tr>${d.rows.map(r=>`<tr>${r.map(x=>`<td>${esc(x)}</td>`).join("")}</tr>`).join("")}</table></div><p style="color:var(--mute);font-size:13px">${t("prev")} ${d.rows.length} ${t("of")} ${num(d.total)}</p></div>`}
+async function upload(files){for(const f of files){try{const r=await api("/datasets?name="+encodeURIComponent(f.name),{method:"POST",body:await f.arrayBuffer()});cur=r.id}catch(e){alert(f.name+": "+e.message)}}lastReport=null;await refresh()}
+$("#add").onclick=()=>$("#file").click();$("#file").onchange=e=>{upload(e.target.files);e.target.value=""};
+$("#theme").onclick=()=>{theme=theme=="dark"?"light":"dark";applyTheme()};
+$("#lang").onclick=()=>{lang=lang=="ru"?"en":"ru";renderList();strip();view()};
+$("#q").oninput=e=>{filter=e.target.value.toLowerCase();renderList()};
+$("#tabs").onclick=e=>{const b=e.target.closest(".tab");if(b){tab=+b.dataset.i;view()}};
+$("#list").onclick=async e=>{const x=e.target.closest("[data-del]");if(x){await api("/datasets/"+x.dataset.del,{method:"DELETE"});return refresh()}const i=e.target.closest(".item");if(i){cur=i.dataset.id;lastReport=null;renderList();strip();notifyDatasetSelection();view()}};
+$("#importDemographics").onclick=async()=>{const button=$("#importDemographics");button.disabled=true;try{const result=await post("/datasets/from-demographics",{});cur=result.id;tab=6;lastReport=null;await refresh()}catch(e){alert(e.message)}finally{button.disabled=false}};
+addEventListener("dragover",e=>e.preventDefault());addEventListener("drop",e=>{e.preventDefault();upload(e.dataTransfer.files)});
+/* ===== расширение: все вкладки ===== */
+Object.assign(L.ru,{tabs:["Обзор","Очистка","Данные","Преобразования","Расшифровки","Объединение","Графики"],selected:"Удалить по выбранным столбцам",cats:"Считать категориальными",dcols:"Столбцы для поиска дубликатов",
+ rule_col:"Столбец",exact:"Точное значение",range:"Диапазон",from:"От",to:"До",repl:"Расшифровка",addr:"Добавить правило",load:"Показать значения",rules:"Правила (применяются при очистке)",applyr:"Применить правила",
+ comb:"Объединить столбцы в один",newc:"Новое имя",sepr:"Разделитель",skipE:"Пропускать пустые",coal:"Схлопнуть дублирующиеся столбцы (первое непустое)",addrule:"Добавить правило",run:"Выполнить",ren:"Переименование столбцов",
+ base:"Базовый датасет",pick:"Датасеты для объединения",how:"Тип",cond:"Условие",addc:"+ условие",m2m:"Разрешить N:M",runm:"Объединить",res:"Результат добавлен в список слева",need2:"Выберите минимум два датасета",ok:"Готово",val:"Значение",cnt:"Кол-во"});
+Object.assign(L.en,{tabs:["Overview","Cleaning","Data","Transformations","Decodings","Merge","Charts"],selected:"Remove by selected columns",cats:"Treat as categorical",dcols:"Duplicate key columns",
+ rule_col:"Column",exact:"Exact value",range:"Range",from:"From",to:"To",repl:"Replacement",addr:"Add rule",load:"Show values",rules:"Rules (applied on cleaning)",applyr:"Apply rules",
+ comb:"Combine columns into one",newc:"New name",sepr:"Separator",skipE:"Skip empty",coal:"Coalesce duplicate columns (first non-empty)",addrule:"Add rule",run:"Run",ren:"Rename columns",
+ base:"Base dataset",pick:"Datasets to merge",how:"Type",cond:"Condition",addc:"+ condition",m2m:"Allow N:M",runm:"Merge",res:"Result added to the list on the left",need2:"Select at least two datasets",ok:"Done",val:"Value",cnt:"Count"});
+const copts={},rules={};
+const post=(p,b)=>api(p,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b)});
+const opts=cols=>cols.map(c=>`<option>${esc(c)}</option>`).join("");
+const checks=(cols,cls)=>`<div class="row" style="max-height:140px;overflow:auto;gap:6px 14px">${cols.map(c=>`<label class="row" style="font-weight:500"><input type="checkbox" class="${cls}" value="${esc(c)}"> ${esc(c)}</label>`).join("")}</div>`;
+const picked=cls=>[...document.querySelectorAll("."+cls+":checked")].map(x=>x.value);
+const flash=(m,e)=>{const x=$("#flash");if(x)x.innerHTML=`<div class="msg ${e?"err":""}">${esc(m)}</div>`};
+const fresh=async()=>{const k=tab;await refresh();tab=k;await view()};
+const cname=async()=>(await api(`/datasets/${cur}/columns`)).map(c=>c.name);
+const viewOld=view;
+view=async function(){chrome();const v=$("#view");if(!cur){v.innerHTML=`<div class="card empty">${t("empty")}</div>`;return}
+ try{if(tab==0)await vOverview(v);else if(tab==1)await vClean(v);else if(tab==2)await vData(v);else if(tab==3)await vTrans(v);else if(tab==4)await vDec(v);else if(tab==5)await vMerge(v);else await vChart(v)}catch(e){v.innerHTML=`<div class="card err">${esc(e.message)}</div>`}};
+async function vChart(v){
+ const cols=await api(`/datasets/${cur}/columns`);
+ const numeric=cols.filter(c=>/int|float|double|decimal|numeric/i.test(c.dtype)).map(c=>c.name);
+ const categories=cols.map(c=>c.name);
+ if(!numeric.length){v.innerHTML=`<div class="card err">${t("noChart")}</div>`;return}
+ const defaults=copts[`chart:${cur}`]||{};
+ const xDefault=categories.includes("year")?"year":categories.find(c=>!numeric.includes(c))||categories[0];
+ const yDefault=numeric.includes("value")?"value":numeric[0];
+ const filters=categories.includes("indicator")?await api(`/datasets/${cur}/unique?column=indicator`):[];
+ v.innerHTML=`<div class="card"><div class="chart-controls">
+ <label>${t("category")}<select id="g_x">${opts(categories)}</select></label>
+ <label>${t("measure")}<select id="g_y">${opts(numeric)}</select></label>
+ ${filters.length?`<label>${t("indicator")}<select id="g_filter"><option value="">${t("allValues")}</option>${filters.map(([value])=>`<option value="${escAttr(value)}">${esc(value)}</option>`).join("")}</select></label>`:""}
+ <label>${t("aggregation")}<select id="g_agg"><option value="sum">${t("sum")}</option><option value="mean">${t("mean")}</option></select></label>
+ <label>${t("chart")}<select id="g_type"><option value="bar">${t("bar")}</option><option value="line">${t("line")}</option></select></label>
+ <button class="btn" id="g_draw">${t("draw")}</button></div></div>
+ <div class="card"><div id="g_result" class="chart-frame"></div></div>`;
+ $("#g_x").value=categories.includes(defaults.x)?defaults.x:xDefault;
+ $("#g_y").value=numeric.includes(defaults.y)?defaults.y:yDefault;
+ $("#g_agg").value=defaults.aggregation||"sum";
+ $("#g_type").value=defaults.type||"bar";
+ if($("#g_filter"))$("#g_filter").value=defaults.filter||filters[0]?.[0]||"";
+ const build=async()=>{
+  const x=$("#g_x").value,y=$("#g_y").value,aggregation=$("#g_agg").value,type=$("#g_type").value;
+  const filter=$("#g_filter"),filterValue=filter?.value||"";
+  copts[`chart:${cur}`]={x,y,aggregation,type,filter:filterValue};
+  const query=new URLSearchParams({x,y,aggregation});
+  if(filter&&filterValue){query.set("filter_column","indicator");query.set("filter_value",filterValue)}
+  try{
+   const data=await api(`/datasets/${cur}/chart?${query}`);
+   const output=$("#g_result");
+   if(output)output.innerHTML=svgChart(data,type);
+  }catch(e){const output=$("#g_result");if(output)output.innerHTML=`<div class="msg err">${esc(e.message)}</div>`}
+ };
+ $("#g_draw").onclick=build;
+ await build();
+}
+function svgChart(data,type){
+ const labels=data.labels||[],values=(data.values||[]).map(Number);
+ if(!labels.length)return `<div class="empty">${t("noChart")}</div>`;
+ const W=960,H=480,left=78,right=24,top=30,bottom=120,plotW=W-left-right,plotH=H-top-bottom;
+ let min=Math.min(0,...values),max=Math.max(0,...values);
+ if(min===max){min=0;max=max||1}
+ const y=value=>top+(max-value)/(max-min)*plotH;
+ const x=index=>left+(index+.5)*plotW/labels.length;
+ const ticks=5,grid=Array.from({length:ticks+1},(_,i)=>{
+  const value=min+(max-min)*i/ticks,yy=y(value);
+  return `<line class="chart-grid-line" x1="${left}" y1="${yy}" x2="${W-right}" y2="${yy}"></line><text class="chart-axis-label" x="${left-8}" y="${yy+4}" text-anchor="end">${esc(num(value))}</text>`;
+ }).join("");
+ const labelMarkup=labels.map((label,i)=>{
+  const xx=x(i),yy=H-bottom+18,text=esc(String(label).length>20?String(label).slice(0,18)+"…":label);
+  return `<text class="chart-axis-label" x="${xx}" y="${yy}" text-anchor="${labels.length>6?"end":"middle"}" ${labels.length>6?`transform="rotate(-45 ${xx} ${yy})"`:""}>${text}</text>`;
+ }).join("");
+ let series="";
+ if(type==="line"){
+  series=`<polyline class="chart-line" points="${values.map((value,i)=>`${x(i)},${y(value)}`).join(" ")}"></polyline>`+
+   values.map((value,i)=>`<circle class="chart-point" cx="${x(i)}" cy="${y(value)}" r="4"><title>${esc(labels[i])}: ${esc(num(value))}</title></circle>`).join("");
+ }else{
+  const step=plotW/labels.length,barWidth=Math.max(2,Math.min(44,step*.68)),zero=y(0);
+  series=values.map((value,i)=>{
+   const yy=y(value),barY=Math.min(yy,zero),barH=Math.max(1,Math.abs(zero-yy));
+   return `<rect class="chart-bar" x="${x(i)-barWidth/2}" y="${barY}" width="${barWidth}" height="${barH}" rx="3"><title>${esc(labels[i])}: ${esc(num(value))}</title></rect>`;
+  }).join("");
+ }
+ return `<svg class="dataset-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${escAttr(data.y)} по ${escAttr(data.x)}">${grid}${series}${labelMarkup}</svg>`;
+}
+/* очистка: полный набор настроек */
+vClean=async function(v){const cols=await cname(),M=["keep","drop_all","drop_any","fill_zero","fill_mean","fill_median","fill_mode","fill_value"],o=copts[cur]||{};
+ v.innerHTML=`<div class="card"><div class="form">
+ <label>${t("missing")}<select id="c_m">${M.map(m=>`<option value="${m}" ${o.missing_mode==m?"selected":""}>${t(m)}</option>`).join("")}</select></label>
+ <label id="c_fvw" style="display:none">${t("fillv")}<input type="text" id="c_fv" value="${esc(o.fill_value||"Не указано")}"></label>
+ <label>${t("dupm")}<select id="c_d"><option value="none">${t("none")}</option><option value="all">${t("all")}</option><option value="selected">${t("selected")}</option></select></label>
+ <div id="c_dcw" style="display:none"><label>${t("dcols")}</label>${checks(cols,"dc")}</div>
+ <div><label>${t("cats")}</label>${checks(cols,"cc")}</div>
+ <label class="row"><input type="checkbox" id="c_e" checked> ${t("dropE")}</label>
+ <div class="row"><button class="btn" id="c_go">${t("apply")}</button><button class="btn ghost" id="c_rs">${t("reset")}</button><button class="btn ghost" id="c_sv">${t("save")}</button></div></div><div id="c_rep"></div><div id="flash"></div></div>`;
+ $("#c_d").value=o.duplicate_mode||"none";const sync=()=>{$("#c_fvw").style.display=$("#c_m").value=="fill_value"?"grid":"none";$("#c_dcw").style.display=$("#c_d").value=="selected"?"block":"none"};
+ $("#c_m").onchange=$("#c_d").onchange=sync;sync();
+ (o.duplicate_columns||[]).forEach(c=>{const x=[...document.querySelectorAll(".dc")].find(e=>e.value==c);if(x)x.checked=1});(o.categorical_columns||[]).forEach(c=>{const x=[...document.querySelectorAll(".cc")].find(e=>e.value==c);if(x)x.checked=1});
+ $("#c_go").onclick=()=>runClean();
+ $("#c_rs").onclick=async()=>{await post(`/datasets/${cur}/reset`,{});lastReport=null;await fresh()};
+ $("#c_sv").onclick=()=>location.href=API+`/datasets/${cur}/export`;showRep()};
+async function runClean(fromDec){let o;if(fromDec&&copts[cur])o=copts[cur];else o={missing_mode:$("#c_m").value,fill_value:$("#c_fv").value,duplicate_mode:$("#c_d").value,duplicate_columns:picked("dc"),categorical_columns:picked("cc"),drop_empty_columns:$("#c_e").checked};
+ copts[cur]=o;o.decoding_rules=rules[cur]||[];
+ try{const r=await post(`/datasets/${cur}/clean`,o);lastReport=r.report;await fresh();showRep()}catch(e){flash(e.message,1)}}
+/* расшифровки */
+async function vDec(v){const cols=await cname(),R=rules[cur]=rules[cur]||[];
+ v.innerHTML=`<div class="card"><div class="form" style="max-width:none"><div class="row">
+ <label>${t("rule_col")}<select id="d_c">${opts(cols)}</select></label>
+ <label>${t("type")}<select id="d_t"><option value="exact">${t("exact")}</option><option value="range">${t("range")}</option></select></label>
+ <label>${t("from")}<input type="text" id="d_f"></label><label id="d_tw" style="display:none">${t("to")}<input type="text" id="d_to"></label>
+ <label>${t("repl")}<input type="text" id="d_r"></label></div>
+ <div class="row"><button class="btn ghost" id="d_u">${t("load")}</button><button class="btn" id="d_a">${t("addr")}</button></div></div>
+ <div class="row" style="align-items:flex-start;margin-top:16px"><div class="scroll" style="flex:1;min-width:260px;max-height:300px" id="d_uv"></div>
+ <div style="flex:1;min-width:300px"><b>${t("rules")}</b><table>${R.map((r,i)=>`<tr><td>${esc(r.column)}</td><td>${esc(r.value_from)}${r.match_type=="range"?" … "+esc(r.value_to):""}</td><td>→ ${esc(r.replacement)}</td><td><button class="btn ghost" data-rm="${i}">✕</button></td></tr>`).join("")}</table>
+ <p><button class="btn" id="d_go" ${R.length?"":"disabled"}>${t("applyr")}</button></p></div></div><div id="flash"></div></div>`;
+ $("#d_t").onchange=e=>$("#d_tw").style.display=e.target.value=="range"?"grid":"none";
+ $("#d_u").onclick=async()=>{try{const u=await api(`/datasets/${cur}/unique?column=${encodeURIComponent($("#d_c").value)}`);
+  $("#d_uv").innerHTML=`<table><tr><th>${t("val")}</th><th>${t("cnt")}</th></tr>${u.map(([a,b])=>`<tr class="pk" data-v="${esc(a)}" style="cursor:pointer"><td>${esc(a)}</td><td>${num(b)}</td></tr>`).join("")}</table>`}catch(e){flash(e.message,1)}};
+ $("#d_uv").onclick=e=>{const r=e.target.closest(".pk");if(r)$("#d_f").value=r.dataset.v};
+ $("#d_a").onclick=()=>{if(!$("#d_f").value)return;R.push({column:$("#d_c").value,match_type:$("#d_t").value,value_from:$("#d_f").value,value_to:$("#d_to").value,replacement:$("#d_r").value});vDec($("#view"))};
+ v.onclick=e=>{const b=e.target.closest("[data-rm]");if(b){R.splice(+b.dataset.rm,1);vDec(v)}};
+ $("#d_go").onclick=async()=>{await runClean(true);tab=4;view()}}
+/* преобразования */
+const CR={};
+async function vTrans(v){const cols=await cname(),R=CR[cur]=CR[cur]||[];
+ v.innerHTML=`<div class="card"><h3>${t("comb")}</h3>${checks(cols,"cb")}<div class="row" style="margin-top:10px"><label>${t("newc")}<input type="text" id="cb_n"></label><label>${t("sepr")}<input type="text" id="cb_s" value=" " style="width:80px"></label><label class="row"><input type="checkbox" id="cb_e" checked>${t("skipE")}</label><button class="btn" id="cb_go">${t("run")}</button></div></div>
+ <div class="card"><h3>${t("coal")}</h3>${checks(cols,"co")}<div class="row" style="margin-top:10px"><label>${t("newc")}<input type="text" id="co_n"></label><button class="btn ghost" id="co_a">${t("addrule")}</button></div>
+ <table>${R.map((r,i)=>`<tr><td>${esc(r.columns.join(" + "))}</td><td>→ ${esc(r.new_column)}</td><td><button class="btn ghost" data-cr="${i}">✕</button></td></tr>`).join("")}</table>
+ <p><button class="btn" id="co_go" ${R.length?"":"disabled"}>${t("run")}</button></p></div>
+ <div class="card"><h3>${t("ren")}</h3><div class="grid">${cols.map(c=>`<label>${esc(c)}<input type="text" class="rn" data-o="${esc(c)}" placeholder="${esc(c)}"></label>`).join("")}</div><button class="btn" id="rn_go">${t("run")}</button><div id="flash"></div></div>`;
+ const go=async(p,b)=>{try{await post(`/datasets/${cur}/${p}`,b);flash(t("ok"));await fresh();flash(t("ok"))}catch(e){flash(e.message,1)}};
+ $("#cb_go").onclick=()=>go("combine",{columns:picked("cb"),new_column:$("#cb_n").value,separator:$("#cb_s").value,skip_empty:$("#cb_e").checked});
+ $("#co_a").onclick=()=>{if(picked("co").length<2||!$("#co_n").value)return;R.push({columns:picked("co"),new_column:$("#co_n").value});vTrans(v)};
+ v.onclick=e=>{const b=e.target.closest("[data-cr]");if(b){R.splice(+b.dataset.cr,1);vTrans(v)}};
+ $("#co_go").onclick=()=>go("coalesce",{rules:R}).then(()=>{CR[cur]=[]});
+ $("#rn_go").onclick=()=>{const m={};document.querySelectorAll(".rn").forEach(i=>{if(i.value.trim())m[i.dataset.o]=i.value});go("rename",m)}}
+/* объединение */
+async function vMerge(v){const base=window._mb&&sets.find(s=>s.id==window._mb)?window._mb:cur;window._mb=base;
+ const cols={};for(const s of sets)cols[s.id]=await api(`/datasets/${s.id}/columns`).then(r=>r.map(c=>c.name));
+ v.innerHTML=`<div class="card"><div class="form" style="max-width:none"><label>${t("base")}<select id="m_b">${sets.map(s=>`<option value="${s.id}" ${s.id==base?"selected":""}>${esc(s.name)}</option>`).join("")}</select></label>
+ <div id="m_rel"></div><label class="row"><input type="checkbox" id="m_m"> ${t("m2m")}</label><div class="row"><button class="btn" id="m_go">${t("runm")}</button></div></div><div id="m_rep"></div><div id="flash"></div></div>`;
+ const rels=window._rels=window._rels||{};const draw=()=>{const b=$("#m_b").value;window._mb=b;
+  $("#m_rel").innerHTML=sets.filter(s=>s.id!=b).map(s=>{const R=rels[s.id]=rels[s.id]||[];return`<div class="card" style="background:var(--soft);box-shadow:none;padding:14px"><label class="row"><input type="checkbox" class="mp" value="${s.id}" ${R.length?"checked":""}> <b>${esc(s.name)}</b></label>
+  ${R.map((r,i)=>`<div class="row" style="margin:8px 0"><select data-s="${s.id}" data-i="${i}" data-k="base_column">${opts(cols[b])}</select><span>=</span><select data-s="${s.id}" data-i="${i}" data-k="other_column">${opts(cols[s.id])}</select>
+  <select data-s="${s.id}" data-i="${i}" data-k="how"><option>inner</option><option>left</option><option>right</option><option>outer</option></select><span id="ov_${s.id}_${i}" style="color:var(--mute);font-size:12px"></span></div>`).join("")}
+  <button class="btn ghost" data-add="${s.id}">${t("addc")}</button></div>`}).join("");
+  document.querySelectorAll("#m_rel select").forEach(sel=>{const r=rels[sel.dataset.s][sel.dataset.i];if(r[sel.dataset.k])sel.value=r[sel.dataset.k];else r[sel.dataset.k]=sel.value;
+   sel.onchange=async()=>{r[sel.dataset.k]=sel.value;if(r.base_column&&r.other_column)try{const o=await api(`/overlap?a=${b}&col_a=${encodeURIComponent(r.base_column)}&b=${sel.dataset.s}&col_b=${encodeURIComponent(r.other_column)}`);$(`#ov_${sel.dataset.s}_${sel.dataset.i}`).textContent=`${t("uniq")}: ${o.common_values}, ${(o.overlap_ratio*100).toFixed(0)}%`}catch{}}});
+  document.querySelectorAll("[data-add]").forEach(x=>x.onclick=()=>{rels[x.dataset.add].push({how:(rels[x.dataset.add][0]||{}).how||"inner"});draw()})};
+ $("#m_b").onchange=draw;draw();
+ $("#m_go").onclick=async()=>{const b=$("#m_b").value,sel=picked("mp"),R=[];sel.forEach(id=>(rels[id]||[]).forEach(r=>R.push({dataset:id,...r})));
+  if(!sel.length||!R.length)return flash(t("need2"),1);
+  try{const r=await post("/merge",{ids:[b,...sel],base:b,relations:R,allow_many_to_many:$("#m_m").checked});const p=r.report;
+   await refresh();tab=5;cur=r.info.id;renderList();strip();await view();
+   $("#m_rep").innerHTML=`<div class="msg"><b>${t("res")}</b><br>${p.row_count_before} → <b>${p.row_count_after}</b> ${t("rows")}<br>${(p.relation_descriptions||[]).map(esc).join("<br>")}${(p.cardinality||[]).map(c=>`<br>${esc(c.dataset_name)}: ${c.type}`).join("")}${(p.notes||[]).map(n=>"<br>⚠ "+esc(n)).join("")}</div>`}catch(e){flash(e.message,1)}}}
+addEventListener('message',e=>{const d=e.data;if(d&&d.type==='da-settings'){if(d.theme){theme=d.theme;applyTheme()}if(d.lang&&L[d.lang]){lang=d.lang;chrome();renderList();strip();view()}}});
+addEventListener('message',e=>{if(e.source!==parent||e.data?.type!=='dashboard-dataset-sync')return;const notice=$("#dashboardSyncNotice");if(!notice)return;
+ if(e.data.state==="empty"){notice.hidden=true;return}
+ notice.hidden=false;notice.classList.toggle("err",e.data.state==="error");
+ notice.textContent=e.data.state==="error"?`Датасет не подключён к графикам: ${e.data.message}`:`Датасет «${e.data.name}» подключён. Нажмите «Демография», чтобы открыть графики.`});
+applyTheme();chrome();refresh();
+</script></body></html>
