@@ -2,9 +2,8 @@
 __pycache__/
 *.py[cod]
 
-# Local datasets and generated database
 data/
 database.sqlite
 
-# Source archive for the separately distributed analyzer
 DataAnalyzer_v1.8.3.rar
+>>>>>>> d71b7b9f95949ce4b6d840acf84b37f63d41f1ab
