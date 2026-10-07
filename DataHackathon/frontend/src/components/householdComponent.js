@@ -101,10 +101,13 @@ window.switchMainSection = async function(sectionName, element) {
 
   const dashboard = document.getElementById('mainDashboardContent');
   const household = document.getElementById('householdSection');
+  const datasetPage = document.getElementById('datasetViewSection');
   const detailed = document.getElementById('detailedViewSection');
   const analyzer = document.getElementById('dataAnalyzerSection');
 
   if (detailed) detailed.style.display = 'none';
+  if (datasetPage) datasetPage.style.display = 'none';
+  document.querySelectorAll('.cat-subitem').forEach(el => el.classList.remove('active'));
 
   if (sectionName === 'household') {
     if (dashboard) dashboard.style.display = 'none';
@@ -153,26 +156,27 @@ function parseRowValues(row) {
 function renderGeneralCharts(rawData) {
     const data = rawData.map(parseRowValues);
     const ages = data.map(item => item.age);
-    const canvasEl = document.getElementById('realDetailedChart');
-    if (!canvasEl) return;
+    const chartElement = document.getElementById('realDetailedChart');
+    if (!chartElement || !window.echarts) return;
 
-    if (window.myDetailedChartInstance) window.myDetailedChartInstance.destroy();
-
-    const ctx = canvasEl.getContext('2d');
-    window.myDetailedChartInstance = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: data.map((_, index) => `Респондент ${index + 1}`),
-            datasets: [{
-                label: 'Возраст респондентов',
-                data: ages,
-                backgroundColor: '#2563eb',
-                borderColor: '#1d4ed8',
-                borderWidth: 1
-            }]
+    const chart = window.echarts.getInstanceByDom(chartElement) || window.echarts.init(chartElement);
+    chart.setOption({
+        tooltip: { trigger: 'axis' },
+        grid: { left: 48, right: 20, top: 24, bottom: 55, containLabel: true },
+        xAxis: {
+            type: 'category',
+            data: data.map((_, index) => `Респондент ${index + 1}`),
+            axisLabel: { rotate: 35 }
         },
-        options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
-    });
+        yAxis: { type: 'value', name: 'Возраст', minInterval: 1 },
+        series: [{
+            name: 'Возраст респондентов',
+            type: 'bar',
+            data: ages,
+            itemStyle: { color: '#2563eb', borderRadius: [4, 4, 0, 0] }
+        }]
+    }, true);
+    chart.resize();
 }
 
 function populateTable(rawData) {

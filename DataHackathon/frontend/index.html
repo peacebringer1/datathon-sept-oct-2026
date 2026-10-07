@@ -14,10 +14,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Raleway:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
 
   <!-- Библиотеки графиков и таблиц -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/highcharts/11.3.0/highcharts.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/highcharts/11.3.0/highcharts-3d.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="./node_modules/xlsx/xlsx.js"></script>
 
@@ -391,6 +388,104 @@
           </div>
 
         </div><!-- /mainDashboardContent -->
+
+
+        <section id="datasetViewSection" class="dataset-view-section" style="display: none;">
+          <header class="dataset-page-header">
+            <p id="datasetPageBreadcrumb" class="dataset-page-breadcrumb">Данные</p>
+            <h1 id="datasetPageTitle">Раздел данных</h1>
+            <p id="datasetPageDescription"></p>
+          </header>
+
+          <div id="d004Dashboard" hidden>
+            <div class="dataset-filter-panel">
+              <label>Год
+                <select id="d004YearSelect" aria-label="Год обследования"></select>
+              </label>
+              <label>Квартал
+                <select id="d004QuarterSelect" aria-label="Квартал обследования"></select>
+              </label>
+              <label>Раздел анкеты
+                <select id="d004ModuleSelect" aria-label="Раздел анкеты"></select>
+              </label>
+            </div>
+
+            <p id="d004Status" class="dataset-status" role="status" aria-live="polite">Загрузка параметров D004…</p>
+
+            <div class="dataset-stat-grid">
+              <article class="dataset-stat-card"><span>Строк в файле</span><strong id="d004RowsStat">—</strong></article>
+              <article class="dataset-stat-card"><span>Домохозяйств</span><strong id="d004HouseholdsStat">—</strong></article>
+              <article class="dataset-stat-card"><span>Территорий с данными</span><strong id="d004TerritoriesStat">—</strong></article>
+            </div>
+
+            <article class="dataset-panel">
+              <h2>Количество записей по коду территории</h2>
+              <p id="d004ChartCaption" class="dataset-panel-caption">График строится по данным выбранного файла.</p>
+              <div id="d004TerritoryChart" class="dataset-chart" role="img" aria-label="Столбчатая диаграмма записей по территориям"></div>
+              <div class="dataset-explainer" aria-live="polite">
+                <h3>Как читать эти данные</h3>
+                <p>Здесь собраны данные о бюджете домохозяйств по кварталам: выбранный раздел анкеты, год и квартал указаны выше.</p>
+                <p id="d004DescriptionMetric">График сравнивает выбранный показатель между территориями.</p>
+                <p>Одна строка — одна запись в выбранном разделе. В одном домохозяйстве может быть несколько записей, поэтому количество строк не равно количеству семей или людей.</p>
+                <p><strong>Важно:</strong> это учебный синтетический набор, созданный по структуре обследования. Он помогает знакомиться с данными и работой приложения, но цифры не являются официальной статистикой и не описывают реальные ответы конкретных семей.</p>
+                <p>В некоторых разделах указана стоимость записи. Сумма стоимости складывает значения всех строк и не показывает средний расход семьи. Значения-коды (например, категории товаров и услуг) расшифровываются в справочниках D004 за соответствующий год.</p>
+              </div>
+            </article>
+
+            <article class="dataset-panel">
+              <h2>Сводка по территориям</h2>
+              <p class="dataset-panel-caption">Количество строк и уникальных домохозяйств в выбранном периоде.</p>
+              <div class="dataset-table-scroll">
+                <table class="dataset-table">
+                  <thead><tr><th>Код TE</th><th>Территория</th><th>Записи</th><th>Домохозяйства</th><th>Сумма STOIMK</th></tr></thead>
+                  <tbody id="d004SummaryBody"></tbody>
+                </table>
+              </div>
+            </article>
+
+            <article class="dataset-panel">
+              <h2>Карта показателя по регионам</h2>
+              <p id="d004MapCaption" class="dataset-panel-caption">Карта окрашивает регионы по выбранному показателю.</p>
+              <div class="d004-map-controls">
+                <label for="d004MapMetric">Показывать на карте</label>
+                <select id="d004MapMetric">
+                  <option value="records">Количество записей</option>
+                  <option value="households">Количество домохозяйств</option>
+                  <option value="amount">Сумма стоимости</option>
+                </select>
+                <button id="d004MapReset" type="button">Сбросить масштаб и выбор</button>
+              </div>
+              <div id="d004MapChart" class="dataset-chart" role="img" aria-label="Карта Казахстана по показателю D004"></div>
+              <section id="d004RegionDetails" class="d004-region-details" aria-live="polite" aria-label="Описание выбранного региона">
+                <h3 id="d004RegionTitle">Выберите область на карте</h3>
+                <p id="d004RegionHelp">Нажмите на область или город, чтобы посмотреть данные. Цвет показывает выбранный выше показатель.</p>
+                <dl id="d004RegionStats" hidden></dl>
+              </section>
+            </article>
+
+            <article class="dataset-panel">
+              <div class="dataset-table-heading">
+                <div>
+                  <h2>Записи выбранного раздела</h2>
+                  <p id="d004TableCaption" class="dataset-panel-caption"></p>
+                </div>
+                <div class="dataset-pagination">
+                  <button id="d004PrevPage" type="button">Назад</button>
+                  <span id="d004PageLabel">Страница 1</span>
+                  <button id="d004NextPage" type="button">Далее</button>
+                </div>
+              </div>
+              <div class="dataset-table-scroll">
+                <table class="dataset-table">
+                  <thead id="d004TableHead"></thead>
+                  <tbody id="d004TableBody"></tbody>
+                </table>
+              </div>
+            </article>
+          </div>
+
+          <div id="datasetPlaceholder" class="dataset-panel" hidden></div>
+        </section>
 
 
         <!-- Динамическая страница: Домохозяйство -->

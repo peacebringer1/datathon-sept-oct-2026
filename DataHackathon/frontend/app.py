@@ -3,10 +3,12 @@ from flask_cors import CORS
 sqlite3 = __import__('sqlite3')
 import os
 import json
+from pathlib import Path
 import math
 import time
 import urllib.error
 import urllib.request
+import pandas as pd
 
 app = Flask(__name__)
 CORS(app)
@@ -15,9 +17,12 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 FRONTEND_DIR = os.path.dirname(os.path.abspath(__file__))
 
 DB_FILE = os.path.abspath(os.path.join(FRONTEND_DIR, '..', 'database.sqlite'))
+DATA_DIR = Path(FRONTEND_DIR).parent / 'data' / 'sinte'
 ACTIVE_DEMOGRAPHICS = None
 ACTIVE_DATASET_NAME = None
 ACTIVE_DATASET_MODE = None
+_D004_CACHE_KEY = None
+_D004_CACHE_FRAME = None
 GEMINI_MODEL = os.environ.get('GEMINI_MODEL', 'gemini-3.8-flash').strip()
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '').strip()
 if GEMINI_MODEL.startswith('models/'):
@@ -61,6 +66,180 @@ def get_db_connection():
         conn.commit()
     
     return conn
+
+
+D004_MODULES = {
+    0: 'Сведения о домохозяйстве',
+    1: 'Непродовольственные товары',
+    2: 'Жилищные услуги, вода, энергия и топливо',
+    3: 'Связь',
+    4: 'Образование',
+    5: 'Здравоохранение',
+    6: 'Отдых, культура и прочие услуги',
+    7: 'Транспорт',
+    9: 'Производство и услуги домохозяйства, часть 1',
+    10: 'Производство и услуги домохозяйства, часть 2',
+    11: 'Доходы',
+    12: 'Заемные средства'
+}
+
+
+def get_d004_path(year, quarter, module):
+    if year not in {'2021', '2022', '2023', '2024'}:
+        return None
+    if quarter not in {'1kv', '2kv', '3kv', '4kv'}:
+        return None
+    if not module.isdigit() or int(module) not in D004_MODULES:
+        return None
+    csv_path = DATA_DIR / 'd004' / year / quarter / f'kv_vopr{int(module)}.csv'
+    return csv_path if csv_path.is_file() else None
+
+
+def read_d004_csv(csv_path):
+    global _D004_CACHE_KEY, _D004_CACHE_FRAME
+    cache_key = (str(csv_path), csv_path.stat().st_mtime_ns)
+    if _D004_CACHE_KEY != cache_key:
+        try:
+            frame = pd.read_csv(csv_path, dtype=str, keep_default_na=False, encoding='utf-8-sig', low_memory=False)
+        except UnicodeDecodeError:
+            frame = pd.read_csv(csv_path, dtype=str, keep_default_na=False, encoding='cp1251', low_memory=False)
+        _D004_CACHE_KEY = cache_key
+        _D004_CACHE_FRAME = frame
+    return _D004_CACHE_FRAME
+
+
+@app.route('/api/d004/options', methods=['GET'])
+def d004_options():
+    d004_dir = DATA_DIR / 'd004'
+    years = sorted((path.name for path in d004_dir.iterdir() if path.is_dir()), reverse=True) if d004_dir.is_dir() else []
+    quarters = ['1kv', '2kv', '3kv', '4kv']
+    modules = [{'id': module, 'label': label} for module, label in D004_MODULES.items()]
+    return jsonify({'years': years, 'quarters': quarters, 'modules': modules})
+
+
+@app.route('/api/d004/data', methods=['GET'])
+def d004_data():
+    year = request.args.get('year', '2024')
+    quarter = request.args.get('quarter', '4kv')
+    module = request.args.get('module', '1')
+    if year != 'all' and year not in {'2021', '2022', '2023', '2024'}:
+        return jsonify({'error': 'Выбранный год не поддерживается.'}), 400
+    if quarter != 'all' and quarter not in {'1kv', '2kv', '3kv', '4kv'}:
+        return jsonify({'error': 'Выбранный квартал не поддерживается.'}), 400
+    if not module.isdigit() or int(module) not in D004_MODULES:
+        return jsonify({'error': 'Выбранный раздел анкеты не поддерживается.'}), 400
+
+    d004_dir = DATA_DIR / 'd004'
+    years = sorted((path.name for path in d004_dir.iterdir() if path.is_dir()), reverse=True) if d004_dir.is_dir() else []
+    selected_years = years if year == 'all' else [year]
+    selected_quarters = ['1kv', '2kv', '3kv', '4kv'] if quarter == 'all' else [quarter]
+    paths = [path for selected_year in selected_years for selected_quarter in selected_quarters
+             if (path := get_d004_path(selected_year, selected_quarter, module)) is not None]
+    if not paths:
+        return jsonify({'error': 'Для выбранного года, квартала и раздела файл не найден.'}), 404
+
+    page = max(1, request.args.get('page', default=1, type=int))
+    page_size = min(100, max(10, request.args.get('page_size', default=50, type=int)))
+    start = (page - 1) * page_size
+    rows, columns, total_rows = [], [], 0
+    territory_counts, territory_amounts, households, territory_households = {}, {}, set(), {}
+    has_amount = False
+    try:
+        for csv_path in paths:
+            try:
+                chunks = pd.read_csv(csv_path, dtype=str, keep_default_na=False, encoding='utf-8-sig', chunksize=50000, low_memory=False)
+                for chunk in chunks:
+                    if not columns:
+                        columns = [str(column) for column in chunk.columns]
+                    chunk_size = len(chunk)
+                    left, right = max(start - total_rows, 0), min(start + page_size - total_rows, chunk_size)
+                    if left < right:
+                        selected = chunk.iloc[left:right].copy()
+                        selected['ГОД'] = csv_path.parents[1].name
+                        selected['КВАРТАЛ'] = csv_path.parent.name.upper()
+                        rows.extend(selected.to_dict(orient='records'))
+                    total_rows += chunk_size
+                    territory_column = next((column for column in ('TE', 'Te', 'territory') if column in chunk.columns), None)
+                    if territory_column:
+                        codes = chunk[territory_column].replace('', 'Не указан')
+                        counts = codes.value_counts()
+                        for code, count in counts.items():
+                            territory_counts[str(code)] = territory_counts.get(str(code), 0) + int(count)
+                        if 'STOIMK' in chunk.columns:
+                            has_amount = True
+                            amounts = pd.to_numeric(chunk['STOIMK'], errors='coerce').fillna(0).groupby(codes).sum()
+                            for code, amount in amounts.items():
+                                territory_amounts[str(code)] = territory_amounts.get(str(code), 0) + float(amount)
+                        id_columns = [column for column in ('TE', 'K', 'NOMER') if column in chunk.columns]
+                        if id_columns:
+                            ids = chunk[id_columns].astype(str).agg('|'.join, axis=1)
+                            households.update(ids.tolist())
+                            for code, group in ids.groupby(codes):
+                                territory_households.setdefault(str(code), set()).update(group.tolist())
+            except UnicodeDecodeError:
+                for chunk in pd.read_csv(csv_path, dtype=str, keep_default_na=False, encoding='cp1251', chunksize=50000, low_memory=False):
+                    if not columns:
+                        columns = [str(column) for column in chunk.columns]
+                    chunk_size = len(chunk)
+                    left, right = max(start - total_rows, 0), min(start + page_size - total_rows, chunk_size)
+                    if left < right:
+                        selected = chunk.iloc[left:right].copy()
+                        selected['ГОД'] = csv_path.parents[1].name
+                        selected['КВАРТАЛ'] = csv_path.parent.name.upper()
+                        rows.extend(selected.to_dict(orient='records'))
+                    total_rows += chunk_size
+                    territory_column = next((column for column in ('TE', 'Te', 'territory') if column in chunk.columns), None)
+                    if territory_column:
+                        codes = chunk[territory_column].replace('', 'Не указан')
+                        for code, count in codes.value_counts().items():
+                            territory_counts[str(code)] = territory_counts.get(str(code), 0) + int(count)
+                        id_columns = [column for column in ('TE', 'K', 'NOMER') if column in chunk.columns]
+                        if id_columns:
+                            households.update(chunk[id_columns].astype(str).agg('|'.join, axis=1).tolist())
+        # Keep origin fields visible in both single-file and combined views.
+        columns = columns + [field for field in ('ГОД', 'КВАРТАЛ') if field not in columns]
+    except (OSError, pd.errors.ParserError, UnicodeError) as error:
+        print(f'[D004]: Не удалось прочитать {paths}: {error}')
+        return jsonify({'error': 'Не удалось прочитать CSV-файл D004.'}), 500
+
+    territory_names = {
+        '10': 'Область Абай', '11': 'Акмолинская область', '15': 'Актюбинская область', '19': 'Алматинская область',
+        '23': 'Атырауская область', '27': 'Западно-Казахстанская область', '31': 'Жамбылская область',
+        '33': 'Область Жетысу', '35': 'Карагандинская область', '39': 'Костанайская область',
+        '43': 'Кызылординская область', '47': 'Мангистауская область', '51': 'Туркестанская область',
+        '55': 'Павлодарская область', '59': 'Северо-Казахстанская область', '61': 'Туркестанская область',
+        '62': 'Область Улытау', '63': 'Восточно-Казахстанская область', '71': 'г. Астана',
+        '75': 'г. Алматы', '79': 'г. Шымкент'
+    }
+    labels = list(territory_counts)
+    chart_metric = 'Сумма значений STOIMK в строках выборки' if has_amount else 'Количество записей'
+    chart_values = [territory_amounts.get(code, 0) for code in labels] if has_amount else [territory_counts[code] for code in labels]
+    summary = [{'code': code, 'territory': territory_names.get(code, 'Неизвестная территория'),
+                'records': territory_counts[code], 'households': len(territory_households.get(code, set())),
+                'amount': round(territory_amounts.get(code, 0), 2) if has_amount else None}
+               for code in labels]
+    summary.sort(key=lambda item: item['records'], reverse=True)
+    for row in rows:
+        row['ГОД'] = row.get('ГОД', '')
+        row['КВАРТАЛ'] = row.get('КВАРТАЛ', '')
+
+    return jsonify({
+        'dataset': 'd004',
+        'year': 'Все годы' if year == 'all' else year,
+        'quarter': 'Все кварталы' if quarter == 'all' else quarter,
+        'module': int(module),
+        'module_label': D004_MODULES[int(module)],
+        'columns': columns,
+        'rows': rows,
+        'page': page,
+        'page_size': page_size,
+        'total_rows': total_rows,
+        'households': len(households),
+        'territories': len(territory_counts),
+        'chart_metric': chart_metric,
+        'chart': {'labels': labels, 'values': chart_values},
+        'territory_summary': summary
+    })
 
 @app.route('/api/settings/gemini-key', methods=['GET', 'POST', 'DELETE'])
 def gemini_key_settings():
