@@ -1,45 +1,46 @@
-export async function fetchAIAnalysisForChart(chartTitle, categoryName, retries = 2, delay = 2000) {
-  const prompt = `Проанализируй данные по Республике Казахстан. ` +
-                 `Категория: "${categoryName}". Показатель: "${chartTitle}". ` +
-                 `Дай краткий, структурированный аналитический отчет на русском языке, выделив главные тренды, возможные аномалии и экспертные рекомендации.`;
-
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${GEMINI_API_KEY}`;
-
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    try {
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }]
-        })
-      });
-
-      const data = await res.json();
-      
-      // Если сервер перегружен (ошибка 503 или высокой нагрузки) и попытки еще остались
-      if (data.error) {
-        if ((data.error.code === 503 || data.error.status === 'RESOURCE_EXHAUSTED' || data.error.message.includes('high demand')) && attempt < retries) {
-          console.warn(`Сервер перегружен. Повторная попытка через ${delay / 1000} сек... (Попытка ${attempt + 1})`);
-          await new Promise(resolve => setTimeout(resolve, delay));
-          continue;
-        }
-        return `⚠️ Ошибка ИИ: ${data.error.message}`;
-      }
-
-      const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-      return aiText || "Не удалось получить ответ от модели.";
-
-    } catch (error) {
-      if (attempt === retries) {
-        console.error("Ошибка при запросе к Gemini API:", error);
-        // Возвращаем качественный локальный анализ, если сеть или сервер недоступны
-        return `🤖 Экспертный ИИ-анализ показателя "${chartTitle}" (автономный режим):\n\n` +
-               `• Общий тренд: Зафиксирована стабильная динамика в разрезе выбранного периода по Республике Казахстан.\n` +
-               `• Ключевые особенности: Основные объемы и концентрация приходятся на ключевые экономические регионы страны.\n` +
-               `• Рекомендации: Учитывайте исторические колебания и сезонность при планировании дальнейших шагов.`;
-      }
-      await new Promise(resolve => setTimeout(resolve, delay));
-    }
+export async function fetchAIAnalysisForChart(chartTitle, categoryName, apiBaseUrl, chartContext = {}) {
+  const settingsResponse = await fetch(`${apiBaseUrl}/api/settings/gemini-key`);
+  const settings = await settingsResponse.json();
+  if (!settingsResponse.ok || settings.configured !== true) {
+    return 'Подключите ключ Gemini в настройках, чтобы получить анализ этого графика.';
   }
+
+  const rawChart = chartContext.chart || {};
+  const labels = Array.isArray(rawChart.labels) ? rawChart.labels : [];
+  const series = Array.isArray(rawChart.series) ? rawChart.series.map((item) => ({
+    name: item.name || '',
+    type: item.type || '',
+    points: Array.isArray(item.points)
+      ? item.points
+      : (item.values || []).map((value, index) => ({
+        label: labels[index] || String(index + 1),
+        value
+      }))
+  })) : [];
+
+  const response = await fetch(`${apiBaseUrl}/api/chart-analysis`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      indicator: chartTitle,
+      category: categoryName,
+      year: String(chartContext.year || ''),
+      chart: { title: chartTitle, labels, series }
+    })
+  });
+  const result = await response.json();
+  if (!response.ok) {
+    const message = typeof result.error === 'string' ? result.error : result.error?.message;
+    throw new Error(message || `Ошибка сервера (HTTP ${response.status}).`);
+  }
+
+  const analysis = result.analysis;
+  if (!analysis || typeof analysis !== 'object') return 'ИИ не вернул анализ графика.';
+  const observations = Array.isArray(analysis.observations) ? analysis.observations : [];
+  const hypotheses = Array.isArray(analysis.hypotheses) ? analysis.hypotheses : [];
+  return [
+    analysis.trend,
+    observations.length ? `Наблюдения:\n• ${observations.join('\n• ')}` : '',
+    hypotheses.length ? `Гипотезы:\n• ${hypotheses.join('\n• ')}` : ''
+  ].filter(Boolean).join('\n\n');
 }
