@@ -7,8 +7,10 @@ const { spawn } = require('child_process');
 
 let mainWindow;
 let flaskProcess = null;
+let analyzerProcess = null;
 
 const PYTHON_SCRIPT_PATH = path.join(__dirname, 'app.py');
+const ANALYZER_SCRIPT_PATH = path.join(__dirname, '..', 'server.py');
 const INDEX_HTML_PATH = path.join(__dirname, 'index.html');
 const GEMINI_KEY_FILE = 'gemini-api-key.enc';
 
@@ -113,7 +115,27 @@ function startFlaskServer(port, savedApiKey) {
   });
 }
 
-function createWindow(apiPort) {
+function startAnalyzerServer(port) {
+  const pythonCmd = getPythonPath();
+
+  console.log('Запуск Data Analyzer API:', pythonCmd, ANALYZER_SCRIPT_PATH);
+  analyzerProcess = spawn(pythonCmd, [ANALYZER_SCRIPT_PATH, String(port)], {
+    cwd: path.dirname(ANALYZER_SCRIPT_PATH),
+    env: { ...process.env, PYTHONUNBUFFERED: '1' }
+  });
+
+  analyzerProcess.stdout.on('data', (data) => {
+    console.log(`[Data Analyzer]: ${data.toString().trim()}`);
+  });
+  analyzerProcess.stderr.on('data', (data) => {
+    console.error(`[Data Analyzer Error]: ${data.toString().trim()}`);
+  });
+  analyzerProcess.on('error', (error) => {
+    console.error('[Data Analyzer] Не удалось запустить сервер:', error);
+  });
+}
+
+function createWindow(apiPort, analyzerPort) {
   mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
@@ -126,7 +148,12 @@ function createWindow(apiPort) {
     }
   });
 
-  mainWindow.loadFile(INDEX_HTML_PATH, { query: { apiPort: String(apiPort) } });
+  mainWindow.loadFile(INDEX_HTML_PATH, {
+    query: {
+      apiPort: String(apiPort),
+      analyzerPort: String(analyzerPort)
+    }
+  });
 
 
 }
@@ -134,19 +161,18 @@ function createWindow(apiPort) {
 app.whenReady().then(async () => {
   registerSettingsHandlers();
   const savedApiKey = readSavedGeminiApiKey();
-  const apiPort = await getAvailablePort();
+  const [apiPort, analyzerPort] = await Promise.all([
+    getAvailablePort(),
+    getAvailablePort()
+  ]);
   startFlaskServer(apiPort, savedApiKey);
-  createWindow(apiPort);
+  startAnalyzerServer(analyzerPort);
+  createWindow(apiPort, analyzerPort);
 });
 
 app.on('window-all-closed', () => {
-  if (flaskProcess) {
-    if (process.platform === 'win32') {
-      spawn('taskkill', ['/pid', flaskProcess.pid, '/f', '/t']);
-    } else {
-      flaskProcess.kill();
-    }
-  }
+  if (flaskProcess) flaskProcess.kill();
+  if (analyzerProcess) analyzerProcess.kill();
   if (process.platform !== 'darwin') {
     app.quit();
   }
