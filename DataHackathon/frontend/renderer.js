@@ -289,25 +289,31 @@ if (summaryIndEl && summaryIndEl.value) {
 // Функция управления каруселью аналитики
 let wishlistScrollPosition = 0;
 
-window.scrollWishlist = function(direction) {
+function updateWishlistNavigation() {
   const track = document.getElementById('wishlistTrack');
   if (!track) return;
-  
-  const cardWidth = track.querySelector('.wishlist-card').offsetWidth + 16;
-  const visibleCardsCount = Math.floor(track.parentElement.offsetWidth / cardWidth) || 1;
-  const maxScroll = track.scrollWidth - track.parentElement.offsetWidth;
-
-  if (direction === 'right') {
-    wishlistScrollPosition += cardWidth * visibleCardsCount;
-    if (wishlistScrollPosition > maxScroll) {
-      wishlistScrollPosition = maxScroll;
-    }
-  } else {
-    wishlistScrollPosition -= cardWidth * visibleCardsCount;
-    if (wishlistScrollPosition < 0) {
-      wishlistScrollPosition = 0;
-    }
-  }
-
+  const container = track.parentElement;
+  const buttons = document.querySelectorAll('.wishlist-nav-btn');
+  const maxScroll = Math.max(0, track.scrollWidth - container.clientWidth);
+  wishlistScrollPosition = Math.min(wishlistScrollPosition, maxScroll);
+  buttons[0]?.toggleAttribute('disabled', wishlistScrollPosition <= 0);
+  buttons[1]?.toggleAttribute('disabled', wishlistScrollPosition >= maxScroll - 1);
   track.style.transform = `translateX(-${wishlistScrollPosition}px)`;
+}
+
+window.scrollWishlist = function(direction) {
+  const track = document.getElementById('wishlistTrack');
+  const firstCard = track?.querySelector('.wishlist-card');
+  if (!track || !firstCard) return;
+  const gap = Number.parseFloat(getComputedStyle(track).columnGap) || 0;
+  const step = firstCard.getBoundingClientRect().width + gap;
+  const maxScroll = Math.max(0, track.scrollWidth - track.parentElement.clientWidth);
+  wishlistScrollPosition = Math.max(0, Math.min(
+    maxScroll,
+    wishlistScrollPosition + (direction === 'right' ? step : -step)
+  ));
+  updateWishlistNavigation();
 };
+
+window.addEventListener('resize', updateWishlistNavigation);
+requestAnimationFrame(updateWishlistNavigation);
