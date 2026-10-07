@@ -59,13 +59,13 @@ export function toggleTableVisibility() {
 }
 
 // Экспорт в CSV
-window.exportTableToCSV = function() {
+window.exportTableToCSV = function () {
   const table = document.querySelector('.table-wrapper table');
   if (!table) return;
-  
+
   let csv = [];
   const rows = table.querySelectorAll('tr');
-  
+
   for (let i = 0; i < rows.length; i++) {
     const row = [], cols = rows[i].querySelectorAll('td, th');
     for (let j = 0; j < cols.length; j++) {
@@ -74,7 +74,7 @@ window.exportTableToCSV = function() {
     }
     csv.push(row.join(';'));
   }
-  
+
   const csvFile = new Blob(["\uFEFF" + csv.join('\n')], { type: 'text/csv;charset=utf-8;' });
   const downloadLink = document.createElement('a');
   downloadLink.download = 'kazakhstan_analytics_data.csv';
@@ -86,7 +86,7 @@ window.exportTableToCSV = function() {
 };
 
 // Экспорт в Excel (.xls / .xlsx без сторонних либ)
-window.exportTableToExcel = function() {
+window.exportTableToExcel = function () {
   const table = document.querySelector('.table-wrapper table');
   if (!table) {
     alert('Таблица не найдена на странице');
@@ -98,7 +98,7 @@ window.exportTableToExcel = function() {
     const blob = new Blob(['\ufeff' + html], {
       type: 'application/vnd.ms-excel;charset=utf-8;'
     });
-    
+
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;

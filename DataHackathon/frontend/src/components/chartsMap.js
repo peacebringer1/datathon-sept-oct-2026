@@ -42,8 +42,7 @@ const regionNameMapping = {
   "г. Шымкент": "Шымкент"
 };
 
-// Функция для принудительного ресайза всех активных графиков при изменении размера окна
-window.addEventListener('resize', () => {
+function resizeActiveCharts() {
   const instances = [
     yearChartInstance,
     lineChartInstance,
@@ -60,7 +59,24 @@ window.addEventListener('resize', () => {
       chart.resize();
     }
   });
-});
+}
+
+// Функция для принудительного ресайза всех активных графиков при изменении размера окна
+window.addEventListener('resize', resizeActiveCharts);
+
+const mainContent = document.querySelector('.main-content-area');
+if (mainContent && typeof ResizeObserver !== 'undefined') {
+  let resizeScheduled = false;
+  const contentResizeObserver = new ResizeObserver(() => {
+    if (resizeScheduled) return;
+    resizeScheduled = true;
+    requestAnimationFrame(() => {
+      resizeScheduled = false;
+      resizeActiveCharts();
+    });
+  });
+  contentResizeObserver.observe(mainContent);
+}
 
 // 1. Обновление первого графика (Карточка 1)
 export async function updateBarChart(apiBaseUrl, indicator, year) {

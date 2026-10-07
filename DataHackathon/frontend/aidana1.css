@@ -1050,7 +1050,8 @@ th {
     border-radius: 12px;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
     padding: 12px;
-    width: 180px;
+    width: 220px;
+    max-width: calc(100vw - 24px);
     z-index: 1000;
 }
 
