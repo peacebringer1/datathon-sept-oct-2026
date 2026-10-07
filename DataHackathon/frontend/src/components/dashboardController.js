@@ -157,3 +157,24 @@ export async function onSummaryFilterChange(API_BASE_URL) {
 
   await updateSummaryChart(API_BASE_URL, indicator);
 }
+
+export async function switchSubSection(subDataset, el, apiBaseUrl) {
+  // Убираем активный класс у всех подкатегорий
+  document.querySelectorAll('.cat-subitem').forEach(item => item.classList.remove('active'));
+  if (el) el.classList.add('active');
+
+  console.f_log ? console.f_log(`Выбран датасет: ${subDataset}`) : console.log(`Выбран датасет: ${subDataset}`);
+
+  try {
+    // Запрос к бэкенду Flask для загрузки структуры и данных выбранной таблицы
+    const response = await fetch(`${apiBaseUrl}/api/data?dataset=${subDataset}`);
+    const data = await response.json();
+    
+    // Перерисовываем графики и обновляем таблицу на основе полученных данных
+    if (window.updateDashboardData) {
+      window.updateDashboardData(data);
+    }
+  } catch (error) {
+    console.error("Ошибка при загрузке данных датасета:", error);
+  }
+}

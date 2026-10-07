@@ -1,6 +1,7 @@
 import { initApp } from './src/components/appInit.js';
 import {
   selectCategoryDashboard,
+  switchSubSection,
   onRegionFilterChange,
   onCardFilterChange,
   onMapFilterChange,
@@ -29,6 +30,7 @@ window.API_BASE_URL = API_BASE_URL;
 window.toggleAIChat = toggleAIChat;
 window.toggleCategory = toggleCategory;
 window.selectCategoryDashboard = (cat, el) => selectCategoryDashboard(cat, el, API_BASE_URL);
+window.switchSubSection = (subDataset, el) => switchSubSection(subDataset, el, API_BASE_URL);
 window.switchTab = (tab) => switchTab(tab, API_BASE_URL);
 window.filterTable = () => filterTable(API_BASE_URL);
 window.onRegionFilterChange = () => onRegionFilterChange(API_BASE_URL);
@@ -102,4 +104,28 @@ if (summaryIndEl && summaryIndEl.value) {
   await updateMultiSummaryChart(API_BASE_URL);
 }
 
+// Функция управления каруселью аналитики
+let wishlistScrollPosition = 0;
 
+window.scrollWishlist = function(direction) {
+  const track = document.getElementById('wishlistTrack');
+  if (!track) return;
+  
+  const cardWidth = track.querySelector('.wishlist-card').offsetWidth + 16;
+  const visibleCardsCount = Math.floor(track.parentElement.offsetWidth / cardWidth) || 1;
+  const maxScroll = track.scrollWidth - track.parentElement.offsetWidth;
+
+  if (direction === 'right') {
+    wishlistScrollPosition += cardWidth * visibleCardsCount;
+    if (wishlistScrollPosition > maxScroll) {
+      wishlistScrollPosition = maxScroll;
+    }
+  } else {
+    wishlistScrollPosition -= cardWidth * visibleCardsCount;
+    if (wishlistScrollPosition < 0) {
+      wishlistScrollPosition = 0;
+    }
+  }
+
+  track.style.transform = `translateX(-${wishlistScrollPosition}px)`;
+};
