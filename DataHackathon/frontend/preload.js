@@ -1,6 +1,6 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('appSettings', {
-  saveGeminiApiKey: (apiKey) => ipcRenderer.invoke('settings:save-gemini-key', apiKey),
-  clearGeminiApiKey: () => ipcRenderer.invoke('settings:clear-gemini-key')
+  saveClaudeApiKey: (apiKey) => ipcRenderer.invoke('settings:save-claude-key', apiKey),
+  clearClaudeApiKey: () => ipcRenderer.invoke('settings:clear-claude-key')
 });

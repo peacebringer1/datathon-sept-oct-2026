@@ -126,8 +126,8 @@ export async function sendMessageToAI(apiBaseUrl) {
     appendMessage(answer, 'ai');
   } catch (error) {
     const errorMessage = error.message || '';
-    const friendlyMessage = /Gemini API \(429\)|HTTP 429|quota|exceeded your current quota/i.test(errorMessage)
-      ? 'Временно исчерпан лимит запросов Gemini. Попробуйте позже.'
+    const friendlyMessage = /Claude API \(429\)|HTTP 429|rate.?limit|quota/i.test(errorMessage)
+      ? 'Временно достигнут лимит запросов Claude. Попробуйте позже.'
       : 'Не удалось получить ответ ИИ. Проверьте подключение и попробуйте ещё раз.';
     appendMessage(friendlyMessage, 'ai');
   } finally {

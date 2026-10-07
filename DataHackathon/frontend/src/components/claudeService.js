@@ -1,8 +1,8 @@
 export async function fetchAIAnalysisForChart(chartTitle, categoryName, apiBaseUrl, chartContext = {}) {
-  const settingsResponse = await fetch(`${apiBaseUrl}/api/settings/gemini-key`);
+  const settingsResponse = await fetch(`${apiBaseUrl}/api/settings/claude-key`);
   const settings = await settingsResponse.json();
   if (!settingsResponse.ok || settings.configured !== true) {
-    return 'Подключите ключ Gemini в настройках, чтобы получить анализ этого графика.';
+    return 'Подключите ключ Claude в настройках, чтобы получить анализ этого графика.';
   }
 
   const rawChart = chartContext.chart || {};
