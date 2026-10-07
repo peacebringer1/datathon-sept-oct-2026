@@ -3,19 +3,21 @@ from flask_cors import CORS
 sqlite3 = __import__('sqlite3')
 import os
 import json
+import math
 import time
 import urllib.error
 import urllib.request
 
 app = Flask(__name__)
 CORS(app)
-app.config['MAX_CONTENT_LENGTH'] = 128 * 1024
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
-# Путь к папке frontend/
 FRONTEND_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Путь к файлу database.sqlite в корневом каталоге DataHackathon/
 DB_FILE = os.path.abspath(os.path.join(FRONTEND_DIR, '..', 'database.sqlite'))
+ACTIVE_DEMOGRAPHICS = None
+ACTIVE_DATASET_NAME = None
+ACTIVE_DATASET_MODE = None
 GEMINI_MODEL = os.environ.get('GEMINI_MODEL', 'gemini-3.8-flash').strip()
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '').strip()
 if GEMINI_MODEL.startswith('models/'):
@@ -132,6 +134,65 @@ def get_indicators():
     return jsonify(indicators_list)
 
 
+@app.route('/api/active-dataset', methods=['POST', 'DELETE'])
+def active_dataset():
+    global ACTIVE_DEMOGRAPHICS, ACTIVE_DATASET_NAME, ACTIVE_DATASET_MODE
+
+    if request.method == 'DELETE':
+        ACTIVE_DEMOGRAPHICS = None
+        ACTIVE_DATASET_NAME = None
+        ACTIVE_DATASET_MODE = None
+        return jsonify({'active': False})
+
+    payload = request.get_json(silent=True)
+    rows = payload.get('rows') if isinstance(payload, dict) else None
+    name = payload.get('name') if isinstance(payload, dict) else None
+    if not isinstance(rows, list) or not rows:
+        return jsonify({'error': 'Выбранный датасет не содержит данных.'}), 400
+    if len(rows) > 50000:
+        return jsonify({'error': 'Для графиков можно передать не более 50 000 строк.'}), 413
+
+    normalized_rows = []
+    for row in rows:
+        if not isinstance(row, dict):
+            return jsonify({'error': 'Неверный формат строк датасета.'}), 400
+        try:
+            year = int(float(row['year']))
+            value = float(row['value'])
+            indicator = str(row['indicator']).strip()
+            province = str(row['province']).strip()
+        except (KeyError, TypeError, ValueError, OverflowError):
+            continue
+        if not indicator or not province or not math.isfinite(value):
+            continue
+        normalized_rows.append({
+            'indicator': indicator,
+            'year': year,
+            'province': province,
+            'value': value
+        })
+
+    if not normalized_rows:
+        return jsonify({'error': 'В датасете нет корректных строк для построения графиков.'}), 400
+
+    ACTIVE_DEMOGRAPHICS = normalized_rows
+    ACTIVE_DATASET_NAME = str(name or 'Выбранный датасет')[:200]
+    mode = payload.get('mode')
+    ACTIVE_DATASET_MODE = mode if mode in {'regional', 'distribution'} else 'regional'
+    return jsonify({
+        'active': True,
+        'name': ACTIVE_DATASET_NAME,
+        'mode': ACTIVE_DATASET_MODE,
+        'rows': len(normalized_rows),
+        'indicators': len({row['indicator'] for row in normalized_rows}),
+        'years': len({row['year'] for row in normalized_rows})
+    })
+
+
+def active_dataset_rows():
+    return ACTIVE_DEMOGRAPHICS
+
+
 AI_TOOLS = [{
     'functionDeclarations': [
         {
@@ -164,6 +225,7 @@ AI_TOOLS = [{
 AI_SYSTEM_INSTRUCTION = '''Ты аналитический помощник дашборда статистики Казахстана.
 Отвечай на русском языке, ясно и по существу. Для фактов, чисел, сравнений, рейтингов и трендов из базы обязательно вызывай query_demographics; не придумывай значения и не делай выводы по памяти.
 Если не знаешь точное название показателя или региона, сначала вызови get_dataset_overview. Учитывай, что база содержит агрегированные записи demographics: indicator, year, province, value. Объясняй, какие фильтры и годы использованы. Если запрос нельзя подтвердить данными, прямо скажи об этом.
+Оформляй ответ простым текстом: не используй Markdown-заголовки с #, выделение через * или ** и кодовые блоки. Не добавляй нумерацию разделов, если она не нужна; вместо маркеров Markdown используй короткие абзацы или тире.
 Контекст выбранных фильтров дашборда и история сообщений помогают понять вопрос, но не заменяют проверку базы.'''
 
 
@@ -337,7 +399,132 @@ def ai_chat():
         return jsonify({'error': f'Не удалось прочитать базу данных: {error}'}), 503
 
 
-def call_gemini(contents, dataset_overview, dashboard_context):
+@app.route('/api/chart-analysis', methods=['POST'])
+def chart_analysis():
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return jsonify({'error': 'Ожидался JSON-объект с данными графика.'}), 400
+
+    indicator = payload.get('indicator')
+    category = payload.get('category', 'Общие данные')
+    year = payload.get('year', '')
+    chart = payload.get('chart')
+    if not isinstance(indicator, str) or not indicator.strip():
+        return jsonify({'error': 'Не указан показатель графика.'}), 400
+    if not isinstance(category, str) or not isinstance(year, str):
+        return jsonify({'error': 'Некорректные фильтры графика.'}), 400
+    if not isinstance(chart, dict):
+        return jsonify({'error': 'Не переданы данные графика.'}), 400
+
+    labels = chart.get('labels', [])
+    series = chart.get('series')
+    if not isinstance(labels, list) or len(labels) > 100:
+        return jsonify({'error': 'График содержит слишком много подписей.'}), 400
+    if any(not isinstance(label, str) or len(label) > 200 for label in labels):
+        return jsonify({'error': 'Некорректные подписи графика.'}), 400
+    if not isinstance(series, list) or not series or len(series) > 10:
+        return jsonify({'error': 'Некорректные ряды данных графика.'}), 400
+    for item in series:
+        if (
+            not isinstance(item, dict)
+            or not isinstance(item.get('name', ''), str)
+            or len(item.get('name', '')) > 120
+            or not isinstance(item.get('type', ''), str)
+            or len(item.get('type', '')) > 40
+            or not isinstance(item.get('points'), list)
+            or len(item['points']) > 100
+        ):
+            return jsonify({'error': 'Некорректный ряд данных графика.'}), 400
+        for point in item['points']:
+            if not isinstance(point, dict) or not isinstance(point.get('label', ''), str):
+                return jsonify({'error': 'Некорректная точка данных графика.'}), 400
+            value = point.get('value')
+            if value is not None and (
+                isinstance(value, bool)
+                or not isinstance(value, (int, float, str))
+                or (isinstance(value, str) and len(value) > 120)
+                or (isinstance(value, float) and not math.isfinite(value))
+            ):
+                return jsonify({'error': 'Некорректное значение на графике.'}), 400
+
+    chart_context = {
+        'indicator': indicator.strip()[:200],
+        'category': category.strip()[:120],
+        'year': year.strip()[:20],
+        'chart': chart
+    }
+    if len(json.dumps(chart_context, ensure_ascii=False)) > 8000:
+        return jsonify({'error': 'Данные графика слишком большие для анализа.'}), 400
+
+    prompt = (
+        'Проанализируй только переданные фактические данные графика. Верни строго один '
+        'JSON-объект без Markdown и пояснений по схеме: '
+        '{"trend":"подробное описание динамики в 2–3 предложениях: направление, '
+        'этапы, резкие изменения и последние значения, если они есть в данных",'
+        '"observations":["конкретное наблюдение с периодом и значением из данных",'
+        '"сравнение этапов или групп с числовым подтверждением",'
+        '"ещё одно важное изменение или особенность ряда"],'
+        '"hypotheses":["развёрнутая гипотеза из 2–3 предложений: возможное объяснение, '
+        'на какие особенности графика оно опирается и что следует проверить",'
+        '"вторая независимая гипотеза в таком же формате",'
+        '"третья гипотеза, если она уместна для этих данных"]}. '
+        'Дай содержательный анализ, а не общие фразы. Используй значения графика как '
+        'доказательства наблюдений; не придумывай причины и события. Гипотезы явно '
+        'обозначай как предположения, указывай, каких данных не хватает для проверки. '
+        'Верни 2–3 гипотезы, каждая примерно по 30–60 слов, и до 3 наблюдений. '
+        'Не повторяй одну мысль разными словами. Показатель и график: '
+        f'{json.dumps(chart_context, ensure_ascii=False)}'
+    )
+
+    try:
+        raw_analysis = call_gemini(
+            [{'role': 'user', 'parts': [{'text': prompt}]}],
+            get_dataset_overview(),
+            {
+                'indicator': chart_context['indicator'],
+                'category': chart_context['category'],
+                'year': chart_context['year']
+            },
+            max_output_tokens=1800
+        )
+        cleaned_analysis = raw_analysis.strip()
+        if cleaned_analysis.startswith('```'):
+            cleaned_analysis = cleaned_analysis.split('\n', 1)[-1]
+            if cleaned_analysis.rstrip().endswith('```'):
+                cleaned_analysis = cleaned_analysis.rstrip()[:-3].strip()
+        try:
+            analysis = json.loads(cleaned_analysis)
+        except json.JSONDecodeError as error:
+            raise RuntimeError('ИИ вернул анализ в некорректном формате. Повторите запрос.') from error
+        if (
+            not isinstance(analysis, dict)
+            or not isinstance(analysis.get('trend'), str)
+            or not analysis['trend'].strip()
+            or not isinstance(analysis.get('observations'), list)
+            or not analysis['observations']
+            or any(not isinstance(item, str) or not item.strip() for item in analysis['observations'])
+            or not isinstance(analysis.get('hypotheses'), list)
+            or len(analysis['hypotheses']) < 2
+            or any(not isinstance(item, str) or not item.strip() for item in analysis['hypotheses'])
+        ):
+            raise RuntimeError('ИИ вернул неполный анализ графика. Повторите запрос.')
+        return jsonify({
+            'analysis': {
+                'trend': analysis['trend'].strip()[:1200],
+                'observations': [item.strip()[:600] for item in analysis['observations'][:3]],
+                'hypotheses': [item.strip()[:800] for item in analysis['hypotheses'][:3]]
+            }
+        })
+    except GeminiAPIError as error:
+        return jsonify({'error': str(error)}), 503
+    except RuntimeError as error:
+        return jsonify({'error': str(error)}), 503
+    except (sqlite3.Error, OSError) as error:
+        app.logger.exception('Не удалось подготовить ИИ-анализ графика')
+        return jsonify({'error': f'Не удалось подготовить анализ графика: {error}'}), 503
+
+
+def call_gemini(contents, dataset_overview, dashboard_context, max_output_tokens=1200):
     api_key = GEMINI_API_KEY
     if not api_key:
         raise RuntimeError('Не задан GEMINI_API_KEY. Добавьте ключ Gemini в переменные окружения и перезапустите приложение.')
@@ -361,7 +548,7 @@ def call_gemini(contents, dataset_overview, dashboard_context):
             'systemInstruction': {'parts': [{'text': system_instruction}]},
             'contents': contents,
             'tools': AI_TOOLS,
-            'generationConfig': {'temperature': 0.2, 'maxOutputTokens': 1200}
+            'generationConfig': {'temperature': 0.2, 'maxOutputTokens': max_output_tokens}
         }
         retry = 0
         while retry < 3:
@@ -451,6 +638,19 @@ def call_gemini(contents, dataset_overview, dashboard_context):
 @app.route('/api/init-filters', methods=['GET'])
 def init_filters():
     print("[API Request]: /api/init-filters -> читаем списки из таблицы 'demographics'")
+    active_rows = active_dataset_rows()
+    if active_rows is not None:
+        indicators = sorted({row['indicator'] for row in active_rows}, key=str.casefold)
+        years = sorted({row['year'] for row in active_rows if row['year'] > 0}, reverse=True)
+        if not years:
+            years = [0]
+        return jsonify({
+            'indicators': indicators,
+            'years': years,
+            'dataset': ACTIVE_DATASET_NAME,
+            'mode': ACTIVE_DATASET_MODE
+        })
+
     conn = get_db_connection()
     indicators = [r[0] for r in conn.execute('SELECT DISTINCT indicator FROM demographics ORDER BY indicator').fetchall()]
     years = [r[0] for r in conn.execute('SELECT DISTINCT year FROM demographics WHERE year > 0 ORDER BY year DESC').fetchall()]
@@ -463,6 +663,19 @@ def chart_year():
     indicator = request.args.get('indicator')
     year = request.args.get('year')
     print(f"[API Request]: /api/chart-year -> indicator='{indicator}', year='{year}' (таблица 'demographics')")
+
+    active_rows = active_dataset_rows()
+    if active_rows is not None:
+        try:
+            selected_year = int(year)
+        except (TypeError, ValueError):
+            return jsonify({'labels': [], 'values': []})
+        totals = {}
+        for row in active_rows:
+            if row['indicator'] == indicator and (selected_year == 0 or row['year'] == selected_year):
+                totals[row['province']] = totals.get(row['province'], 0) + row['value']
+        labels = sorted(totals, key=str.casefold)
+        return jsonify({'labels': labels, 'values': [totals[label] for label in labels]})
     
     conn = get_db_connection()
     query = '''
@@ -484,6 +697,19 @@ def chart_year():
 def chart_summary():
     indicator = request.args.get('indicator')
     print(f"[API Request]: /api/chart-summary -> indicator='{indicator}' (таблица 'demographics')")
+
+    active_rows = active_dataset_rows()
+    if active_rows is not None:
+        totals = {}
+        has_real_years = any(row['year'] > 0 for row in active_rows)
+        for row in active_rows:
+            if row['indicator'] == indicator and (row['year'] > 0 or not has_real_years):
+                totals[row['year']] = totals.get(row['year'], 0) + row['value']
+        years = sorted(totals)
+        return jsonify({
+            'labels': [f"{year} год" if year > 0 else "Все годы" for year in years],
+            'values': [totals[year] for year in years]
+        })
     
     conn = get_db_connection()
     query = '''
@@ -511,6 +737,21 @@ def table_data():
     print(f"[API Request]: /api/table-data -> страница {page}, лимит {limit}, поиск='{search}', индикатор='{indicator}' (таблица 'demographics')")
 
     offset = (page - 1) * limit
+    active_rows = active_dataset_rows()
+    if active_rows is not None:
+        filtered = [
+            row for row in active_rows
+            if (not indicator or row['indicator'] == indicator)
+            and (not search or search in row['province'].casefold())
+        ]
+        page_rows = filtered[offset:offset + limit]
+        return jsonify({
+            'total': len(filtered),
+            'page': page,
+            'columns': ['Показатель', 'Год', 'Область', 'Значение'],
+            'data': page_rows
+        })
+
     conn = get_db_connection()
 
     where_clauses = ["1=1"]
@@ -546,6 +787,21 @@ def table_data():
 def ai_insights():
     indicator = request.args.get('indicator')
     print(f"[API Request]: /api/ai-insights -> indicator='{indicator}' (таблица 'demographics')")
+    active_rows = active_dataset_rows()
+    if active_rows is not None:
+        totals = {}
+        for row in active_rows:
+            if row['indicator'] == indicator and row['year'] > 0:
+                key = (row['province'], row['year'])
+                totals[key] = totals.get(key, 0) + row['value']
+        leaders = sorted(totals.items(), key=lambda item: item[1], reverse=True)[:5]
+        return jsonify({'insights': [{
+            'type': 'positive',
+            'title': province,
+            'badge': f'{year} г.',
+            'text': f'Максимум: {int(total):,}'
+        } for (province, year), total in leaders]})
+
     conn = get_db_connection()
     
     query = '''

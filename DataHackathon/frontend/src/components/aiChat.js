@@ -31,6 +31,21 @@ export function appendMessage(text, type) {
   return bubble;
 }
 
+export function cleanAIResponse(text) {
+  return text
+    .replace(/\r\n?/g, '\n')
+    .replace(/```[\w-]*\s*\n?/g, '')
+    .replace(/^[ \t]{0,3}#{1,6}[ \t]*(?:\d+[.)][ \t]*)?/gm, '')
+    .replace(/^([ \t]*)[*+][ \t]+/gm, '$1— ')
+    .replace(/\*\*(.*?)\*\*|__(.*?)__/g, (_match, stars, underscores) => stars || underscores)
+    .replace(/(^|[\s([{«])\*([^*\n]+)\*(?=$|[\s.,!?;:)\]}»])/gm, '$1$2')
+    .replace(/`([^`]*)`/g, '$1')
+    .replace(/^[ \t]*(?:-{3,}|_{3,}|\*{3,})[ \t]*$/gm, '')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 export function initAIChat(apiBaseUrl) {
   window.sendMessageToAI = () => sendMessageToAI(apiBaseUrl);
   window.handleChatKeyDown = (event) => handleChatKeyDown(event, window.sendMessageToAI);
@@ -103,10 +118,18 @@ export async function sendMessageToAI(apiBaseUrl) {
       throw new Error('Flask API не вернул текст ответа.');
     }
 
-    chatHistory = [...nextHistory, { role: 'model', text: result.answer }].slice(-10);
-    appendMessage(result.answer, 'ai');
+    const answer = cleanAIResponse(result.answer);
+    if (!answer) {
+      throw new Error('После очистки форматирования ответ ИИ оказался пустым.');
+    }
+    chatHistory = [...nextHistory, { role: 'model', text: answer }].slice(-10);
+    appendMessage(answer, 'ai');
   } catch (error) {
-    appendMessage(error.message || 'Не удалось связаться с ИИ-помощником.', 'ai');
+    const errorMessage = error.message || '';
+    const friendlyMessage = /Gemini API \(429\)|HTTP 429|quota|exceeded your current quota/i.test(errorMessage)
+      ? 'Временно исчерпан лимит запросов Gemini. Попробуйте позже.'
+      : 'Не удалось получить ответ ИИ. Проверьте подключение и попробуйте ещё раз.';
+    appendMessage(friendlyMessage, 'ai');
   } finally {
     input.disabled = false;
     if (sendButton) sendButton.disabled = false;
