@@ -23,6 +23,8 @@ import { updateSummaryChart, updateMultiSummaryChart } from './src/components/ch
 
 const apiPort = new URLSearchParams(window.location.search).get('apiPort') || '5000';
 const API_BASE_URL = `http://127.0.0.1:${apiPort}`;
+const analyzerPort = new URLSearchParams(window.location.search).get('analyzerPort');
+window.DATA_ANALYZER_URL = analyzerPort ? `http://127.0.0.1:${analyzerPort}` : '';
 window.API_BASE_URL = API_BASE_URL;
 
 async function refreshGeminiApiKeyStatus() {
@@ -110,6 +112,97 @@ window.resetCustomCard = resetCustomCard;
 window.openDetailedAnalytics = openDetailedAnalytics;
 window.openAnalyticsFromCard = (button) => openAnalyticsFromCard(button, API_BASE_URL);
 
+const dashboardCallbacks = {
+  onRegionFilterChange: () => onRegionFilterChange(API_BASE_URL),
+  onMapFilterChange: () => onMapFilterChange(API_BASE_URL),
+  onSummaryFilterChange: () => onSummaryFilterChange(API_BASE_URL)
+};
+window.refreshDemographyCharts = async () => {
+  await initApp(API_BASE_URL, dashboardCallbacks);
+  await Promise.all([1, 2, 3, 4].map(card => onCardFilterChange(card, API_BASE_URL)));
+};
+
+let analyzerDatasetSync = Promise.resolve(true);
+let analyzerDatasetSyncQueue = Promise.resolve(true);
+let analyzerDatasetSyncRevision = 0;
+window.waitForAnalyzerDatasetSync = () => analyzerDatasetSync;
+window.addEventListener('message', (event) => {
+  const frame = document.getElementById('dataAnalyzerFrame');
+  if (!frame || event.source !== frame.contentWindow || !window.DATA_ANALYZER_URL) return;
+  if (event.origin !== new URL(window.DATA_ANALYZER_URL).origin) return;
+  if (event.data?.type !== 'da-selected-dataset') return;
+
+  const datasetId = event.data.datasetId;
+  if (datasetId !== null && (typeof datasetId !== 'string' || !/^[a-f0-9]{8}$/i.test(datasetId))) return;
+  const revision = ++analyzerDatasetSyncRevision;
+
+  analyzerDatasetSync = analyzerDatasetSyncQueue.then(async () => {
+    const status = document.getElementById('activeDatasetStatus');
+    if (status) {
+      status.hidden = false;
+      status.dataset.state = 'loading';
+      status.textContent = 'Загружаю выбранный датасет для графиков…';
+    }
+
+    try {
+      if (datasetId === null) {
+        const response = await fetch(`${API_BASE_URL}/api/active-dataset`, { method: 'DELETE' });
+        if (!response.ok) throw new Error('Не удалось отключить выбранный датасет.');
+        if (revision !== analyzerDatasetSyncRevision) return false;
+        window.activeAnalyzerDataset = false;
+        window.activeAnalyzerDatasetMode = null;
+        if (status) status.hidden = true;
+        frame.contentWindow.postMessage({ type: 'dashboard-dataset-sync', state: 'empty' }, '*');
+        return true;
+      }
+
+      const datasetResponse = await fetch(`${window.DATA_ANALYZER_URL}/api/datasets/${datasetId}/dashboard-data`);
+      const dataset = await datasetResponse.json();
+      if (!datasetResponse.ok) throw new Error(dataset.detail || 'Не удалось прочитать выбранный датасет.');
+      if (revision !== analyzerDatasetSyncRevision) return false;
+
+      const response = await fetch(`${API_BASE_URL}/api/active-dataset`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dataset)
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Не удалось подключить датасет к графикам.');
+      if (revision !== analyzerDatasetSyncRevision) return false;
+
+      window.activeAnalyzerDataset = true;
+      window.activeAnalyzerDatasetMode = result.mode;
+      if (status) {
+        status.hidden = false;
+        status.dataset.state = 'success';
+        status.textContent = `Графики используют датасет «${result.name}» (${result.rows.toLocaleString('ru-RU')} строк).`;
+      }
+      frame.contentWindow.postMessage({
+        type: 'dashboard-dataset-sync',
+        state: 'success',
+        name: result.name
+      }, '*');
+      return true;
+    } catch (error) {
+      if (revision !== analyzerDatasetSyncRevision) return false;
+      window.activeAnalyzerDataset = false;
+      window.activeAnalyzerDatasetMode = null;
+      if (status) {
+        status.hidden = false;
+        status.dataset.state = 'error';
+        status.textContent = `Датасет не подключён к графикам: ${error.message}`;
+      }
+      frame.contentWindow.postMessage({
+        type: 'dashboard-dataset-sync',
+        state: 'error',
+        message: error.message
+      }, '*');
+      return false;
+    }
+  });
+  analyzerDatasetSyncQueue = analyzerDatasetSync;
+});
+
 // Инициализация при загрузке DOM
 document.addEventListener('DOMContentLoaded', () => {
   initDetailedViewClose();
@@ -179,9 +272,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Запуск старта приложения
 initApp(API_BASE_URL, {
-  onRegionFilterChange: () => onRegionFilterChange(API_BASE_URL),
-  onMapFilterChange: () => onMapFilterChange(API_BASE_URL),
-  onSummaryFilterChange: () => onSummaryFilterChange(API_BASE_URL)
+  ...dashboardCallbacks
 });
 
 initAIChat(API_BASE_URL);
@@ -192,4 +283,3 @@ if (summaryIndEl && summaryIndEl.value) {
   await updateSummaryChart(API_BASE_URL, summaryIndEl.value);
   await updateMultiSummaryChart(API_BASE_URL);
 }
-

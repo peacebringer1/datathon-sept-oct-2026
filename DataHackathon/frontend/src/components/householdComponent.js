@@ -83,23 +83,56 @@ export async function initHouseholdSection(apiBaseUrl) {
   }
 }
 
-window.switchMainSection = function(sectionName, element) {
+window.switchMainSection = async function(sectionName, element) {
+  if (sectionName === 'dashboard' && window.waitForAnalyzerDatasetSync) {
+    const datasetReady = await window.waitForAnalyzerDatasetSync();
+    if (!datasetReady) return;
+  }
+
   document.querySelectorAll('.cat-header').forEach(el => el.classList.remove('active'));
   if (element) element.classList.add('active');
+
+  const activeProgram = sectionName === 'data-analyzer' ? 'data-analyzer' : 'dashboard';
+  document.querySelectorAll('.program-switcher-button').forEach(button => {
+    const isActive = button.dataset.program === activeProgram;
+    button.classList.toggle('active', isActive);
+    button.setAttribute('aria-pressed', String(isActive));
+  });
 
   const dashboard = document.getElementById('mainDashboardContent');
   const household = document.getElementById('householdSection');
   const detailed = document.getElementById('detailedViewSection');
+  const analyzer = document.getElementById('dataAnalyzerSection');
 
   if (detailed) detailed.style.display = 'none';
 
   if (sectionName === 'household') {
-    dashboard.style.display = 'none';
-    household.style.display = 'block';
+    if (dashboard) dashboard.style.display = 'none';
+    if (dashboard) dashboard.classList.remove('program-analyzer-active');
+    if (household) household.style.display = 'block';
+    if (analyzer) analyzer.style.display = 'none';
     initHouseholdSection(window.API_BASE_URL || 'http://127.0.0.1:5000');
+  } else if (sectionName === 'data-analyzer') {
+    if (dashboard) {
+      dashboard.style.display = 'block';
+      dashboard.classList.add('program-analyzer-active');
+    }
+    if (household) household.style.display = 'none';
+    if (analyzer) analyzer.style.display = 'block';
+
+    const frame = document.getElementById('dataAnalyzerFrame');
+    if (frame && window.DATA_ANALYZER_URL && frame.dataset.loaded !== 'true') {
+      frame.src = `${window.DATA_ANALYZER_URL}/`;
+      frame.dataset.loaded = 'true';
+    }
   } else {
-    household.style.display = 'none';
-    dashboard.style.display = 'block';
+    if (dashboard) dashboard.classList.remove('program-analyzer-active');
+    if (household) household.style.display = 'none';
+    if (analyzer) analyzer.style.display = 'none';
+    if (dashboard) dashboard.style.display = 'block';
+    if (sectionName === 'dashboard' && window.refreshDemographyCharts) {
+      await window.refreshDemographyCharts();
+    }
   }
 };
 

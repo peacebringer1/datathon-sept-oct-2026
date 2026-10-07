@@ -1,6 +1,7 @@
 import { updateStackedAreaChart } from './chartsMap.js';
 import { loadTablePage } from './table.js';
 import { fetchAIInsights } from './insightsTicker.js';
+import { updateChartAnalysis } from './chartAnalysis.js';
 
 export async function initApp(apiBaseUrl, callbacks) {
   try {
@@ -8,7 +9,7 @@ export async function initApp(apiBaseUrl, callbacks) {
     const { indicators, years } = await res.json();
 
     const optionsHTML = indicators.map(ind => `<option value="${ind}">${ind}</option>`).join('');
-    const yearsHTML = years.map(y => `<option value="${y}">${y} год</option>`).join('');
+    const yearsHTML = years.map(y => `<option value="${y}">${Number(y) > 0 ? `${y} год` : 'Все годы'}</option>`).join('');
 
     const regionIndEl = document.getElementById('regionIndicatorSelect');
     const regionYearEl = document.getElementById('regionYearSelect');
@@ -32,6 +33,10 @@ export async function initApp(apiBaseUrl, callbacks) {
     const card5Year = document.getElementById('card5Year')?.value || years[0];
     if (card5Ind && card5Year) {
       await updateStackedAreaChart(apiBaseUrl, card5Ind, card5Year);
+      const activeCategory = document.querySelector('.cat-header.active .cat-text')?.textContent?.trim();
+      if (!window.activeAnalyzerDataset) {
+        updateChartAnalysis('barAnimationChart', apiBaseUrl, card5Ind, activeCategory || 'Общие данные', card5Year);
+      }
     }
 
     loadTablePage(apiBaseUrl);
@@ -44,7 +49,7 @@ export async function initApp(apiBaseUrl, callbacks) {
 
 export function populateAllSelectors(indicatorsList, yearsList) {
   const optionsHTML = indicatorsList.map(ind => `<option value="${ind}">${ind}</option>`).join('');
-  const yearsHTML = yearsList.map(y => `<option value="${y}">${y} год</option>`).join('');
+  const yearsHTML = yearsList.map(y => `<option value="${y}">${Number(y) > 0 ? `${y} год` : 'Все годы'}</option>`).join('');
 
   const regionIndEl = document.getElementById('regionIndicatorSelect');
   const regionYearEl = document.getElementById('regionYearSelect');
@@ -59,11 +64,13 @@ export function populateAllSelectors(indicatorsList, yearsList) {
       const currentInd = indEl.value;
       indEl.innerHTML = optionsHTML;
       if (currentInd) indEl.value = currentInd;
+      if (!indEl.value) indEl.selectedIndex = 0;
     }
     if (yearEl) {
       const currentYear = yearEl.value;
       yearEl.innerHTML = yearsHTML;
       if (currentYear) yearEl.value = currentYear;
+      if (!yearEl.value) yearEl.selectedIndex = 0;
     }
   }
 }

@@ -76,6 +76,11 @@
               <span class="cat-text">Домохозяйство</span>
             </div>
           </div>
+          <div class="cat-group">
+            <div class="cat-header" onclick="switchMainSection('data-analyzer', this)">
+              <span class="cat-text">Анализ данных</span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -106,8 +111,6 @@
     <main class="main-content-area">
       <div class="container">
 
-        <header class="app-header"></header>
-
         <!-- Главный дашборд -->
         <div id="mainDashboardContent" class="main-dashboard-content">
 
@@ -129,9 +132,28 @@
             <button class="tab-btn active" onclick="switchTab('year')">По областям</button>
             <button class="tab-btn" onclick="switchTab('summary')">Итоговый</button>
             <button class="tab-btn" onclick="switchTab('summary')">Аналитика</button>
+            <nav class="program-switcher" aria-label="Переключение между программами">
+              <button
+                type="button"
+                class="program-switcher-button active"
+                data-program="dashboard"
+                aria-pressed="true"
+                onclick="switchMainSection('dashboard', this)">
+                Демография
+              </button>
+              <button
+                type="button"
+                class="program-switcher-button"
+                data-program="data-analyzer"
+                aria-pressed="false"
+                onclick="switchMainSection('data-analyzer', this)">
+                Анализ данных
+              </button>
+            </nav>
           </div>
 
           <div id="yearChartSection" class="chart-section-block">
+            <div id="activeDatasetStatus" class="active-dataset-status" role="status" aria-live="polite" hidden></div>
             <div class="widget-controls">
               <div class="control-group">
                 <label>Общий показатель:</label>
@@ -405,6 +427,14 @@
             </div>
           </div>
         </div>
+
+        <section id="dataAnalyzerSection" class="data-analyzer-section" style="display: none;">
+          <iframe
+            id="dataAnalyzerFrame"
+            title="Анализ и очистка данных"
+            sandbox="allow-scripts allow-forms allow-same-origin allow-downloads">
+          </iframe>
+        </section>
 
       </div>
     </main>

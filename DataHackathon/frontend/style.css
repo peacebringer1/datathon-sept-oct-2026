@@ -67,6 +67,36 @@ body {
     gap: 15px;
 }
 
+.program-switcher {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-left: 10px;
+}
+
+.program-switcher-button {
+    border: 1px solid #1d4ed8;
+    border-radius: 8px;
+    padding: 10px 18px;
+    background: var(--card-bg);
+    color: var(--text-primary);
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.program-switcher-button:hover {
+    border-color: var(--accent-hover);
+}
+
+.program-switcher-button.active {
+    border-color: #1d4ed8;
+    background: #1d4ed8;
+    color: #ffffff;
+}
+
 .app-header h2 {
     font-size: 1.5rem;
     color: var(--text-primary);
@@ -114,6 +144,59 @@ aside.category-sidebar-hover.pinned {
     box-sizing: border-box;
     overflow-x: hidden;
     padding: 30px;
+}
+
+.data-analyzer-section {
+    width: 100%;
+    height: calc(100vh - 60px);
+    min-height: 600px;
+    overflow: hidden;
+    border-radius: 16px;
+    background: var(--bg-color);
+}
+
+.data-analyzer-section iframe {
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-height: inherit;
+    border: 0;
+    border-radius: inherit;
+    background: var(--bg-color);
+}
+
+.active-dataset-status {
+    margin-bottom: 14px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: #dbeafe;
+    color: #1e40af;
+    font-size: 0.92rem;
+    font-weight: 600;
+}
+
+.active-dataset-status[data-state="loading"] {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.active-dataset-status[data-state="error"] {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+body.dark-theme .active-dataset-status {
+    background: #1e3a5f;
+    color: #bfdbfe;
+}
+
+body.dark-theme .active-dataset-status[data-state="error"] {
+    background: #5f1e1e;
+    color: #fecaca;
+}
+
+#mainDashboardContent.program-analyzer-active > *:not(.tabs) {
+    display: none;
 }
 
 aside.category-sidebar-hover.expanded~.main-content-area,
@@ -522,6 +605,83 @@ aside.category-sidebar-hover.pinned .sidebar-settings-footer {
     min-width: 0; /* Предотвращает разрыв флекс/грид элементов */
 }
 
+.chart-ai-analysis {
+    display: grid;
+    gap: 12px;
+    padding: 16px;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    background: var(--card-bg);
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    line-height: 1.6;
+    overflow-wrap: break-word;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+}
+
+.chart-ai-analysis p,
+.chart-ai-analysis ul {
+    margin: 0;
+}
+
+.chart-ai-analysis h4 {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+}
+
+.chart-ai-analysis h5 {
+    margin: 0 0 4px;
+    color: var(--text-secondary);
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+
+.chart-ai-trend,
+.chart-ai-observations,
+.chart-ai-hypotheses {
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: var(--bg-input);
+}
+
+.chart-ai-observations ul,
+.chart-ai-hypotheses ul {
+    display: grid;
+    gap: 7px;
+    padding-left: 18px;
+}
+
+.chart-ai-observations li,
+.chart-ai-hypotheses li {
+    padding-left: 2px;
+}
+
+.chart-ai-retry {
+    justify-self: start;
+    padding: 6px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--bg-input);
+    color: var(--text-primary);
+    cursor: pointer;
+}
+
+.chart-ai-analysis details {
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+}
+
+.chart-ai-analysis summary {
+    width: fit-content;
+    cursor: pointer;
+}
+
+.chart-ai-error-details {
+    margin-top: 6px !important;
+    overflow-wrap: anywhere;
+}
+
 .card-header-controls {
     display: flex;
     width: 100%;
@@ -648,7 +808,11 @@ aside.category-sidebar-hover.pinned .sidebar-settings-footer {
     background: var(--card-bg);
     padding: 16px;
     border-radius: 12px;
-    height: 500px;
+    height: auto;
+    min-height: 500px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     box-sizing: border-box;
     border: 1px solid var(--border-color);
@@ -656,7 +820,8 @@ aside.category-sidebar-hover.pinned .sidebar-settings-footer {
 
 .summary-chart-inner {
     width: 100%;
-    height: 100%;
+    height: 450px;
+    flex: 0 0 450px;
 }
 
 /* ========================================================================== */

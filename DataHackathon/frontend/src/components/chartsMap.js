@@ -1,3 +1,5 @@
+import { updateChartAnalysis } from './chartAnalysis.js';
+
 export let yearChartInstance = null; // Первый график (барчарт)
 export let lineChartInstance = null; // Второй график (линейный со сглаживанием)
 export let pieChartInstance = null;  // Третий график (круговой)
@@ -91,7 +93,7 @@ export async function updateBarChart(apiBaseUrl, indicator, year) {
       yearChartInstance.setOption({
         animation: true,
         animationDuration: 1000,
-        title: { text: 'Распределение по регионам', left: 'center', textStyle: { fontSize: 13, color: getThemeColors().textColor } },
+        title: { text: window.activeAnalyzerDatasetMode === 'distribution' ? 'Распределение ответов' : 'Распределение по регионам', left: 'center', textStyle: { fontSize: 13, color: getThemeColors().textColor } },
         toolbox: commonToolbox,
         tooltip: { trigger: 'axis', formatter: (p) => `<b>${p[0].name}</b><br/>${indicator}: <b>${p[0].value.toLocaleString('ru-RU')}</b>` },
         grid: { top: '22%', bottom: '15%', left: '8%', right: '5%', containLabel: true },
@@ -129,7 +131,7 @@ export async function updateLineChart(apiBaseUrl, indicator, year) {
       lineChartInstance.setOption({
         animation: true,
         animationDuration: 1000,
-        title: { text: 'Динамика показателей', left: 'center', textStyle: { fontSize: 13, color: getThemeColors().textColor } },
+        title: { text: window.activeAnalyzerDatasetMode === 'distribution' ? 'Частота ответов' : 'Динамика показателей', left: 'center', textStyle: { fontSize: 13, color: getThemeColors().textColor } },
         toolbox: commonToolbox,
         tooltip: { trigger: 'axis' },
         grid: { top: '22%', bottom: '15%', left: '8%', right: '5%', containLabel: true },
@@ -171,7 +173,7 @@ export async function updatePieChart(apiBaseUrl, indicator, year) {
       pieChartInstance.setOption({
         animation: true,
         animationDuration: 1000,
-        title: { text: 'Доли по регионам', left: 'center', textStyle: { fontSize: 13, color: getThemeColors().textColor } },
+        title: { text: window.activeAnalyzerDatasetMode === 'distribution' ? 'Доли вариантов ответа' : 'Доли по регионам', left: 'center', textStyle: { fontSize: 13, color: getThemeColors().textColor } },
         toolbox: commonToolbox,
         tooltip: { trigger: 'item', formatter: '{b}: <b>{c}</b> ({d}%)' },
         legend: { type: 'scroll', orient: 'vertical', left: 'left', top: '15%', textStyle: { fontSize: 9, color: getThemeColors().textColor } },
@@ -213,7 +215,7 @@ export async function updateHBarChart(apiBaseUrl, indicator, year) {
       hBarChartInstance.setOption({
         animation: true,
         animationDuration: 1000,
-        title: { text: 'Рейтинг регионов', left: 'center', textStyle: { fontSize: 13, color: getThemeColors().textColor } },
+        title: { text: window.activeAnalyzerDatasetMode === 'distribution' ? 'Частота вариантов ответа' : 'Рейтинг регионов', left: 'center', textStyle: { fontSize: 13, color: getThemeColors().textColor } },
         toolbox: commonToolbox,
         tooltip: { trigger: 'axis', formatter: (p) => `<b>${p[0].data[1]}</b><br/>${indicator}: <b>${p[0].data[0].toLocaleString('ru-RU')}</b>` },
         dataset: { source: sourceData },
@@ -257,37 +259,22 @@ export async function updateStackedAreaChart(apiBaseUrl, indicator, year) {
     if (dom) {
       if (!stackedAreaChartInstance) stackedAreaChartInstance = echarts.init(dom);
 
-      const half = Math.ceil(values.length / 2);
-      const data1 = values.slice(0, half);
-      const data2 = values.slice(half);
-      const xAxisData = labels.slice(0, Math.max(data1.length, data2.length));
-      const finalData2 = data2.length ? data2 : values.map(v => Math.round(v * 0.7));
-
       stackedAreaChartInstance.setOption({
         animation: true,
-        title: { text: `Bar Animation Delay: ${indicator} (${year})`, left: 'center', textStyle: { fontSize: 12, color: getThemeColors().textColor } },
-        legend: { data: ['bar', 'bar2'], top: '12%', textStyle: { fontSize: 10, color: getThemeColors().textColor } },
+        title: { text: `${indicator} (${year})`, left: 'center', textStyle: { fontSize: 12, color: getThemeColors().textColor } },
         toolbox: { feature: { magicType: { type: ['stack'] }, dataView: { readOnly: true }, saveAsImage: { pixelRatio: 2 } } },
         tooltip: { trigger: 'axis' },
         grid: { top: '25%', bottom: '15%', left: '8%', right: '5%', containLabel: true },
-        xAxis: { data: xAxisData, splitLine: { show: false }, axisLabel: { interval: 0, rotate: 35, fontSize: 9, color: getThemeColors().textColor } },
+        xAxis: { data: labels, splitLine: { show: false }, axisLabel: { interval: 0, rotate: 35, fontSize: 9, color: getThemeColors().textColor } },
         yAxis: { type: 'value', axisLabel: { fontSize: 10, color: getThemeColors().textColor }, splitLine: { lineStyle: { color: '#f1f5f9' } } },
         series: [
           {
-            name: 'bar',
+            name: indicator,
             type: 'bar',
-            data: data1.length ? data1 : values,
+            data: values,
             itemStyle: { color: '#3b82f6', borderRadius: [4, 4, 0, 0] },
             emphasis: { focus: 'series' },
             animationDelay: function (idx) { return idx * 20; }
-          },
-          {
-            name: 'bar2',
-            type: 'bar',
-            data: finalData2,
-            itemStyle: { color: '#10b981', borderRadius: [4, 4, 0, 0] },
-            emphasis: { focus: 'series' },
-            animationDelay: function (idx) { return idx * 20 + 100; }
           }
         ],
         animationEasing: 'elasticOut',
@@ -421,6 +408,8 @@ export async function updateSummaryChart(apiBaseUrl, indicator) {
 
     summaryChartInstance.setOption(option, true);
     summaryChartInstance.resize();
+    const activeCategory = document.querySelector('.cat-header.active .cat-text')?.textContent?.trim();
+    updateChartAnalysis('summaryChart', apiBaseUrl, indicator, activeCategory || 'Общие данные');
   } catch (e) {
     console.error('Ошибка загрузки суммарных данных:', e);
   }
