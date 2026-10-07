@@ -6,11 +6,13 @@ import {
   updateHBarChart,
   updateSummaryChart, 
   initKazakhstanMap,
-  updateStackedAreaChart
+  updateStackedAreaChart,
+  updateCustomChart
 } from './chartsMap.js';
 import { renderDynamicSwitchChart } from './dynamicCharts.js';
 import { fetchAIInsights } from './insightsTicker.js';
 import { setSelectValuePrecise } from './appInit.js';
+import { updateChartAnalysis } from './chartAnalysis.js';
 
 const categoryDashboards = {
   "Население": [
@@ -117,22 +119,22 @@ export async function onCardFilterChange(cardNumber, API_BASE_URL, customCardCha
   if (!indicator || !year) return;
 
   try {
+    let chartId;
     switch (cardNumber) {
-      case 1: await updateBarChart(API_BASE_URL, indicator, year); break;
-      case 2: await updateLineChart(API_BASE_URL, indicator, year); break;
-      case 3: await updatePieChart(API_BASE_URL, indicator, year); break;
-      case 4: await updateHBarChart(API_BASE_URL, indicator, year); break;
-      case 5: await updateStackedAreaChart(API_BASE_URL, indicator, year); break;
+      case 1: chartId = 'chartTypeBar'; await updateBarChart(API_BASE_URL, indicator, year); break;
+      case 2: chartId = 'chartTypeLine'; await updateLineChart(API_BASE_URL, indicator, year); break;
+      case 3: chartId = 'chartTypePie'; await updatePieChart(API_BASE_URL, indicator, year); break;
+      case 4: chartId = 'chartTypeHBar'; await updateHBarChart(API_BASE_URL, indicator, year); break;
+      case 5: chartId = 'barAnimationChart'; await updateStackedAreaChart(API_BASE_URL, indicator, year); break;
       case 6: {
-        if (customCardChartType === 'line') {
-          await updateLineChart(API_BASE_URL, indicator, year);
-        } else if (customCardChartType === 'pie') {
-          await updatePieChart(API_BASE_URL, indicator, year);
-        } else {
-          await updateBarChart(API_BASE_URL, indicator, year);
-        }
+        chartId = 'chartTypeCustom';
+        await updateCustomChart(API_BASE_URL, indicator, year, customCardChartType);
         break;
       }
+    }
+    const activeCategory = document.querySelector('.cat-header.active .cat-text')?.textContent?.trim();
+    if (!window.activeAnalyzerDataset && chartId && document.getElementById(chartId)?.offsetParent) {
+      updateChartAnalysis(chartId, API_BASE_URL, indicator, activeCategory || 'Общие данные', year);
     }
   } catch (err) {
     console.error(`Ошибка при обновлении карточки ${cardNumber}:`, err);
