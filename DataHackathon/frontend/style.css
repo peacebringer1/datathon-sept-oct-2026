@@ -148,8 +148,8 @@ aside.category-sidebar-hover.pinned {
 
 .data-analyzer-section {
     width: 100%;
-    height: calc(100vh - 60px);
-    min-height: 600px;
+    height: calc(100dvh - 170px);
+    min-height: 0;
     overflow: hidden;
     border-radius: 16px;
     background: var(--bg-color);
