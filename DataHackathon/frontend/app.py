@@ -17,6 +17,7 @@ FRONTEND_DIR = os.path.dirname(os.path.abspath(__file__))
 # Путь к файлу database.sqlite в корневом каталоге DataHackathon/
 DB_FILE = os.path.abspath(os.path.join(FRONTEND_DIR, '..', 'database.sqlite'))
 GEMINI_MODEL = os.environ.get('GEMINI_MODEL', 'gemini-3.8-flash').strip()
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '').strip()
 if GEMINI_MODEL.startswith('models/'):
     GEMINI_MODEL = GEMINI_MODEL[len('models/'):]
 
@@ -58,6 +59,34 @@ def get_db_connection():
         conn.commit()
     
     return conn
+
+@app.route('/api/settings/gemini-key', methods=['GET', 'POST', 'DELETE'])
+def gemini_key_settings():
+    global GEMINI_API_KEY
+
+    if request.method == 'GET':
+        return jsonify({'configured': bool(GEMINI_API_KEY)})
+
+    if request.method == 'DELETE':
+        GEMINI_API_KEY = ''
+        return jsonify({'configured': False})
+
+    payload = request.get_json(silent=True)
+    api_key = payload.get('api_key') if isinstance(payload, dict) else None
+    if not isinstance(api_key, str):
+        return jsonify({'error': 'Введите API-ключ Gemini.'}), 400
+
+    api_key = api_key.strip()
+    if len(api_key) < 20:
+        return jsonify({'error': 'Ключ выглядит слишком коротким. Вставьте полный API-ключ из Google AI Studio.'}), 400
+    try:
+        api_key.encode('ascii')
+    except UnicodeEncodeError:
+        return jsonify({'error': 'API-ключ должен содержать только ASCII-символы.'}), 400
+
+    GEMINI_API_KEY = api_key
+    return jsonify({'configured': True})
+
 
 
 @app.route('/api/household-radar', methods=['GET'])
@@ -309,7 +338,7 @@ def ai_chat():
 
 
 def call_gemini(contents, dataset_overview, dashboard_context):
-    api_key = os.environ.get('GEMINI_API_KEY', '').strip()
+    api_key = GEMINI_API_KEY
     if not api_key:
         raise RuntimeError('Не задан GEMINI_API_KEY. Добавьте ключ Gemini в переменные окружения и перезапустите приложение.')
     try:
@@ -477,7 +506,7 @@ def chart_summary():
 def table_data():
     page = int(request.args.get('page', 1))
     limit = int(request.args.get('limit', 5000))
-    search = request.args.get('search', '').strip().lower()
+    search = request.args.get('search', '').strip().casefold()
     indicator = request.args.get('indicator', '')
     print(f"[API Request]: /api/table-data -> страница {page}, лимит {limit}, поиск='{search}', индикатор='{indicator}' (таблица 'demographics')")
 
@@ -491,8 +520,8 @@ def table_data():
         where_clauses.append("indicator = ?")
         params.append(indicator)
     if search:
-        where_clauses.append("(LOWER(province) LIKE ? OR LOWER(indicator) LIKE ?)")
-        params.extend([f"%{search}%", f"%{search}%"])
+        where_clauses.append("casefold(province) LIKE ?")
+        params.append(f"%{search}%")
 
     where_str = " WHERE " + " AND ".join(where_clauses)
 
