@@ -246,61 +246,68 @@
           <div class="wrapper-wishlist">
             <div class="wishlist-header-flex">
               <div class="wishlist-title">
-                <!-- Заголовок при необходимости -->
+                <div>
+                  <h2>Новости и тренды</h2>
+                  <p>Коротко о заметных изменениях в данных Казахстана</p>
+                </div>
               </div>
             </div>
 
             <!-- Внешняя обертка, выстраивающая элементы в ряд: Кнопка слева -> Лента -> Кнопка справа -->
             <div class="wishlist-wrapper-outer">
-              <button class="wishlist-nav-btn" onclick="scrollWishlist('left')">←</button>
+              <button class="wishlist-nav-btn" type="button" aria-label="Предыдущая новость" onclick="scrollWishlist('left')">←</button>
 
               <div class="wishlist-track-container">
                 <div class="wishlist-track" id="wishlistTrack">
                   
                   <!-- Карточка 1: Взлет -->
-                  <div class="wishlist-card">
+                  <article class="wishlist-card">
                     <div class="wishlist-card-top">
                       <span class="trend-badge up">Рост +14.2%</span>
-                      <span style="font-size: 0.75rem; color: var(--text-secondary);">Экономика</span>
+                      <span class="wishlist-category"><span aria-hidden="true">◈</span> Экономика</span>
                     </div>
-                    <h5>Инвестиции в основной капитал</h5>
+                    <h3>Инвестиции в основной капитал</h3>
                     <p>Зафиксирован значительный прирост инвестиционной активности в регионах за последний отчетный период.</p>
-                  </div>
+                    <div class="wishlist-card-footer"><span>Экономический обзор</span><span aria-hidden="true">↗</span></div>
+                  </article>
 
                   <!-- Карточка 2: Падение -->
-                  <div class="wishlist-card">
+                  <article class="wishlist-card">
                     <div class="wishlist-card-top">
                       <span class="trend-badge down">Снижение -3.5%</span>
-                      <span style="font-size: 0.75rem; color: var(--text-secondary);">Население</span>
+                      <span class="wishlist-category"><span aria-hidden="true">◎</span> Население</span>
                     </div>
-                    <h5>Демографическая динамика миграции</h5>
+                    <h3>Демографическая динамика миграции</h3>
                     <p>Отмечается локальное уменьшение коэффициента внешней миграции в отдельных промышленных центрах.</p>
-                  </div>
+                    <div class="wishlist-card-footer"><span>Демографический обзор</span><span aria-hidden="true">↘</span></div>
+                  </article>
 
                   <!-- Карточка 3: Взлет -->
-                  <div class="wishlist-card">
+                  <article class="wishlist-card">
                     <div class="wishlist-card-top">
                       <span class="trend-badge up">Рост +22.8%</span>
-                      <span style="font-size: 0.75rem; color: var(--text-secondary);">Образование</span>
+                      <span class="wishlist-category"><span aria-hidden="true">▧</span> Образование</span>
                     </div>
-                    <h5>Цифровизация учебных заведений</h5>
+                    <h3>Цифровизация учебных заведений</h3>
                     <p>Существенное расширение высокоскоростного интернет-покрытия и внедрение интерактивных платформ.</p>
-                  </div>
+                    <div class="wishlist-card-footer"><span>Образовательный обзор</span><span aria-hidden="true">↗</span></div>
+                  </article>
 
                   <!-- Карточка 4: Стабильность / Тренд -->
-                  <div class="wishlist-card">
+                  <article class="wishlist-card">
                     <div class="wishlist-card-top">
-                      <span class="trend-badge up">📈 Рост +8.1%</span>
-                      <span style="font-size: 0.75rem; color: var(--text-secondary);">Сельское хозяйство</span>
+                      <span class="trend-badge up">Рост +8.1%</span>
+                      <span class="wishlist-category"><span aria-hidden="true">❋</span> Сельское хозяйство</span>
                     </div>
-                    <h5>Объемы вапа продукции АПК</h5>
+                    <h3>Объёмы выпуска продукции АПК</h3>
                     <p>Успешное внедрение автоматизированного полива и субсидирования повысило общую урожайность.</p>
-                  </div>
+                    <div class="wishlist-card-footer"><span>Обзор АПК</span><span aria-hidden="true">↗</span></div>
+                  </article>
 
                 </div>
               </div>
 
-              <button class="wishlist-nav-btn" onclick="scrollWishlist('right')">→</button>
+              <button class="wishlist-nav-btn" type="button" aria-label="Следующая новость" onclick="scrollWishlist('right')">→</button>
             </div>
           </div>
 

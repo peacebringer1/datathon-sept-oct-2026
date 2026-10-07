@@ -343,9 +343,6 @@ aside.category-sidebar-hover.pinned .sidebar-settings-footer {
     border: none;
 }
 
-/* ========================================================================== */
-/* ДАШБОРД И ВИДЖЕТЫ                                                          */
-/* ========================================================================== */
 .ticker-container {
     display: flex;
     align-items: center;
@@ -374,12 +371,14 @@ aside.category-sidebar-hover.pinned .sidebar-settings-footer {
     0% {
         transform: translateX(0);
     }
-
     100% {
         transform: translateX(-50%);
     }
 }
 
+/* ========================================================================== */
+/* ДАШБОРД И ВИДЖЕТЫ                                                          */
+/* ========================================================================== */
 .widget-controls {
     display: flex;
     gap: 25px;
