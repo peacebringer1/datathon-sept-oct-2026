@@ -1,4 +1,3 @@
-import { initApp } from './src/components/appInit.js';
 import {
   selectCategoryDashboard,
   switchSubSection,
@@ -20,7 +19,8 @@ import {
   initGlobalResizeListener
 } from './src/components/uiInteractions.js';
 import { openDetailedAnalytics, openAnalyticsFromCard, initDetailedViewClose } from './src/components/detailedView.js';
-import { updateSummaryChart, updateMultiSummaryChart } from './src/components/chartsMap.js';
+import { startAppLoading } from './src/components/loadingIndicator.js';
+import './src/components/projectPages.js';
 
 const apiPort = new URLSearchParams(window.location.search).get('apiPort') || '5000';
 const API_BASE_URL = `http://127.0.0.1:${apiPort}`;
@@ -28,12 +28,43 @@ const analyzerPort = new URLSearchParams(window.location.search).get('analyzerPo
 window.DATA_ANALYZER_URL = analyzerPort ? `http://127.0.0.1:${analyzerPort}` : '';
 window.API_BASE_URL = API_BASE_URL;
 
-async function refreshGeminiApiKeyStatus() {
-  const status = document.getElementById('geminiApiKeyStatus');
+window.syncAnalyzerPreferences = function() {
+  document.getElementById('dataAnalyzerFrame')?.contentWindow?.postMessage({
+    type: 'da-settings',
+    lang: window.getAppLanguage?.() === 'en' ? 'en' : 'ru',
+    theme: document.body.classList.contains('dark-theme') ? 'dark' : 'light'
+  }, '*');
+};
+window.addEventListener('app-language-changed', () => window.syncAnalyzerPreferences());
+window.addEventListener('app-theme-changed', () => window.syncAnalyzerPreferences());
+
+const finishStartupLoading = startAppLoading('Запускаем приложение и подключаем данные…');
+async function waitForBackendStartup() {
+  const attempts = 60;
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/d008/options`);
+      if (response.ok) return;
+    } catch {
+      // Flask запускается параллельно с Electron; проверим ещё раз.
+    }
+    finishStartupLoading.update?.('Подключаем Flask и готовим разделы данных…');
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+  finishStartupLoading.update?.('Сервер пока не отвечает. Можно продолжить и повторить запуск данных позже.');
+  await new Promise((resolve) => setTimeout(resolve, 1300));
+}
+void waitForBackendStartup().finally(() => {
+  finishStartupLoading();
+  void refreshAIStatus();
+});
+
+async function refreshClaudeApiKeyStatus() {
+  const status = document.getElementById('claudeApiKeyStatus');
   if (!status) return;
 
   try {
-    const response = await fetch(`${API_BASE_URL}/api/settings/gemini-key`);
+    const response = await fetch(`${API_BASE_URL}/api/settings/claude-key`);
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || 'Не удалось проверить настройки ИИ.');
     status.textContent = result.configured
@@ -46,22 +77,52 @@ async function refreshGeminiApiKeyStatus() {
   }
 }
 
-async function updateGeminiApiKey(method, apiKey) {
-  const status = document.getElementById('geminiApiKeyStatus');
-  const saveButton = document.getElementById('saveGeminiApiKeyBtn');
-  const clearButton = document.getElementById('clearGeminiApiKeyBtn');
+async function refreshAIStatus() {
+  const badge = document.getElementById('aiStatusBadge');
+  if (!badge) return;
+  const translate = (value) => window.translateAppText?.(value) || value;
+  badge.dataset.state = 'checking';
+  badge.textContent = translate('Проверка…');
+  badge.title = translate('Проверяем доступ к ИИ');
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/ai-status`);
+    const result = await response.json();
+    if (!response.ok) throw new Error('status_failed');
+    const state = result.status === 'online' ? 'online' : 'offline';
+    const stateText = state === 'online' ? 'Доступен' : 'Оффлайн';
+    const reasons = {
+      missing_key: 'Не подключён API-ключ',
+      invalid_key: 'API-ключ не принят сервисом',
+      model_unavailable: 'Выбранная модель недоступна',
+      api_unavailable: 'Сервис ИИ временно недоступен',
+      network_unavailable: 'Нет соединения с сервисом ИИ'
+    };
+    badge.dataset.state = state;
+    badge.textContent = translate(stateText);
+    badge.title = translate(reasons[result.reason] || (state === 'online' ? 'Соединение с API активно' : 'ИИ сейчас недоступен'));
+  } catch {
+    badge.dataset.state = 'offline';
+    badge.textContent = translate('Оффлайн');
+    badge.title = translate('Не удалось проверить доступность ИИ');
+  }
+}
+
+async function updateClaudeApiKey(method, apiKey) {
+  const status = document.getElementById('claudeApiKeyStatus');
+  const saveButton = document.getElementById('saveClaudeApiKeyBtn');
+  const clearButton = document.getElementById('clearClaudeApiKeyBtn');
   if (saveButton) saveButton.disabled = true;
   if (clearButton) clearButton.disabled = true;
 
   try {
     if (method === 'POST') {
-      if (!window.appSettings?.saveGeminiApiKey) {
+      if (!window.appSettings?.saveClaudeApiKey) {
         throw new Error('Безопасное хранилище приложения недоступно. Перезапустите приложение.');
       }
-      await window.appSettings.saveGeminiApiKey(apiKey);
+      await window.appSettings.saveClaudeApiKey(apiKey);
     }
 
-    const response = await fetch(`${API_BASE_URL}/api/settings/gemini-key`, {
+    const response = await fetch(`${API_BASE_URL}/api/settings/claude-key`, {
       method,
       headers: method === 'POST' ? { 'Content-Type': 'application/json' } : undefined,
       body: method === 'POST' ? JSON.stringify({ api_key: apiKey }) : undefined
@@ -70,19 +131,19 @@ async function updateGeminiApiKey(method, apiKey) {
     if (!response.ok) throw new Error(result.error || 'Не удалось обновить настройки ИИ.');
 
     if (method === 'DELETE') {
-      if (!window.appSettings?.clearGeminiApiKey) {
+      if (!window.appSettings?.clearClaudeApiKey) {
         throw new Error('Ключ удалён из текущего сеанса, но безопасное хранилище недоступно.');
       }
-      await window.appSettings.clearGeminiApiKey();
+      await window.appSettings.clearClaudeApiKey();
     }
 
     if (status) {
       status.textContent = method === 'POST'
-        ? 'Ключ сохранён и подключён. Gemini проверит его при первом запросе.'
+        ? 'Ключ Claude сохранён. Его действительность проверится при первом запросе.'
         : 'Сохранённый ключ удалён.';
       status.dataset.state = 'success';
     }
-    const input = document.getElementById('geminiApiKeyInput');
+    const input = document.getElementById('claudeApiKeyInput');
     if (input) input.value = '';
   } catch (error) {
     if (status) {
@@ -92,6 +153,7 @@ async function updateGeminiApiKey(method, apiKey) {
   } finally {
     if (saveButton) saveButton.disabled = false;
     if (clearButton) clearButton.disabled = false;
+    void refreshAIStatus();
   }
 }
 
@@ -114,15 +176,7 @@ window.resetCustomCard = resetCustomCard;
 window.openDetailedAnalytics = openDetailedAnalytics;
 window.openAnalyticsFromCard = (button) => openAnalyticsFromCard(button, API_BASE_URL);
 
-const dashboardCallbacks = {
-  onRegionFilterChange: () => onRegionFilterChange(API_BASE_URL),
-  onMapFilterChange: () => onMapFilterChange(API_BASE_URL),
-  onSummaryFilterChange: () => onSummaryFilterChange(API_BASE_URL)
-};
-window.refreshDemographyCharts = async () => {
-  await initApp(API_BASE_URL, dashboardCallbacks);
-  await Promise.all([1, 2, 3, 4].map(card => onCardFilterChange(card, API_BASE_URL)));
-};
+window.refreshDemographyCharts = async () => {};
 
 let analyzerDatasetSync = Promise.resolve(true);
 let analyzerDatasetSyncQueue = Promise.resolve(true);
@@ -211,18 +265,20 @@ document.addEventListener('DOMContentLoaded', () => {
   initSidebarSearch();
   initThemeToggle();
   initGlobalResizeListener();
+  void refreshAIStatus();
+  window.setInterval(refreshAIStatus, 60000);
 
   const settingsBtn = document.getElementById('settingsToggleBtn');
   const settingsMenu = document.getElementById('settingsDropdown');
-  const geminiApiKeyForm = document.getElementById('geminiApiKeyForm');
-  const clearGeminiApiKeyBtn = document.getElementById('clearGeminiApiKeyBtn');
+  const claudeApiKeyForm = document.getElementById('claudeApiKeyForm');
+  const clearClaudeApiKeyBtn = document.getElementById('clearClaudeApiKeyBtn');
 
   if (settingsBtn && settingsMenu) {
     settingsBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       const isOpen = settingsMenu.style.display === 'block';
       settingsMenu.style.display = isOpen ? 'none' : 'block';
-      if (!isOpen) refreshGeminiApiKeyStatus();
+      if (!isOpen) refreshClaudeApiKeyStatus();
     });
 
     document.addEventListener('click', (e) => {
@@ -232,24 +288,24 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  if (geminiApiKeyForm) {
-    geminiApiKeyForm.addEventListener('submit', (event) => {
+  if (claudeApiKeyForm) {
+    claudeApiKeyForm.addEventListener('submit', (event) => {
       event.preventDefault();
-      const input = document.getElementById('geminiApiKeyInput');
+      const input = document.getElementById('claudeApiKeyInput');
       if (!input?.value.trim()) {
-        const status = document.getElementById('geminiApiKeyStatus');
+        const status = document.getElementById('claudeApiKeyStatus');
         if (status) {
-          status.textContent = 'Вставьте API-ключ Gemini.';
+          status.textContent = 'Вставьте API-ключ Claude из Anthropic Console.';
           status.dataset.state = 'error';
         }
         return;
       }
-      updateGeminiApiKey('POST', input.value);
+      updateClaudeApiKey('POST', input.value);
     });
   }
 
-  if (clearGeminiApiKeyBtn) {
-    clearGeminiApiKeyBtn.addEventListener('click', () => updateGeminiApiKey('DELETE'));
+  if (clearClaudeApiKeyBtn) {
+    clearClaudeApiKeyBtn.addEventListener('click', () => updateClaudeApiKey('DELETE'));
   }
 
   const sidebar = document.getElementById('categorySidebar');
@@ -272,42 +328,36 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// Запуск старта приложения
-initApp(API_BASE_URL, {
-  ...dashboardCallbacks
-});
-
 initAIChat(API_BASE_URL);
-
-// Корректный вызов сводных графиков при старте
-const summaryIndEl = document.getElementById('summaryIndicatorSelect');
-if (summaryIndEl && summaryIndEl.value) {
-  await updateSummaryChart(API_BASE_URL, summaryIndEl.value);
-  await updateMultiSummaryChart(API_BASE_URL);
-}
 
 // Функция управления каруселью аналитики
 let wishlistScrollPosition = 0;
 
-window.scrollWishlist = function(direction) {
+function updateWishlistNavigation() {
   const track = document.getElementById('wishlistTrack');
   if (!track) return;
-  
-  const cardWidth = track.querySelector('.wishlist-card').offsetWidth + 16;
-  const visibleCardsCount = Math.floor(track.parentElement.offsetWidth / cardWidth) || 1;
-  const maxScroll = track.scrollWidth - track.parentElement.offsetWidth;
-
-  if (direction === 'right') {
-    wishlistScrollPosition += cardWidth * visibleCardsCount;
-    if (wishlistScrollPosition > maxScroll) {
-      wishlistScrollPosition = maxScroll;
-    }
-  } else {
-    wishlistScrollPosition -= cardWidth * visibleCardsCount;
-    if (wishlistScrollPosition < 0) {
-      wishlistScrollPosition = 0;
-    }
-  }
-
+  const container = track.parentElement;
+  const buttons = document.querySelectorAll('.wishlist-nav-btn');
+  const maxScroll = Math.max(0, track.scrollWidth - container.clientWidth);
+  wishlistScrollPosition = Math.min(wishlistScrollPosition, maxScroll);
+  buttons[0]?.toggleAttribute('disabled', wishlistScrollPosition <= 0);
+  buttons[1]?.toggleAttribute('disabled', wishlistScrollPosition >= maxScroll - 1);
   track.style.transform = `translateX(-${wishlistScrollPosition}px)`;
+}
+
+window.scrollWishlist = function(direction) {
+  const track = document.getElementById('wishlistTrack');
+  const firstCard = track?.querySelector('.wishlist-card');
+  if (!track || !firstCard) return;
+  const gap = Number.parseFloat(getComputedStyle(track).columnGap) || 0;
+  const step = firstCard.getBoundingClientRect().width + gap;
+  const maxScroll = Math.max(0, track.scrollWidth - track.parentElement.clientWidth);
+  wishlistScrollPosition = Math.max(0, Math.min(
+    maxScroll,
+    wishlistScrollPosition + (direction === 'right' ? step : -step)
+  ));
+  updateWishlistNavigation();
 };
+
+window.addEventListener('resize', updateWishlistNavigation);
+requestAnimationFrame(updateWishlistNavigation);

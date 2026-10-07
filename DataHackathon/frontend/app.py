@@ -24,15 +24,13 @@ ACTIVE_DATASET_NAME = None
 ACTIVE_DATASET_MODE = None
 _D004_CACHE_KEY = None
 _D004_CACHE_FRAME = None
-GEMINI_MODEL = os.environ.get('GEMINI_MODEL', 'gemini-3.8-flash').strip()
-GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '').strip()
-if GEMINI_MODEL.startswith('models/'):
-    GEMINI_MODEL = GEMINI_MODEL[len('models/'):]
+CLAUDE_MODEL = os.environ.get('CLAUDE_MODEL', 'claude-sonnet-5-5').strip()
+CLAUDE_API_KEY = os.environ.get('CLAUDE_API_KEY', '').strip()
 
 print(f"[Flask DB]: Используется база данных по пути -> {DB_FILE}")
 
 
-class GeminiAPIError(RuntimeError):
+class ClaudeAPIError(RuntimeError):
     def __init__(self, message, status=None, content_type=None):
         super().__init__(message)
         self.status = status
@@ -94,6 +92,68 @@ D002_FORMS = {
         'description': 'Возможность оплачивать необходимые расходы и пользоваться услугами, а также материальные потребности и лишения детей.'
     }
 }
+
+D006_HOME_TYPES = {
+    '1': 'Индивидуальный дом', '2': 'Комната в доме', '3': 'Двухквартирный дом',
+    '4': 'Дом на три и более квартир', '5': 'Комната в квартире'
+}
+D006_OWNERSHIP = {
+    '1': 'В собственности одного члена семьи', '2': 'В совместной собственности семьи',
+    '3': 'Частное жильё предоставлено бесплатно', '4': 'Частное жильё арендуется',
+    '5': 'Жильё организации предоставлено бесплатно', '6': 'Жильё организации арендуется',
+    '7': 'Государственное жильё'
+}
+D006_AMENITIES = [
+    'Электричество', 'Электроплита', 'Природный газ', 'Сжиженный газ', 'Центральное отопление',
+    'Печное отопление на твёрдом топливе', 'Печное отопление на жидком топливе', 'Печное отопление на газу',
+    'Печное отопление от электричества', 'Солнечная энергия', 'Энергия ветра', 'Энергия воды',
+    'Топливо из органических отходов', 'Водопровод внутри жилья', 'Водопровод вне жилья',
+    'Колодец или колонка', 'Привозная вода', 'Родник, река или озеро', 'Туалет с центральной канализацией',
+    'Туалет с септиком', 'Туалет с выгребной ямой', 'Биотуалет', 'Туалет отсутствует',
+    'Центральная канализация', 'Другая канализация', 'Ванна', 'Душ', 'Баня или сауна',
+    'Центральное горячее водоснабжение', 'Индивидуальный водонагреватель', 'Мусоропровод',
+    'Сбор и вывоз мусора', 'Стационарный телефон', 'Фиксированный интернет', 'Мобильный интернет',
+    'Лифт', 'Домофон', 'Спутниковое телевидение', 'Кабельное телевидение', 'Эфирное телевидение',
+    'Гараж', 'Паркинг'
+]
+D006_DURABLE_GOODS = [
+    'Телевизор', 'Домашний кинотеатр', 'Радиоприёмник', 'Музыкальный центр', 'Спутниковая антенна',
+    'Другое аудио- и видеооборудование', 'Видеокамера', 'Цифровой фотоаппарат', 'Другое фотооборудование',
+    'Ноутбук', 'Другое оборудование для обработки информации', 'Холодильник', 'Морозильная камера',
+    'Стиральная машина', 'Посудомоечная машина', 'Швейная машина', 'Микроволновая печь', 'Пылесос',
+    'Кухонная плита', 'Кондиционер', 'Мультиварка', 'Обогреватель', 'Крупные инструменты для дома и сада',
+    'Другие крупные бытовые приборы', 'Факсимильный аппарат', 'Телефонный аппарат', 'Мобильный телефон',
+    'Стенка или горка', 'Мягкая мебель', 'Мебель для спальни', 'Кухонная мебель', 'Произведения искусства',
+    'Ковры', 'Другая мебель и предметы обихода', 'Легковой автомобиль', 'Грузовой автомобиль',
+    'Мотоцикл', 'Скутер или мопед', 'Велосипед для взрослых', 'Гужевой транспорт',
+    'Клавишный музыкальный инструмент', 'Гитара', 'Домбра', 'Другие музыкальные инструменты',
+    'Крупные товары для отдыха вне помещений', 'Другой товар длительного пользования'
+]
+
+D008_RELATIONSHIPS = {
+    '1': 'Глава домохозяйства', '2': 'Супруг или супруга', '3': 'Сын или дочь',
+    '4': 'Отец или мать', '5': 'Брат или сестра', '6': 'Дедушка или бабушка',
+    '7': 'Внук или внучка', '8': 'Другая степень родства', '9': 'Не родственник'
+}
+D008_MARITAL_STATUS = {
+    '1': 'Никогда не состоял(а) в браке', '2': 'Состоит в браке',
+    '3': 'Вдовец или вдова', '4': 'Разведён(а)'
+}
+D008_EDUCATION = {
+    '1': 'Дошкольное образование', '2': 'Начальное образование', '3': 'Основное среднее',
+    '4': 'Среднее или техническое и профессиональное', '5': 'Высшее образование',
+    '6': 'Послевузовское образование', '7': 'Нет достигнутого уровня образования'
+}
+D008_ACTIVITY = {
+    '1': 'Работа по найму', '2': 'Работа не по найму или предпринимательство',
+    '3': 'Ищет работу', '4': 'Неработающий пенсионер', '5': 'Учащийся или студент',
+    '6': 'Домашнее хозяйство или уход', '7': 'Временно или длительно нетрудоспособен',
+    '8': 'Не работает и не ищет работу по другим причинам'
+}
+D008_AGE_GROUPS = [
+    ('0–14 лет', 0, 14), ('15–24 года', 15, 24), ('25–39 лет', 25, 39),
+    ('40–59 лет', 40, 59), ('60 лет и старше', 60, 130)
+]
 
 D002_QUESTION_OVERRIDES = {
     'subject': {
@@ -309,6 +369,17 @@ def d002_answer_label(form, question, value):
     return f'Код ответа {value}'
 
 
+D002_TERRITORY_NAMES = {
+    '10': 'Область Абай', '11': 'Акмолинская область', '15': 'Актюбинская область',
+    '19': 'Алматинская область', '23': 'Атырауская область', '27': 'Западно-Казахстанская область',
+    '31': 'Жамбылская область', '33': 'Область Жетысу', '35': 'Карагандинская область',
+    '39': 'Костанайская область', '43': 'Кызылординская область', '47': 'Мангистауская область',
+    '51': 'Туркестанская область', '55': 'Павлодарская область', '59': 'Северо-Казахстанская область',
+    '61': 'Туркестанская область', '62': 'Область Улытау', '63': 'Восточно-Казахстанская область',
+    '71': 'г. Астана', '75': 'г. Алматы', '79': 'г. Шымкент'
+}
+
+
 @app.route('/api/d002/options', methods=['GET'])
 def d002_options():
     d002_dir = DATA_DIR / 'd002'
@@ -400,6 +471,323 @@ def d002_data():
         'territories': territories,
         'questions': question_items,
         'question_count': len(question_items)
+    })
+
+
+@app.route('/api/d002/map', methods=['GET'])
+def d002_map_data():
+    year = request.args.get('year', '2024')
+    form = request.args.get('form', 'subject').lower()
+    question = request.args.get('question', '').strip()
+    if year not in {'2021', '2022', '2023', '2024'} or form not in D002_FORMS:
+        return jsonify({'error': 'Выберите доступный год и раздел анкеты D002.'}), 400
+
+    frame, source = get_d002_frame(year, form, get_d002_db_catalog())
+    if frame is None:
+        return jsonify({'error': f'Данные D002 за {year} не найдены.'}), 404
+    question_column = next((str(column) for column in frame.columns if str(column).casefold() == question.casefold()), None)
+    territory_column = next((str(column) for column in frame.columns if str(column).casefold() == 'te'), None)
+    if not question_column or not re.match(r'^GR', question_column, flags=re.IGNORECASE):
+        return jsonify({'error': 'Выбранный вопрос D002 не найден.'}), 404
+    if not territory_column:
+        return jsonify({'available': False, 'reason': 'В наборе D002 нет кода территории.'}), 200
+
+    values = frame[[territory_column, question_column]].copy()
+    values[territory_column] = values[territory_column].fillna('').astype(str).str.strip()
+    values[question_column] = values[question_column].fillna('').astype(str).str.strip()
+    values = values[(values[territory_column] != '') & (values[question_column] != '')]
+    normalized_question = normalize_d002_question(question_column)
+    match = re.match(r'^GR(\d+)', normalized_question)
+    is_satisfaction_scale = form == 'subject' and bool(match) and int(match.group(1)) <= 19
+
+    if is_satisfaction_scale:
+        answer_groups = {
+            '1–3': {'label': 'Низкая удовлетворённость', 'values': {'1', '2', '3'}},
+            '4–7': {'label': 'Частичная удовлетворённость', 'values': {'4', '5', '6', '7'}},
+            '8–10': {'label': 'Высокая удовлетворённость', 'values': {'8', '9', '10'}},
+            '89': {'label': 'Не применимо / затруднились ответить', 'values': {'89'}}
+        }
+        categories = [
+            {'code': code, 'label': details['label']}
+            for code, details in answer_groups.items()
+            if values[question_column].isin(details['values']).any()
+        ]
+        values['_answer_group'] = values[question_column].map({
+            raw: code for code, details in answer_groups.items() for raw in details['values']
+        })
+    else:
+        answer_codes = sorted(values[question_column].unique(), key=lambda value: (not value.isdigit(), int(value) if value.isdigit() else value.casefold()))
+        categories = [{'code': code, 'label': d002_answer_label(form, question_column, code)} for code in answer_codes]
+        values['_answer_group'] = values[question_column]
+
+    regions = []
+    for code, group in values.groupby(territory_column, sort=True):
+        answered = int(len(group))
+        counts = group['_answer_group'].value_counts().to_dict()
+        regions.append({
+            'code': str(code),
+            'territory': D002_TERRITORY_NAMES.get(str(code), f'Код территории {code}'),
+            'answered': answered,
+            'distribution': [
+                {
+                    **category,
+                    'count': int(counts.get(category['code'], 0)),
+                    'share': round(int(counts.get(category['code'], 0)) / answered * 100, 1) if answered else 0
+                }
+                for category in categories
+            ]
+        })
+    return jsonify({
+        'year': year,
+        'form': form,
+        'question': question_column,
+        'source': source,
+        'categories': categories,
+        'regions': regions
+    })
+
+
+def get_d006_catalog():
+    if not Path(DB_FILE).is_file():
+        return {}
+    conn = None
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        if not conn.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='sinte_import_manifest'").fetchone():
+            return {}
+        catalog = {}
+        for source_path, table, row_count in conn.execute(
+            "SELECT source_path, sql_table, row_count FROM sinte_import_manifest WHERE form='d006'"
+        ):
+            parts = Path(source_path).parts
+            if len(parts) == 3 and parts[2].lower().endswith('.csv'):
+                catalog[parts[1]] = {'table': table, 'rows': int(row_count)}
+        return catalog
+    except sqlite3.Error as error:
+        print(f'[D006]: Не удалось прочитать каталог SQLite: {error}')
+        return {}
+    finally:
+        if conn:
+            conn.close()
+
+
+def get_d006_frame(year, catalog):
+    csv_dir = DATA_DIR / 'd006' / year
+    csv_path = next((path for path in csv_dir.glob('*.csv')), None) if csv_dir.is_dir() else None
+    if csv_path:
+        try:
+            return pd.read_csv(csv_path, dtype=str, keep_default_na=False, encoding='utf-8-sig'), 'data/sinte CSV'
+        except UnicodeDecodeError:
+            return pd.read_csv(csv_path, dtype=str, keep_default_na=False, encoding='cp1251'), 'data/sinte CSV'
+    spec = catalog.get(year)
+    if not spec or not Path(DB_FILE).is_file():
+        return None, None
+    table = '"' + spec['table'].replace('"', '""') + '"'
+    conn = sqlite3.connect(DB_FILE)
+    try:
+        return pd.read_sql_query(f'SELECT * FROM {table}', conn, dtype=str).fillna(''), 'database.sqlite'
+    finally:
+        conn.close()
+
+
+@app.route('/api/d006/options', methods=['GET'])
+def d006_options():
+    d006_dir = DATA_DIR / 'd006'
+    years = {path.name for path in d006_dir.iterdir() if path.is_dir() and path.name.isdigit()} if d006_dir.is_dir() else set()
+    catalog = get_d006_catalog()
+    years.update(catalog)
+    return jsonify({'years': sorted(years, reverse=True), 'source_available': bool(years)})
+
+
+@app.route('/api/d006/data', methods=['GET'])
+def d006_data():
+    year = request.args.get('year', '2024')
+    if year not in {'2021', '2022', '2023', '2024'}:
+        return jsonify({'error': 'Выбранный год D006 не поддерживается.'}), 400
+    frame, source = get_d006_frame(year, get_d006_catalog())
+    if frame is None:
+        return jsonify({'error': f'Данные D006 за {year} не найдены ни в data/sinte, ни в database.sqlite.'}), 404
+    frame.columns = [str(column).strip().upper() for column in frame.columns]
+    respondents = len(frame)
+
+    def distribution(column, labels):
+        if column not in frame.columns:
+            return []
+        counts = frame[column].astype(str).str.strip().value_counts()
+        denominator = int(counts.sum())
+        return [
+            {'code': code, 'label': labels.get(code, f'Код {code}'), 'count': int(count),
+             'share': round(int(count) / denominator * 100, 1) if denominator else 0}
+            for code, count in counts.items() if code and code in labels
+        ]
+
+    city_rural = distribution('K', {'1': 'Город', '2': 'Село'})
+    home_types = distribution('TIP_J', D006_HOME_TYPES)
+    ownership = distribution('VLAD1', D006_OWNERSHIP)
+    land_access = distribution('ZEM', {'1': 'Есть доступ', '2': 'Нет доступа'})
+    amenities = []
+    for index, label in enumerate(D006_AMENITIES, start=1):
+        column = f'U{index}'
+        if column not in frame.columns:
+            continue
+        values = frame[column].astype(str).str.strip()
+        valid = values[values.isin({'1', '2'})]
+        available = int(valid.eq('1').sum())
+        amenities.append({
+            'code': column, 'label': label, 'count': available,
+            'share': round(available / len(valid) * 100, 1) if len(valid) else 0
+        })
+
+    goods = []
+    for index, label in enumerate(D006_DURABLE_GOODS, start=1):
+        column = f'TDP{index}'
+        if column not in frame.columns:
+            continue
+        values = pd.to_numeric(frame[column].astype(str).str.strip(), errors='coerce').dropna()
+        goods.append({'code': column, 'label': label, 'count': round(float(values.sum()), 1), 'households_reported': int(len(values))})
+    goods.sort(key=lambda item: item['count'], reverse=True)
+
+    def mean_value(column):
+        if column not in frame.columns:
+            return None
+        values = pd.to_numeric(frame[column].astype(str).str.strip(), errors='coerce').dropna()
+        return round(float(values.mean()), 1) if len(values) else None
+
+    territories = int(frame['TE'].replace('', pd.NA).nunique()) if 'TE' in frame.columns else 0
+    return jsonify({
+        'dataset': 'd006', 'year': year, 'source': source, 'respondents': respondents,
+        'territories': territories, 'city_rural': city_rural, 'home_types': home_types,
+        'ownership': ownership, 'land_access': land_access, 'amenities': amenities,
+        'durable_goods': goods[:15], 'average_total_area': mean_value('OB_PL'),
+        'average_living_area': mean_value('J_PL'), 'average_rooms': mean_value('KOL_K')
+    })
+
+
+def get_d008_catalog():
+    if not Path(DB_FILE).is_file():
+        return {}
+    conn = None
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        if not conn.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='sinte_import_manifest'").fetchone():
+            return {}
+        catalog = {}
+        for source_path, table, row_count in conn.execute(
+            "SELECT source_path, sql_table, row_count FROM sinte_import_manifest WHERE form='d008'"
+        ):
+            parts = Path(source_path).parts
+            if len(parts) == 3 and parts[2].lower().endswith('.csv'):
+                catalog[parts[1]] = {'table': table, 'rows': int(row_count)}
+        return catalog
+    except sqlite3.Error as error:
+        print(f'[D008]: Не удалось прочитать каталог SQLite: {error}')
+        return {}
+    finally:
+        if conn:
+            conn.close()
+
+
+def get_d008_frame(year, catalog):
+    csv_dir = DATA_DIR / 'd008' / year
+    csv_path = next((path for path in csv_dir.glob('*.csv')), None) if csv_dir.is_dir() else None
+    if csv_path:
+        try:
+            return pd.read_csv(csv_path, dtype=str, keep_default_na=False, encoding='utf-8-sig'), 'data/sinte CSV'
+        except UnicodeDecodeError:
+            return pd.read_csv(csv_path, dtype=str, keep_default_na=False, encoding='cp1251'), 'data/sinte CSV'
+    spec = catalog.get(year)
+    if not spec or not Path(DB_FILE).is_file():
+        return None, None
+    table = '"' + spec['table'].replace('"', '""') + '"'
+    conn = sqlite3.connect(DB_FILE)
+    try:
+        return pd.read_sql_query(f'SELECT * FROM {table}', conn, dtype=str).fillna(''), 'database.sqlite'
+    finally:
+        conn.close()
+
+
+@app.route('/api/d008/options', methods=['GET'])
+def d008_options():
+    d008_dir = DATA_DIR / 'd008'
+    years = {path.name for path in d008_dir.iterdir() if path.is_dir() and path.name.isdigit()} if d008_dir.is_dir() else set()
+    catalog = get_d008_catalog()
+    years.update(catalog)
+    return jsonify({'years': sorted(years, reverse=True), 'source_available': bool(years)})
+
+
+@app.route('/api/d008/data', methods=['GET'])
+def d008_data():
+    year = request.args.get('year', '2024')
+    if year not in {'2021', '2022', '2023', '2024'}:
+        return jsonify({'error': 'Выбранный год D008 не поддерживается.'}), 400
+    frame, source = get_d008_frame(year, get_d008_catalog())
+    if frame is None:
+        return jsonify({'error': f'Данные D008 за {year} не найдены ни в data/sinte, ни в database.sqlite.'}), 404
+    frame.columns = [str(column).strip().upper() for column in frame.columns]
+    people_count = int(len(frame))
+
+    def distribution(column, labels):
+        if column not in frame.columns:
+            return []
+        counts = frame[column].astype(str).str.strip().value_counts()
+        known = [(code, int(count)) for code, count in counts.items() if code in labels]
+        denominator = sum(count for _, count in known)
+        return [
+            {'code': code, 'label': labels[code], 'count': count,
+             'share': round(count / denominator * 100, 1) if denominator else 0}
+            for code, count in sorted(known, key=lambda item: (int(item[0]) if item[0].isdigit() else 999, item[0]))
+        ]
+
+    settlement = distribution('K', {'1': 'Город', '2': 'Село'})
+    gender = distribution('POL', {'1': 'Мужчины', '2': 'Женщины'})
+    relationships = distribution('RODSTVO', D008_RELATIONSHIPS)
+    education = distribution('UROV', D008_EDUCATION)
+    marital_status = distribution('SEM_POL', D008_MARITAL_STATUS)
+    activity = distribution('STATUS', D008_ACTIVITY)
+
+    ages = pd.Series(dtype='float64')
+    if 'GOD_ROJD' in frame.columns:
+        birth_year = pd.to_numeric(frame['GOD_ROJD'], errors='coerce')
+        age = pd.to_numeric(year, errors='coerce') - birth_year
+        if 'MES_ROJD' in frame.columns:
+            birth_month = pd.to_numeric(frame['MES_ROJD'], errors='coerce')
+            age = age - (birth_month.gt(1)).astype('int64')
+        ages = age[age.between(0, 120)].dropna()
+    age_structure = []
+    if len(ages):
+        for label, lower, upper in D008_AGE_GROUPS:
+            count = int(ages.between(lower, upper).sum())
+            age_structure.append({
+                'label': label, 'count': count,
+                'share': round(count / len(ages) * 100, 1)
+            })
+
+    if 'NOMER' in frame.columns:
+        household_sizes = frame.groupby(frame['NOMER'].astype(str).str.strip()).size()
+        household_sizes = household_sizes[household_sizes.index.astype(str) != '']
+    elif 'KOL_CHL' in frame.columns:
+        household_sizes = pd.to_numeric(frame['KOL_CHL'], errors='coerce').dropna()
+    else:
+        household_sizes = pd.Series(dtype='float64')
+    size_counts = household_sizes.value_counts().sort_index()
+    household_size_distribution = [
+        {'label': f'{int(size)} ' + ('человек' if int(size) % 10 == 1 and int(size) % 100 != 11 else 'человека' if int(size) % 10 in {2, 3, 4} and int(size) % 100 not in {12, 13, 14} else 'человек'),
+         'count': int(count), 'share': round(int(count) / len(household_sizes) * 100, 1) if len(household_sizes) else 0}
+        for size, count in size_counts.items()
+    ]
+    territories = int(frame['TE'].replace('', pd.NA).nunique()) if 'TE' in frame.columns else 0
+    average_household_size = round(float(household_sizes.mean()), 1) if len(household_sizes) else None
+    average_age = round(float(ages.mean()), 1) if len(ages) else None
+    under_15_share = round(float(ages.lt(15).mean()) * 100, 1) if len(ages) else None
+
+    return jsonify({
+        'dataset': 'd008', 'year': year, 'source': source,
+        'people': people_count, 'households': int(len(household_sizes)), 'territories': territories,
+        'average_household_size': average_household_size, 'average_age': average_age,
+        'under_15_share': under_15_share, 'age_available': len(ages) > 0,
+        'settlement': settlement, 'gender': gender, 'relationships': relationships,
+        'education': education, 'marital_status': marital_status, 'activity': activity,
+        'age_structure': age_structure, 'household_sizes': household_size_distribution
     })
 
 
@@ -726,32 +1114,61 @@ def d004_data():
         'source': 'data/sinte CSV'
     })
 
-@app.route('/api/settings/gemini-key', methods=['GET', 'POST', 'DELETE'])
-def gemini_key_settings():
-    global GEMINI_API_KEY
+@app.route('/api/settings/claude-key', methods=['GET', 'POST', 'DELETE'])
+def claude_key_settings():
+    global CLAUDE_API_KEY
 
     if request.method == 'GET':
-        return jsonify({'configured': bool(GEMINI_API_KEY)})
+        return jsonify({'configured': bool(CLAUDE_API_KEY)})
 
     if request.method == 'DELETE':
-        GEMINI_API_KEY = ''
+        CLAUDE_API_KEY = ''
         return jsonify({'configured': False})
 
     payload = request.get_json(silent=True)
     api_key = payload.get('api_key') if isinstance(payload, dict) else None
     if not isinstance(api_key, str):
-        return jsonify({'error': 'Введите API-ключ Gemini.'}), 400
+        return jsonify({'error': 'Введите API-ключ Claude из Anthropic Console.'}), 400
 
     api_key = api_key.strip()
     if len(api_key) < 20:
-        return jsonify({'error': 'Ключ выглядит слишком коротким. Вставьте полный API-ключ из Google AI Studio.'}), 400
+        return jsonify({'error': 'Ключ выглядит слишком коротким. Вставьте полный API-ключ из Anthropic Console.'}), 400
+    if not api_key.startswith('sk-ant-'):
+        return jsonify({'error': 'Ожидается ключ Anthropic, начинающийся с sk-ant-.'}), 400
     try:
         api_key.encode('ascii')
     except UnicodeEncodeError:
         return jsonify({'error': 'API-ключ должен содержать только ASCII-символы.'}), 400
 
-    GEMINI_API_KEY = api_key
+    CLAUDE_API_KEY = api_key
     return jsonify({'configured': True})
+
+
+@app.route('/api/ai-status', methods=['GET'])
+def ai_status():
+    if not CLAUDE_API_KEY:
+        return jsonify({'status': 'offline', 'reason': 'missing_key'})
+
+    status_request = urllib.request.Request(
+        'https://api.anthropic.com/v1/models?limit=100',
+        headers={
+            'x-api-key': CLAUDE_API_KEY,
+            'anthropic-version': '2023-06-01',
+            'accept': 'application/json'
+        }
+    )
+    try:
+        with urllib.request.urlopen(status_request, timeout=4) as response:
+            models = json.loads(response.read().decode('utf-8')).get('data', [])
+        available_models = {item.get('id') for item in models if isinstance(item, dict)}
+        if CLAUDE_MODEL not in available_models:
+            return jsonify({'status': 'offline', 'reason': 'model_unavailable'})
+        return jsonify({'status': 'online', 'reason': 'ready'})
+    except urllib.error.HTTPError as error:
+        reason = 'invalid_key' if error.code in (401, 403) else 'api_unavailable'
+        return jsonify({'status': 'offline', 'reason': reason})
+    except (urllib.error.URLError, TimeoutError, OSError, ValueError, json.JSONDecodeError):
+        return jsonify({'status': 'offline', 'reason': 'network_unavailable'})
 
 
 
@@ -1036,9 +1453,9 @@ def ai_chat():
 
     try:
         dataset_overview = get_dataset_overview()
-        answer = call_gemini(contents, dataset_overview, dashboard_context)
+        answer = call_claude(contents, dataset_overview, dashboard_context)
         return jsonify({'answer': answer})
-    except GeminiAPIError as error:
+    except ClaudeAPIError as error:
         upstream = {}
         if error.status is not None:
             upstream['status'] = error.status
@@ -1046,7 +1463,7 @@ def ai_chat():
             upstream['content_type'] = error.content_type
         return jsonify({
             'error': {
-                'code': 'gemini_api_error',
+                'code': 'claude_api_error',
                 'message': str(error),
                 'upstream': upstream
             }
@@ -1141,7 +1558,7 @@ def chart_analysis():
     )
 
     try:
-        raw_analysis = call_gemini(
+        raw_analysis = call_claude(
             [{'role': 'user', 'parts': [{'text': prompt}]}],
             get_dataset_overview(),
             {
@@ -1179,7 +1596,7 @@ def chart_analysis():
                 'hypotheses': [item.strip()[:800] for item in analysis['hypotheses'][:3]]
             }
         })
-    except GeminiAPIError as error:
+    except ClaudeAPIError as error:
         return jsonify({'error': str(error)}), 503
     except RuntimeError as error:
         return jsonify({'error': str(error)}), 503
@@ -1188,47 +1605,79 @@ def chart_analysis():
         return jsonify({'error': f'Не удалось подготовить анализ графика: {error}'}), 503
 
 
-def call_gemini(contents, dataset_overview, dashboard_context, max_output_tokens=1200):
-    api_key = GEMINI_API_KEY
+def call_claude(contents, dataset_overview, dashboard_context, max_output_tokens=1200):
+    api_key = CLAUDE_API_KEY
     if not api_key:
-        raise RuntimeError('Не задан GEMINI_API_KEY. Добавьте ключ Gemini в переменные окружения и перезапустите приложение.')
-    try:
-        api_key.encode('ascii')
-    except UnicodeEncodeError as error:
-        raise RuntimeError(
-            'GEMINI_API_KEY содержит недопустимые символы. Скопируйте только ASCII-ключ Gemini '
-            'и перезапустите приложение.'
-        ) from error
+        raise RuntimeError('Не задан CLAUDE_API_KEY. Добавьте ключ Claude в настройках приложения.')
+    if not api_key.startswith('sk-ant-'):
+        raise RuntimeError('CLAUDE_API_KEY должен быть ключом Anthropic, начинающимся с sk-ant-.')
 
-    model = GEMINI_MODEL
     context_text = json.dumps({
         'dataset': dataset_overview,
         'dashboard_filters': dashboard_context
     }, ensure_ascii=False)
     system_instruction = f'{AI_SYSTEM_INSTRUCTION}\n\nФактический каталог базы и выбранные фильтры: {context_text}'
+    messages = []
+    for item in contents:
+        role = 'assistant' if item.get('role') in ('assistant', 'model') else 'user'
+        text = '\n'.join(
+            part.get('text', '')
+            for part in item.get('parts', [])
+            if isinstance(part, dict) and isinstance(part.get('text'), str)
+        ).strip()
+        if text:
+            messages.append({'role': role, 'content': text})
+
+    claude_tools = [
+        {
+            'name': 'get_dataset_overview',
+            'description': 'Получить каталог таблицы demographics: показатели, годы, регионы и количество записей.',
+            'input_schema': {'type': 'object', 'properties': {}}
+        },
+        {
+            'name': 'query_demographics',
+            'description': 'Прочитать агрегированные данные по показателям Казахстана. Вызывай для вычислений, сравнений, трендов и любых числовых выводов.',
+            'input_schema': {
+                'type': 'object',
+                'properties': {
+                    'indicator': {'type': 'string', 'description': 'Название показателя или его уникальная часть.'},
+                    'province': {'type': 'string', 'description': 'Название области/города или его уникальная часть.'},
+                    'start_year': {'type': 'integer', 'description': 'Начальный год включительно.'},
+                    'end_year': {'type': 'integer', 'description': 'Конечный год включительно.'},
+                    'group_by': {
+                        'type': 'string',
+                        'enum': ['none', 'indicator', 'year', 'province', 'province_year'],
+                        'description': 'Группировка результата.'
+                    },
+                    'limit': {'type': 'integer', 'description': 'Максимум строк результата, от 1 до 200.'}
+                }
+            }
+        }
+    ]
 
     for _ in range(4):
         body = {
-            'systemInstruction': {'parts': [{'text': system_instruction}]},
-            'contents': contents,
-            'tools': AI_TOOLS,
-            'generationConfig': {'temperature': 0.2, 'maxOutputTokens': max_output_tokens}
+            'model': CLAUDE_MODEL,
+            'max_tokens': max_output_tokens,
+            'system': system_instruction,
+            'messages': messages,
+            'tools': claude_tools
         }
         retry = 0
-        while retry < 3:
-            endpoint = f'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent'
+        while True:
             req = urllib.request.Request(
-                endpoint,
+                'https://api.anthropic.com/v1/messages',
                 data=json.dumps(body, ensure_ascii=False).encode('utf-8'),
                 headers={
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
-                    'x-goog-api-key': api_key
+                    'x-api-key': api_key,
+                    'anthropic-version': '2023-06-01'
                 },
                 method='POST'
             )
             try:
-                with urllib.request.urlopen(req, timeout=45) as response:
+                with urllib.request.urlopen(req, timeout=60) as response:
                     result = json.loads(response.read().decode('utf-8'))
                 break
             except urllib.error.HTTPError as error:
@@ -1239,49 +1688,43 @@ def call_gemini(contents, dataset_overview, dashboard_context, max_output_tokens
                     error_payload = None
 
                 api_error = error_payload.get('error') if isinstance(error_payload, dict) else None
-                if isinstance(api_error, dict) and isinstance(api_error.get('message'), str):
-                    details = api_error['message']
-                elif isinstance(api_error, str):
-                    details = api_error
-                else:
+                details = api_error.get('message') if isinstance(api_error, dict) else None
+                if not isinstance(details, str):
                     details = (
-                        f'Gemini вернул HTTP {error.code} без JSON-описания '
-                        f'(Content-Type: {error.headers.get_content_type()}). '
-                        f'Диагностика backend: GEMINI_API_KEY получен, длина после удаления '
-                        f'внешних пробелов — {len(api_key)} символов; модель — {model}. '
-                        'Сам ключ не отображается. Если длина не совпадает с полным ключом, '
-                        'полностью закройте приложение и запустите его из PowerShell, '
-                        'в котором задан GEMINI_API_KEY. Если длина верная, проверьте '
-                        'ограничения ключа и сетевой доступ к generativelanguage.googleapis.com.'
+                        f'Anthropic API вернул HTTP {error.code} без описания '
+                        f'(Content-Type: {error.headers.get_content_type()}). Модель: {CLAUDE_MODEL}.'
                     )
-                if error.code == 503 and retry < 2:
+                if error.code in (429, 500, 503, 529) and retry < 2:
                     time.sleep(2 ** (retry + 1))
                     retry += 1
                     continue
-                raise GeminiAPIError(
-                    f'Gemini API ({error.code}): {details}',
+                raise ClaudeAPIError(
+                    f'Claude API ({error.code}): {details}',
                     status=error.code,
                     content_type=error.headers.get_content_type()
                 ) from error
             except urllib.error.URLError as error:
-                raise GeminiAPIError(
-                    f'Не удалось подключиться к Gemini API: {error.reason}'
+                raise ClaudeAPIError(
+                    f'Не удалось подключиться к Anthropic API: {error.reason}'
                 ) from error
 
-        candidate = (result.get('candidates') or [{}])[0]
-        model_content = candidate.get('content', {})
-        parts = model_content.get('parts', [])
-        function_calls = [part['functionCall'] for part in parts if 'functionCall' in part]
-        if not function_calls:
-            answer = '\n'.join(part.get('text', '') for part in parts if part.get('text'))
+        blocks = result.get('content') or []
+        tool_calls = [block for block in blocks if block.get('type') == 'tool_use']
+        if not tool_calls:
+            answer = '\n'.join(
+                block.get('text', '')
+                for block in blocks
+                if block.get('type') == 'text' and block.get('text')
+            )
             if answer:
                 return answer
-            raise RuntimeError('Gemini вернул пустой ответ.')
+            raise RuntimeError('Claude вернул пустой ответ.')
 
-        contents.append(model_content)
-        for function_call in function_calls:
-            name = function_call.get('name')
-            arguments = function_call.get('args') or {}
+        messages.append({'role': 'assistant', 'content': blocks})
+        tool_results = []
+        for tool_call in tool_calls:
+            name = tool_call.get('name')
+            arguments = tool_call.get('input') or {}
             try:
                 if name == 'get_dataset_overview':
                     tool_result = dataset_overview
@@ -1291,10 +1734,12 @@ def call_gemini(contents, dataset_overview, dashboard_context, max_output_tokens
                     tool_result = {'error': 'Запрошена неизвестная функция или переданы неверные параметры.'}
             except (AttributeError, TypeError, ValueError, sqlite3.Error):
                 tool_result = {'error': 'Переданы некорректные параметры фильтрации.'}
-            function_response = {'name': name, 'response': tool_result}
-            if function_call.get('id'):
-                function_response['id'] = function_call['id']
-            contents.append({'role': 'user', 'parts': [{'functionResponse': function_response}]})
+            tool_results.append({
+                'type': 'tool_result',
+                'tool_use_id': tool_call.get('id', ''),
+                'content': json.dumps(tool_result, ensure_ascii=False)
+            })
+        messages.append({'role': 'user', 'content': tool_results})
 
     raise RuntimeError('ИИ не завершил анализ после нескольких запросов к базе. Попробуйте уточнить вопрос.')
 

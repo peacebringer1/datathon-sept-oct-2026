@@ -12,7 +12,7 @@ const PAGE_CONFIG = {
   d008: {
     title: 'Демография',
     breadcrumb: 'Население · Демография',
-    description: 'Демографические данные Казахстана. Выберите общий дашборд для просмотра текущих демографических графиков.'
+    description: 'Возрастной и социальный состав участников обследования домохозяйств: пол, родство, образование, семейное положение и основная деятельность.'
   },
   d004: {
     title: 'Доходы и расходы домохозяйств',
@@ -22,7 +22,7 @@ const PAGE_CONFIG = {
   d006: {
     title: 'Жилищные условия',
     breadcrumb: 'Население · Жилищные условия',
-    description: 'Раздел жилищной статистики. Данные можно будет подключить к этой странице отдельно.'
+    description: 'Ежегодный опрос о типе и площади жилья, коммунальных удобствах, собственности, доступе к земле и имуществе домохозяйств.'
   },
   d002: {
     title: 'Социальные оценки',
@@ -39,7 +39,14 @@ let d002Charts = new Map();
 let d002ChartObserver = null;
 let d002Questions = [];
 let d002Respondents = 0;
-let d002VisibleQuestionCount = 10;
+let d002FilteredQuestions = [];
+let d002QuestionIndex = 0;
+let d002Map = null;
+let d002MapGeoJSON = null;
+let d002MapRevision = 0;
+let d002MapRegions = [];
+let d006Charts = new Map();
+let d008Charts = new Map();
 let d004Map = null;
 let d004GeoJSON = null;
 let d004MapSummary = [];
@@ -70,11 +77,10 @@ function disposeD002Charts() {
 }
 
 function renderD002QuestionChart(element, question) {
-  if (!element || !window.echarts || !question.distribution.length) return;
+  if (!element || !window.echarts || !question?.distribution?.length) return;
   const chart = window.echarts.init(element);
   d002Charts.set(element, chart);
-  const card = element.closest('.d002-question-card');
-  const styles = getComputedStyle(card);
+  const styles = getComputedStyle(element.closest('.dataset-panel') || element);
   const textColor = styles.getPropertyValue('--text-primary').trim() || '#222222';
   const surfaceColor = styles.backgroundColor || '#ffffff';
   chart.setOption({
@@ -106,59 +112,400 @@ function renderD002QuestionChart(element, question) {
   chart.resize();
 }
 
-function renderD002QuestionCards() {
-  const grid = document.getElementById('d002QuestionCharts');
+function renderD002Question() {
   const query = document.getElementById('d002QuestionSearch').value.trim().toLocaleLowerCase('ru-RU');
-  const matchingQuestions = d002Questions.filter((question) => `${question.label} ${question.id}`.toLocaleLowerCase('ru-RU').includes(query));
-  const shownQuestions = matchingQuestions.slice(0, d002VisibleQuestionCount);
+  d002FilteredQuestions = d002Questions.filter((question) => `${question.label} ${question.id}`.toLocaleLowerCase('ru-RU').includes(query));
+  if (d002QuestionIndex >= d002FilteredQuestions.length) d002QuestionIndex = Math.max(0, d002FilteredQuestions.length - 1);
   disposeD002Charts();
-  const fragment = document.createDocumentFragment();
-  shownQuestions.forEach((question, index) => {
-    const card = document.createElement('article');
-    card.className = 'd002-question-card';
-    const heading = document.createElement('h3');
-    heading.textContent = question.label;
-    const code = document.createElement('span');
-    code.className = 'd002-question-code';
-    code.textContent = question.id;
-    const meta = document.createElement('p');
-    meta.className = 'd002-question-meta';
-    meta.textContent = `Ответили: ${Number(question.answered).toLocaleString('ru-RU')} из ${Number(d002Respondents).toLocaleString('ru-RU')} · без ответа: ${Number(question.missing).toLocaleString('ru-RU')}`;
-    const visualHint = document.createElement('p');
-    visualHint.className = 'd002-question-hint';
-    visualHint.textContent = 'Наведите на сектор, чтобы увидеть долю ответа';
-    const chart = document.createElement('div');
-    chart.className = 'd002-question-chart';
-    chart.setAttribute('role', 'img');
-    chart.setAttribute('aria-label', `Диаграмма ответов: ${question.label}`);
-    chart.dataset.questionIndex = String(index);
-    const note = document.createElement('p');
-    note.className = 'd002-question-note';
-    note.textContent = question.chart_note;
-    card.append(heading, code, meta, visualHint, chart, note);
-    fragment.append(card);
+  const question = d002FilteredQuestions[d002QuestionIndex];
+  const empty = !question;
+  document.getElementById('d002NoResults').hidden = !empty;
+  document.getElementById('d002QuestionChart').hidden = empty;
+  document.getElementById('d002QuestionInfo').hidden = empty;
+  document.getElementById('d002PreviousQuestion').disabled = empty || d002QuestionIndex === 0;
+  document.getElementById('d002NextQuestion').disabled = empty || d002QuestionIndex >= d002FilteredQuestions.length - 1;
+  setText('d002QuestionPosition', empty ? 'Вопросов не найдено' : `Вопрос ${d002QuestionIndex + 1} из ${d002FilteredQuestions.length}`);
+  if (empty) {
+    setText('d002CurrentQuestionTitle', '');
+    setText('d002CurrentQuestionCode', '');
+    document.getElementById('d002MapPanel').hidden = true;
+    d002MapRevision += 1;
+    return;
+  }
+  setText('d002CurrentQuestionTitle', question.label);
+  setText('d002QuestionInfoTitle', question.label);
+  setText('d002CurrentQuestionCode', question.id);
+  setText('d002AnsweredCount', Number(question.answered).toLocaleString('ru-RU'));
+  setText('d002MissingCount', Number(question.missing).toLocaleString('ru-RU'));
+  setText('d002AnswerRate', `${d002Respondents ? Math.round(question.answered / d002Respondents * 1000) / 10 : 0}%`);
+  setText('d002QuestionNote', question.chart_note || 'Доля рассчитана среди участников, ответивших на этот вопрос.');
+  setText('d002ChartCaption', `Ответы ${Number(question.answered).toLocaleString('ru-RU')} участников. Наведите на сектор, чтобы увидеть число и долю.`);
+  renderD002QuestionChart(document.getElementById('d002QuestionChart'), question);
+  renderD002Map(question);
+}
+
+const d002RegionCoordinates = {
+  '10': [80.23, 50.41], '11': [69.39, 53.28], '15': [57.2, 50.28], '19': [76.96, 43.86],
+  '23': [51.92, 47.11], '27': [51.37, 51.23], '31': [71.37, 42.9], '33': [78.37, 45.02],
+  '35': [73.1, 49.8], '39': [63.63, 53.21], '43': [65.5, 44.85], '47': [51.16, 43.65],
+  '51': [68.27, 43.3], '55': [76.95, 52.28], '59': [69.15, 54.87], '61': [68.27, 43.3],
+  '62': [67.71, 47.78], '63': [82.62, 49.95], '71': [71.43, 51.17], '75': [76.95, 43.24],
+  '79': [69.6, 42.32]
+};
+
+async function renderD002Map(question) {
+  const panel = document.getElementById('d002MapPanel');
+  const chartElement = document.getElementById('d002MapChart');
+  const revision = ++d002MapRevision;
+  if (!Number(document.getElementById('d002TerritoriesStat').textContent.replace(/\D/g, '')) || !question.distribution?.length) {
+    panel.hidden = true;
+    return;
+  }
+  panel.hidden = false;
+  const params = new URLSearchParams({
+    year: document.getElementById('d002YearSelect').value,
+    form: document.getElementById('d002FormSelect').value,
+    question: question.id
   });
-  grid.replaceChildren(fragment);
+  setText('d002MapStatus', 'Считаем доли ответов по территориям…');
+  setText('d002RegionTitle', 'Выберите область на карте');
+  document.getElementById('d002RegionStats').hidden = true;
+  let response;
+  try {
+    response = await fetch(`${activeApiUrl}/api/d002/map?${params}`);
+    const result = await response.json().catch(() => ({}));
+    if (revision !== d002MapRevision) return;
+    if (!response.ok) {
+      const serverMessage = result.error ? ` Сервер сообщил: ${result.error}` : '';
+      const restartHint = response.status === 404
+        ? ' Перезапустите приложение целиком, чтобы Flask загрузил маршрут карты.'
+        : '';
+      throw new Error(`Flask API вернул HTTP ${response.status}.${serverMessage}${restartHint}`);
+    }
+    if (!result.regions?.length || !result.categories?.length) {
+      panel.hidden = true;
+      return;
+    }
+    d002MapRegions = result.regions;
+    setText('d002MapStatus', 'Каждый круг — отдельная область. Цвет сектора соответствует варианту ответа; наведите курсор или нажмите на круг для подробностей.');
+    if (!window.echarts) throw new Error('Библиотека ECharts недоступна.');
+    d002Map = window.echarts.getInstanceByDom(chartElement) || window.echarts.init(chartElement);
+    if (!d002MapGeoJSON) {
+      const geoResponse = await fetch('https://raw.githubusercontent.com/artemnovichkov/KazakhstanMapExample/main/KazakhstanMapExample/kazakhstan.geojson');
+      if (!geoResponse.ok) throw new Error('Не удалось загрузить границы Казахстана.');
+      d002MapGeoJSON = await geoResponse.json();
+      window.echarts.registerMap('KZ_D002', d002MapGeoJSON);
+    }
+    if (revision !== d002MapRevision) return;
+    const dark = document.body.classList.contains('dark-theme');
+    const colors = ['#fbb085', '#c9aace', '#a88db1', '#df987d', '#e8c785', '#9ab7a6', '#d87979', '#8db9c3', '#bb9a80', '#c1c1d3'];
+    d002Map.setOption({
+      color: colors,
+      tooltip: {
+        trigger: 'item',
+        formatter: (item) => {
+          const region = d002MapRegions.find((entry) => entry.code === item.data?.regionCode);
+          return region && item.data?.count != null
+            ? `${region.territory}<br>${item.name}: ${item.data.count} (${item.data.share}%)<br>Всего ответов: ${region.answered}`
+            : `${item.seriesName || item.name}`;
+        }
+      },
+      legend: {
+        type: 'scroll', bottom: 2, left: 'center', data: result.categories.map((item) => item.label),
+        textStyle: { color: dark ? '#e7dce8' : '#51484f', fontSize: 11 },
+        pageTextStyle: { color: dark ? '#e7dce8' : '#51484f' }
+      },
+      geo: {
+        map: 'KZ_D002', roam: false, zoom: 1,
+        layoutCenter: [' 0%', '130%'], layoutSize: '297%',
+        itemStyle: { areaColor: dark ? '#39333b' : '#f4ede8', borderColor: dark ? '#c9aace' : '#ad91b3', borderWidth: 1.1 },
+        emphasis: { itemStyle: { areaColor: dark ? '#514352' : '#e8d6e9' }, label: { show: true, color: dark ? '#fff' : '#342c35', fontSize: 10 } },
+        label: { show: false }
+      },
+      series: result.regions.filter((region) => d002RegionCoordinates[region.code]).map((region) => ({
+        name: region.territory,
+        type: 'pie',
+        coordinateSystem: 'geo',
+        geoIndex: 0,
+        center: d002RegionCoordinates[region.code],
+        radius: 18,
+        minShowLabelAngle: 8,
+        avoidLabelOverlap: true,
+        itemStyle: { borderColor: dark ? '#2c282d' : '#fff', borderWidth: 1, borderRadius: 2 },
+        label: { show: false },
+        emphasis: { scale: true, scaleSize: 5, label: { show: true, formatter: '{b}\n{d}%', color: dark ? '#fff' : '#342c35', fontSize: 9, fontWeight: 700 } },
+        data: region.distribution.map((answer) => ({
+          name: answer.label, value: answer.count, share: answer.share,
+          count: answer.count, regionCode: region.code
+        }))
+      }))
+    }, true);
+    d002Map.off('click');
+    d002Map.on('click', (params) => {
+      const region = d002MapRegions.find((entry) => entry.territory === params.seriesName);
+      if (region) showD002RegionDetails(region);
+    });
+    d002Map.resize();
+    setText('d002MapCaption', `${question.label} · сравнение распределения ответов по областям. Размер круга условный; секторы показывают доли ответов.`);
+  } catch (error) {
+    if (revision !== d002MapRevision) return;
+    const networkHint = response ? '' : ' Проверьте, запущен ли Flask-сервер.';
+    setText('d002MapStatus', `${error.message}${networkHint}`);
+  }
+}
 
-  const noResults = document.getElementById('d002NoResults');
-  noResults.hidden = matchingQuestions.length > 0;
-  const loadMore = document.getElementById('d002LoadMore');
-  loadMore.hidden = shownQuestions.length >= matchingQuestions.length;
-  const shownStatus = document.getElementById('d002ShownStatus');
-  shownStatus.textContent = matchingQuestions.length ? `Показано ${shownQuestions.length} из ${matchingQuestions.length} вопросов` : '';
+function showD002RegionDetails(region) {
+  setText('d002RegionTitle', region.territory);
+  const description = document.getElementById('d002RegionDescription');
+  const stats = document.getElementById('d002RegionStats');
+  description.textContent = `Распределение ответов среди ${Number(region.answered).toLocaleString('ru-RU')} участников этой территории.`;
+  stats.replaceChildren();
+  const total = document.createElement('article');
+  total.className = 'd002-region-total';
+  const totalLabel = document.createElement('span');
+  totalLabel.textContent = `Всего ответов · код ${region.code}`;
+  const totalValue = document.createElement('strong');
+  totalValue.textContent = Number(region.answered).toLocaleString('ru-RU');
+  total.append(totalLabel, totalValue);
+  stats.append(total);
+  const palette = ['#fbb085', '#c9aace', '#a88db1', '#df987d', '#e8c785', '#9ab7a6', '#d87979', '#8db9c3', '#bb9a80', '#c1c1d3'];
+  region.distribution.forEach((item, index) => {
+    const row = document.createElement('article');
+    row.className = 'd002-region-answer';
+    row.style.setProperty('--answer-color', palette[index % palette.length]);
+    const heading = document.createElement('div');
+    heading.className = 'd002-region-answer-heading';
+    const label = document.createElement('span');
+    label.textContent = item.label;
+    const value = document.createElement('strong');
+    value.textContent = `${Number(item.count).toLocaleString('ru-RU')} · ${item.share}%`;
+    heading.append(label, value);
+    const track = document.createElement('div');
+    track.className = 'd002-region-answer-track';
+    track.setAttribute('aria-hidden', 'true');
+    const bar = document.createElement('span');
+    bar.style.width = `${Math.max(0, Math.min(100, Number(item.share) || 0))}%`;
+    track.append(bar);
+    row.append(heading, track);
+    stats.append(row);
+  });
+  stats.hidden = false;
+}
 
-  const renderChart = (chartElement) => renderD002QuestionChart(chartElement, shownQuestions[Number(chartElement.dataset.questionIndex)]);
-  if ('IntersectionObserver' in window) {
-    d002ChartObserver = new IntersectionObserver((entries, observer) => {
-      entries.forEach((entry) => {
-        if (!entry.isIntersecting) return;
-        renderChart(entry.target);
-        observer.unobserve(entry.target);
-      });
-    }, { rootMargin: '300px 0px' });
-    grid.querySelectorAll('.d002-question-chart').forEach((element) => d002ChartObserver.observe(element));
-  } else {
-    grid.querySelectorAll('.d002-question-chart').forEach(renderChart);
+function renderD006Pie(id, items) {
+  const element = document.getElementById(id);
+  if (!element || !window.echarts || !items.length) return;
+  const chart = window.echarts.init(element);
+  d006Charts.set(id, chart);
+  const styles = getComputedStyle(element.closest('.d006-chart-panel'));
+  const textColor = styles.getPropertyValue('--text-primary').trim() || '#222222';
+  chart.setOption({
+    color: ['#fbb085', '#c9aace', '#222222', '#e9d4c2', '#a987b0', '#756b6b', '#f4c7aa'],
+    tooltip: { trigger: 'item', formatter: ({ name, value, percent }) => `${name}<br>${Number(value).toLocaleString('ru-RU')} домохозяйств · ${percent}%` },
+    legend: { top: '3%', left: 'center', type: 'scroll', textStyle: { color: textColor, fontSize: 11 } },
+    series: [{
+      name: 'Домохозяйства', type: 'pie', radius: ['40%', '70%'], center: ['50%', '59%'],
+      avoidLabelOverlap: false, padAngle: 4,
+      data: items.map((item) => ({ value: item.count, name: item.label })),
+      label: { show: false, position: 'center' },
+      emphasis: { label: { show: true, color: textColor, fontSize: 16, fontWeight: 'bold', formatter: ({ name, percent }) => `${name}\n${percent}%` } },
+      labelLine: { show: false },
+      itemStyle: { borderRadius: 9, borderColor: styles.backgroundColor, borderWidth: 3 }
+    }]
+  });
+  chart.resize();
+}
+
+function renderD006Bars(id, items, valueKey, valueSuffix = '') {
+  const element = document.getElementById(id);
+  if (!element || !window.echarts || !items.length) return;
+  const chart = window.echarts.init(element);
+  d006Charts.set(id, chart);
+  const styles = getComputedStyle(element.closest('.d006-chart-panel'));
+  const textColor = styles.getPropertyValue('--text-primary').trim() || '#222222';
+  const sorted = [...items].sort((a, b) => Number(b[valueKey]) - Number(a[valueKey]));
+  chart.setOption({
+    color: ['#fbb085', '#c9aace', '#a88db1', '#df987d'],
+    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: (params) => `${params[0].name}<br>${Number(params[0].value).toLocaleString('ru-RU')}${valueSuffix}` },
+    grid: { left: 16, right: 70, top: 12, bottom: 14, containLabel: true },
+    dataZoom: [
+      { type: 'inside', yAxisIndex: 0, startValue: 0, endValue: Math.min(items.length - 1, 17), filterMode: 'none', zoomOnMouseWheel: false, moveOnMouseWheel: true },
+      { type: 'slider', yAxisIndex: 0, startValue: 0, endValue: Math.min(items.length - 1, 17), right: 8, width: 9, showDetail: false, brushSelect: false, borderColor: 'transparent', backgroundColor: 'rgba(201,170,206,.12)', fillerColor: 'rgba(201,170,206,.35)', handleStyle: { color: '#c9aace' }, textStyle: { color: textColor } }
+    ],
+    xAxis: { type: 'value', max: valueSuffix === '%' ? 100 : undefined, axisLabel: { color: textColor, formatter: valueSuffix === '%' ? '{value}%' : '{value}' }, splitLine: { lineStyle: { type: 'dashed', color: 'rgba(201,170,206,.23)' } } },
+    yAxis: { type: 'category', inverse: true, data: sorted.map((item) => item.label), axisLabel: { color: textColor, width: 270, overflow: 'truncate', fontSize: 10 }, axisLine: { show: false }, axisTick: { show: false } },
+    series: [{ type: 'bar', data: sorted.map((item, index) => ({ value: item[valueKey], itemStyle: { color: ['#fbb085', '#c9aace', '#a88db1', '#df987d'][index % 4] } })), barMaxWidth: 20, showBackground: true, backgroundStyle: { color: 'rgba(201,170,206,.11)', borderRadius: [0, 7, 7, 0] }, itemStyle: { borderRadius: [0, 7, 7, 0] }, label: { show: true, position: 'right', color: textColor, fontSize: 10, formatter: ({ value }) => `${Number(value).toLocaleString('ru-RU')}${valueSuffix}` } }]
+  });
+  chart.resize();
+}
+
+function disposeD006Charts() {
+  d006Charts.forEach((chart) => chart.dispose());
+  d006Charts.clear();
+}
+
+async function loadD006Page() {
+  const status = document.getElementById('d006Status');
+  const year = document.getElementById('d006YearSelect').value;
+  status.dataset.state = 'loading';
+  status.textContent = 'Загружаем данные о жилищных условиях…';
+  try {
+    const response = await fetch(`${activeApiUrl}/api/d006/data?year=${encodeURIComponent(year)}`);
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(result.error || 'Не удалось загрузить D006.');
+    disposeD006Charts();
+    setText('d006RespondentsStat', Number(result.respondents).toLocaleString('ru-RU'));
+    setText('d006TerritoriesStat', Number(result.territories).toLocaleString('ru-RU'));
+    setText('d006TotalAreaStat', result.average_total_area == null ? '—' : `${Number(result.average_total_area).toLocaleString('ru-RU')} м²`);
+    setText('d006LivingAreaStat', result.average_living_area == null ? '—' : `${Number(result.average_living_area).toLocaleString('ru-RU')} м²`);
+    setText('d006RoomsStat', result.average_rooms == null ? '—' : Number(result.average_rooms).toLocaleString('ru-RU'));
+    renderD006Pie('d006HomeTypeChart', result.home_types);
+    renderD006Pie('d006OwnershipChart', result.ownership);
+    renderD006Pie('d006SettlementChart', result.city_rural);
+    renderD006Pie('d006LandChart', result.land_access);
+    renderD006Bars('d006AmenitiesChart', result.amenities, 'share', '%');
+    renderD006Bars('d006GoodsChart', result.durable_goods, 'count');
+    setText('d006SourceNote', `Год ${result.year}. Источник: ${result.source === 'database.sqlite' ? 'database.sqlite' : 'CSV в data/sinte'}. Средние значения рассчитаны по анкетам с заполненным ответом.`);
+    status.dataset.state = 'success';
+    status.textContent = `${result.year}: ${Number(result.respondents).toLocaleString('ru-RU')} анкет по ${Number(result.territories).toLocaleString('ru-RU')} территориям.`;
+  } catch (error) {
+    disposeD006Charts();
+    status.dataset.state = 'error';
+    status.textContent = error.message;
+  }
+}
+
+async function initializeD006(apiBaseUrl) {
+  activeApiUrl = apiBaseUrl;
+  const dashboard = document.getElementById('d006Dashboard');
+  try {
+    const response = await fetch(`${apiBaseUrl}/api/d006/options`);
+    const options = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(options.error || 'Не удалось получить список данных D006.');
+    if (!options.years.length) throw new Error('Данные D006 не найдены ни в data/sinte, ни в database.sqlite.');
+    appendOptions(document.getElementById('d006YearSelect'), options.years, String, String);
+    if (options.years.includes('2024')) document.getElementById('d006YearSelect').value = '2024';
+    if (!dashboard.dataset.listenersReady) {
+      document.getElementById('d006YearSelect').addEventListener('change', loadD006Page);
+      window.addEventListener('resize', () => d006Charts.forEach((chart) => chart.resize()));
+      dashboard.dataset.listenersReady = 'true';
+    }
+    dashboard.hidden = false;
+    await loadD006Page();
+  } catch (error) {
+    dashboard.hidden = false;
+    const status = document.getElementById('d006Status');
+    status.dataset.state = 'error';
+    status.textContent = error.message;
+  }
+}
+
+function renderD008Pie(id, items) {
+  const element = document.getElementById(id);
+  if (!element || !window.echarts || !items.length) return;
+  const chart = window.echarts.init(element);
+  d008Charts.set(id, chart);
+  const styles = getComputedStyle(element.closest('.d006-chart-panel'));
+  const textColor = styles.getPropertyValue('--text-primary').trim() || '#222222';
+  chart.setOption({
+    color: ['#fbb085', '#c9aace', '#222222', '#e9d4c2', '#a987b0', '#756b6b', '#f4c7aa', '#d9c8dc'],
+    tooltip: { trigger: 'item', formatter: ({ name, value, percent }) => `${name}<br>${Number(value).toLocaleString('ru-RU')} человек · ${percent}%` },
+    legend: { top: '3%', left: 'center', type: 'scroll', textStyle: { color: textColor, fontSize: 11 } },
+    series: [{
+      name: 'Участники обследования', type: 'pie', radius: ['40%', '70%'], center: ['50%', '59%'],
+      avoidLabelOverlap: false, padAngle: 4,
+      data: items.map((item) => ({ value: item.count, name: item.label })),
+      label: { show: false, position: 'center' },
+      emphasis: { label: { show: true, color: textColor, fontSize: 15, fontWeight: 'bold', formatter: ({ name, percent }) => `${name}\n${percent}%` } },
+      labelLine: { show: false },
+      itemStyle: { borderRadius: 9, borderColor: styles.backgroundColor, borderWidth: 3 }
+    }]
+  });
+  chart.resize();
+}
+
+function renderD008Bars(id, items, valueKey, suffix = '', sortByValue = true) {
+  const element = document.getElementById(id);
+  if (!element || !window.echarts || !items.length) return;
+  const chart = window.echarts.init(element);
+  d008Charts.set(id, chart);
+  const styles = getComputedStyle(element.closest('.d006-chart-panel'));
+  const textColor = styles.getPropertyValue('--text-primary').trim() || '#222222';
+  const sorted = sortByValue ? [...items].sort((a, b) => Number(a[valueKey]) - Number(b[valueKey])) : items;
+  chart.setOption({
+    color: ['#fbb085'],
+    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: (params) => `${params[0].name}<br>${Number(params[0].value).toLocaleString('ru-RU')}${suffix}` },
+    grid: { left: 12, right: 45, top: 10, bottom: 10, containLabel: true },
+    xAxis: { type: 'value', max: suffix === '%' ? 100 : undefined, axisLabel: { color: textColor, formatter: suffix === '%' ? '{value}%' : '{value}' }, splitLine: { lineStyle: { color: 'rgba(201, 170, 206, 0.2)' } } },
+    yAxis: { type: 'category', data: sorted.map((item) => item.label), axisLabel: { color: textColor, width: 245, overflow: 'truncate' }, axisLine: { show: false } },
+    series: [{ type: 'bar', data: sorted.map((item) => item[valueKey]), barMaxWidth: 25, itemStyle: { borderRadius: [0, 7, 7, 0] }, label: { show: true, position: 'right', color: textColor, formatter: ({ value }) => `${Number(value).toLocaleString('ru-RU')}${suffix}` } }]
+  });
+  chart.resize();
+}
+
+function disposeD008Charts() {
+  d008Charts.forEach((chart) => chart.dispose());
+  d008Charts.clear();
+}
+
+async function loadD008Page() {
+  const status = document.getElementById('d008Status');
+  const year = document.getElementById('d008YearSelect').value;
+  status.dataset.state = 'loading';
+  status.textContent = 'Загружаем состав домохозяйств…';
+  try {
+    const response = await fetch(`${activeApiUrl}/api/d008/data?year=${encodeURIComponent(year)}`);
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(result.error || 'Не удалось загрузить D008.');
+    disposeD008Charts();
+    setText('d008PeopleStat', Number(result.people).toLocaleString('ru-RU'));
+    setText('d008HouseholdsStat', Number(result.households).toLocaleString('ru-RU'));
+    setText('d008HouseholdSizeStat', result.average_household_size == null ? '—' : `${Number(result.average_household_size).toLocaleString('ru-RU')} чел.`);
+    setText('d008AverageAgeStat', result.average_age == null ? '—' : `${Number(result.average_age).toLocaleString('ru-RU')} года`);
+    setText('d008ChildrenStat', result.under_15_share == null ? '—' : `${Number(result.under_15_share).toLocaleString('ru-RU')}%`);
+    setText('d008TerritoriesStat', Number(result.territories).toLocaleString('ru-RU'));
+    document.getElementById('d008AgeNoData').hidden = result.age_available;
+    document.getElementById('d008AgeChart').hidden = !result.age_available;
+    renderD008Pie('d008SettlementChart', result.settlement);
+    renderD008Pie('d008GenderChart', result.gender);
+    renderD008Pie('d008RelationshipChart', result.relationships);
+    renderD008Pie('d008EducationChart', result.education);
+    renderD008Pie('d008MaritalChart', result.marital_status);
+    renderD008Bars('d008ActivityChart', result.activity, 'share', '%');
+    renderD008Bars('d008AgeChart', result.age_structure, 'share', '%', false);
+    renderD008Bars('d008HouseholdSizeChart', result.household_sizes, 'count', '', false);
+    setText('d008SourceNote', `Год ${result.year}. Источник: ${result.source === 'database.sqlite' ? 'database.sqlite' : 'CSV в data/sinte'}. Средний возраст рассчитывается на 1 января отчётного года; анкета за ${result.year} год содержит ${Number(result.people).toLocaleString('ru-RU')} записей о людях.`);
+    status.dataset.state = 'success';
+    status.textContent = `${result.year}: ${Number(result.people).toLocaleString('ru-RU')} человек из ${Number(result.households).toLocaleString('ru-RU')} обследованных домохозяйств.`;
+  } catch (error) {
+    disposeD008Charts();
+    status.dataset.state = 'error';
+    status.textContent = error.message;
+  }
+}
+
+async function initializeD008(apiBaseUrl) {
+  activeApiUrl = apiBaseUrl;
+  const dashboard = document.getElementById('d008Dashboard');
+  try {
+    const response = await fetch(`${apiBaseUrl}/api/d008/options`);
+    const options = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(options.error || 'Не удалось получить список данных D008.');
+    if (!options.years.length) throw new Error('Данные D008 не найдены ни в data/sinte, ни в database.sqlite.');
+    appendOptions(document.getElementById('d008YearSelect'), options.years, String, String);
+    if (options.years.includes('2024')) document.getElementById('d008YearSelect').value = '2024';
+    if (!dashboard.dataset.listenersReady) {
+      document.getElementById('d008YearSelect').addEventListener('change', loadD008Page);
+      window.addEventListener('resize', () => d008Charts.forEach((chart) => chart.resize()));
+      dashboard.dataset.listenersReady = 'true';
+    }
+    dashboard.hidden = false;
+    await loadD008Page();
+  } catch (error) {
+    dashboard.hidden = false;
+    const status = document.getElementById('d008Status');
+    status.dataset.state = 'error';
+    status.textContent = error.message;
   }
 }
 
@@ -182,16 +529,17 @@ async function loadD002Page() {
     setText('d002TerritoriesStat', Number(result.territories).toLocaleString('ru-RU'));
     d002Questions = result.questions;
     d002Respondents = result.respondents;
-    d002VisibleQuestionCount = 10;
+    d002QuestionIndex = 0;
     document.getElementById('d002QuestionSearch').value = '';
-    renderD002QuestionCards();
+    renderD002Question();
     status.dataset.state = 'success';
     status.textContent = `${result.year}: ${Number(result.respondents).toLocaleString('ru-RU')} анкет. Источник: ${result.source === 'database.sqlite' ? 'database.sqlite' : 'CSV в data/sinte'}.`;
   } catch (error) {
     status.dataset.state = 'error';
     status.textContent = error.message;
     disposeD002Charts();
-    document.getElementById('d002QuestionCharts').replaceChildren();
+    document.getElementById('d002QuestionChart').hidden = true;
+    document.getElementById('d002MapPanel').hidden = true;
   }
 }
 
@@ -214,12 +562,14 @@ async function initializeD002(apiBaseUrl) {
         document.getElementById(id).addEventListener('change', loadD002Page);
       });
       document.getElementById('d002QuestionSearch').addEventListener('input', () => {
-        d002VisibleQuestionCount = 10;
-        renderD002QuestionCards();
+        d002QuestionIndex = 0;
+        renderD002Question();
       });
-      document.getElementById('d002LoadMore').addEventListener('click', () => {
-        d002VisibleQuestionCount += 10;
-        renderD002QuestionCards();
+      document.getElementById('d002PreviousQuestion').addEventListener('click', () => {
+        if (d002QuestionIndex > 0) { d002QuestionIndex -= 1; renderD002Question(); }
+      });
+      document.getElementById('d002NextQuestion').addEventListener('click', () => {
+        if (d002QuestionIndex < d002FilteredQuestions.length - 1) { d002QuestionIndex += 1; renderD002Question(); }
       });
       dashboard.dataset.listenersReady = 'true';
     }
@@ -273,27 +623,33 @@ function renderD004Chart(chartData, metric, moduleLabel, year, quarter) {
   const chartElement = document.getElementById('d004TerritoryChart');
   if (!chartElement || !window.echarts) return;
   d004Chart = window.echarts.getInstanceByDom(chartElement) || window.echarts.init(chartElement);
+  const dark = document.body.classList.contains('dark-theme');
+  const textColor = dark ? '#eee5ed' : '#51484f';
+  const colors = ['#fbb085', '#c9aace', '#a88db1', '#df987d'];
   d004Chart.setOption({
-    color: ['#2563eb'],
-    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-    grid: { left: 48, right: 24, top: 24, bottom: 68, containLabel: true },
+    color: colors,
+    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, textStyle: { color: '#222' } },
+    grid: { left: 48, right: 24, top: 48, bottom: 68, containLabel: true },
     xAxis: {
       type: 'category',
       data: chartData.labels,
-      axisLabel: { rotate: 35, interval: 0 }
+      axisLabel: { rotate: 35, interval: 0, color: textColor },
+      axisLine: { lineStyle: { color: dark ? '#655a66' : '#d9ced6' } }
     },
-    yAxis: { type: 'value', name: metric === 'Количество записей' ? 'Записей' : 'Значение', minInterval: 1 },
+    yAxis: { type: 'value', name: metric === 'Количество записей' ? 'Записей' : 'Значение', minInterval: 1, axisLabel: { color: textColor }, nameTextStyle: { color: textColor }, splitLine: { lineStyle: { color: dark ? 'rgba(255,255,255,.08)' : 'rgba(34,34,34,.08)' } } },
     series: [{
       name: metric,
       type: 'bar',
-      data: chartData.values,
+      data: chartData.values.map((value, index) => ({ value, itemStyle: { color: colors[index % colors.length] } })),
       barMaxWidth: 42,
+      showBackground: true,
+      backgroundStyle: { color: dark ? 'rgba(201,170,206,.12)' : 'rgba(201,170,206,.18)', borderRadius: [5, 5, 0, 0] },
       itemStyle: { borderRadius: [5, 5, 0, 0] }
     }],
     title: {
       text: `${moduleLabel} · ${year}, ${quarter.toUpperCase()}`,
       left: 'center',
-      textStyle: { fontSize: 13, fontWeight: 500 }
+    textStyle: { fontSize: 13, fontWeight: 600, color: textColor }
     }
   }, true);
   d004Chart.resize();
@@ -361,11 +717,12 @@ async function renderD004Map(summary, metric, period) {
     d004Map.setOption({
       animation: false,
       tooltip: { trigger: 'item', formatter: (params) => `${params.name}<br>${metricConfig.label}: ${params.value == null ? 'Нет данных' : Number(params.value).toLocaleString('ru-RU')}` },
-      visualMap: { min: low, max: high, left: 'right', bottom: 24, calculable: true, inRange: { color: ['#dbeafe', '#60a5fa', '#1d4ed8'] } },
+      visualMap: { min: low, max: high, left: 16, bottom: 12, orient: 'horizontal', calculable: true, inRange: { color: ['#f7e9df', '#fbb085', '#a88db1'] }, textStyle: { color: document.body.classList.contains('dark-theme') ? '#e7dce8' : '#51484f' } },
       series: [{
-        type: 'map', map: 'KZ_D004', roam: true, zoom: 1.35, selectedMode: 'single', data,
+        type: 'map', map: 'KZ_D004', roam: false, zoom: 1, layoutCenter: [' 0%', '130%'], layoutSize: '297%', selectedMode: 'single', data,
+        itemStyle: { borderColor: document.body.classList.contains('dark-theme') ? '#e0c9e4' : '#fff', borderWidth: 1 },
         emphasis: { label: { show: true } },
-        select: { itemStyle: { areaColor: '#f59e0b', borderColor: '#92400e', borderWidth: 2 }, label: { show: true, color: '#111827' } }
+        select: { itemStyle: { areaColor: '#fbb085', borderColor: '#8a5844', borderWidth: 2 }, label: { show: true, color: '#222222' } }
       }]
     }, true);
     setText('d004MapCaption', `${metricConfig.label} · ${period}. Наведите курсор для быстрой подсказки или нажмите на регион для подробностей.`);
@@ -538,6 +895,10 @@ export async function openSidebarDatasetPage(datasetId, element, apiBaseUrl) {
 
   document.querySelectorAll('.cat-subitem').forEach((item) => item.classList.remove('active'));
   if (element) element.classList.add('active');
+  document.querySelectorAll('.sidebar-home-link').forEach((item) => {
+    item.classList.remove('active');
+    item.removeAttribute('aria-current');
+  });
   document.querySelectorAll('.cat-header').forEach((item) => item.classList.remove('active'));
   document.querySelectorAll('.program-switcher-button').forEach((button) => {
     const active = button.dataset.program === 'dashboard';
@@ -549,6 +910,9 @@ export async function openSidebarDatasetPage(datasetId, element, apiBaseUrl) {
   document.getElementById('householdSection').style.display = 'none';
   document.getElementById('dataAnalyzerSection').style.display = 'none';
   document.getElementById('detailedViewSection').style.display = 'none';
+  document.getElementById('populationHypothesesSection').style.display = 'none';
+  document.getElementById('aboutProjectSection').style.display = 'none';
+  document.querySelector('.app-layout')?.classList.remove('home-route-active');
   const section = document.getElementById('datasetViewSection');
   section.style.display = 'block';
   setText('datasetPageTitle', page.title);
@@ -557,18 +921,26 @@ export async function openSidebarDatasetPage(datasetId, element, apiBaseUrl) {
 
   const d002 = datasetId === 'd002';
   const d004 = datasetId === 'd004';
+  const d006 = datasetId === 'd006';
+  const d008 = datasetId === 'd008';
   document.getElementById('d002Dashboard').hidden = !d002;
   document.getElementById('d004Dashboard').hidden = !d004;
-  document.getElementById('datasetPlaceholder').hidden = d002 || d004;
+  document.getElementById('d006Dashboard').hidden = !d006;
+  document.getElementById('d008Dashboard').hidden = !d008;
+  document.getElementById('datasetPlaceholder').hidden = d002 || d004 || d006 || d008;
   if (d002) {
     await initializeD002(apiBaseUrl);
   } else if (d004) {
     await initializeD004(apiBaseUrl);
+  } else if (d006) {
+    await initializeD006(apiBaseUrl);
+  } else if (d008) {
+    await initializeD008(apiBaseUrl);
   } else {
     const placeholder = document.getElementById('datasetPlaceholder');
     placeholder.replaceChildren();
     const message = document.createElement('p');
-    message.textContent = 'Сейчас подключён D004. Этот раздел откроется здесь после подключения его набора данных.';
+    message.textContent = 'Данные для этого раздела пока не подключены.';
     placeholder.append(message);
   }
 }

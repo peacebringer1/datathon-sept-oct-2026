@@ -1,4 +1,4 @@
-import { fetchAIAnalysisForChart } from './geminiService.js';
+import { fetchAIAnalysisForChart } from './claudeService.js';
 
 let detailedEChartInstance = null;
 
@@ -78,7 +78,7 @@ export async function openAnalyticsFromCard(buttonElement, apiBaseUrl) {
 
   openDetailedAnalytics(
     indicatorName,
-    "⏳ Генерация ИИ-аналитики с помощью Gemini...",
+    "⏳ Генерация ИИ-аналитики с помощью Claude...",
     chartId
   );
 

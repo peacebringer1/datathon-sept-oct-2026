@@ -1,4 +1,5 @@
 // frontend/src/components/householdComponent.js
+import { startAppLoading, transitionAppPage } from './loadingIndicator.js';
 
 export async function initHouseholdSection(apiBaseUrl) {
   try {
@@ -83,59 +84,154 @@ export async function initHouseholdSection(apiBaseUrl) {
   }
 }
 
-window.switchMainSection = async function(sectionName, element) {
-  if (sectionName === 'dashboard' && window.waitForAnalyzerDatasetSync) {
-    const datasetReady = await window.waitForAnalyzerDatasetSync();
-    if (!datasetReady) return;
+async function openDataAnalyzerPage() {
+  const frame = document.getElementById('dataAnalyzerFrame');
+  const notice = document.getElementById('dataAnalyzerNotice');
+  const noticeText = document.getElementById('dataAnalyzerNoticeText');
+  const retryButton = document.getElementById('retryDataAnalyzerBtn');
+  if (!frame || !notice || !noticeText) return;
+  if (retryButton) retryButton.onclick = () => {
+    frame.dataset.loaded = 'false';
+    void openDataAnalyzerPage();
+  };
+
+  if (!window.DATA_ANALYZER_URL) {
+    frame.hidden = true;
+    notice.hidden = false;
+    noticeText.textContent = 'Сервис анализа данных не запущен. Перезапустите приложение и попробуйте снова.';
+    if (retryButton) retryButton.hidden = false;
+    return;
   }
 
-  document.querySelectorAll('.cat-header').forEach(el => el.classList.remove('active'));
-  if (element) element.classList.add('active');
+  if (frame.dataset.loaded === 'true') {
+    frame.hidden = false;
+    notice.hidden = true;
+    return;
+  }
 
-  const activeProgram = sectionName === 'data-analyzer' ? 'data-analyzer' : 'dashboard';
-  document.querySelectorAll('.program-switcher-button').forEach(button => {
-    const isActive = button.dataset.program === activeProgram;
-    button.classList.toggle('active', isActive);
-    button.setAttribute('aria-pressed', String(isActive));
-  });
+  notice.hidden = false;
+  noticeText.textContent = 'Подключаем страницу анализа данных…';
+  if (retryButton) retryButton.hidden = true;
+  frame.hidden = true;
 
-  const dashboard = document.getElementById('mainDashboardContent');
-  const household = document.getElementById('householdSection');
-  const datasetPage = document.getElementById('datasetViewSection');
-  const detailed = document.getElementById('detailedViewSection');
-  const analyzer = document.getElementById('dataAnalyzerSection');
-
-  if (detailed) detailed.style.display = 'none';
-  if (datasetPage) datasetPage.style.display = 'none';
-  document.querySelectorAll('.cat-subitem').forEach(el => el.classList.remove('active'));
-
-  if (sectionName === 'household') {
-    if (dashboard) dashboard.style.display = 'none';
-    if (dashboard) dashboard.classList.remove('program-analyzer-active');
-    if (household) household.style.display = 'block';
-    if (analyzer) analyzer.style.display = 'none';
-    initHouseholdSection(window.API_BASE_URL || 'http://127.0.0.1:5000');
-  } else if (sectionName === 'data-analyzer') {
-    if (dashboard) {
-      dashboard.style.display = 'block';
-      dashboard.classList.add('program-analyzer-active');
+  try {
+    const controller = new AbortController();
+    const probeTimeout = setTimeout(() => controller.abort(), 2500);
+    let response;
+    try {
+      response = await fetch(`${window.DATA_ANALYZER_URL}/api/health`, { signal: controller.signal });
+    } finally {
+      clearTimeout(probeTimeout);
     }
-    if (household) household.style.display = 'none';
-    if (analyzer) analyzer.style.display = 'block';
+    const health = response.ok ? await response.json() : null;
+    if (!response.ok || !health?.ok || health.interface !== 'index.html') {
+      throw new Error('Не удалось найти корневой index.html анализатора.');
+    }
 
-    const frame = document.getElementById('dataAnalyzerFrame');
-    if (frame && window.DATA_ANALYZER_URL && frame.dataset.loaded !== 'true') {
-      frame.src = `${window.DATA_ANALYZER_URL}/`;
-      frame.dataset.loaded = 'true';
+    await new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => reject(new Error('Страница анализа данных не ответила за 12 секунд.')), 12000);
+      frame.addEventListener('load', () => {
+        clearTimeout(timeout);
+        resolve();
+      }, { once: true });
+      frame.src = `${window.DATA_ANALYZER_URL}/analyzer/`;
+    });
+    frame.dataset.loaded = 'true';
+    frame.hidden = false;
+    notice.hidden = true;
+    window.syncAnalyzerPreferences?.();
+  } catch (error) {
+    noticeText.textContent = `Не удалось открыть анализ данных: ${error.message}`;
+    if (retryButton) retryButton.hidden = false;
+  }
+
+}
+
+window.switchMainSection = async function(sectionName, element) {
+  const isHome = sectionName === 'home' || sectionName === 'dashboard';
+  const appLayout = document.querySelector('.app-layout');
+  const label = sectionName === 'data-analyzer'
+    ? 'Открываем анализ данных…'
+    : sectionName === 'household' ? 'Загружаем обзор домохозяйств…' : 'Открываем главную…';
+  const finishLoading = startAppLoading(label);
+  try {
+    await transitionAppPage(async () => {
+    if (isHome && sectionName === 'dashboard' && window.waitForAnalyzerDatasetSync) {
+      const datasetReady = await window.waitForAnalyzerDatasetSync();
+      if (!datasetReady) return;
     }
-  } else {
-    if (dashboard) dashboard.classList.remove('program-analyzer-active');
-    if (household) household.style.display = 'none';
-    if (analyzer) analyzer.style.display = 'none';
-    if (dashboard) dashboard.style.display = 'block';
-    if (sectionName === 'dashboard' && window.refreshDemographyCharts) {
-      await window.refreshDemographyCharts();
+
+    document.querySelectorAll('.cat-header').forEach((el) => el.classList.remove('active'));
+    document.querySelectorAll('.sidebar-home-link').forEach((el) => {
+      const active = sectionName === 'home' ? el.id === 'navHome'
+        : sectionName === 'about' ? el.id === 'navAboutProject' : false;
+      el.classList.toggle('active', active);
+      if (active) el.setAttribute('aria-current', 'page');
+      else el.removeAttribute('aria-current');
+    });
+    if (element?.classList.contains('cat-header')) element.classList.add('active');
+
+    const activeProgram = sectionName === 'data-analyzer' ? 'data-analyzer' : 'dashboard';
+    document.querySelectorAll('.program-switcher-button').forEach((button) => {
+      const isActive = button.dataset.program === activeProgram;
+      button.classList.toggle('active', isActive);
+      button.setAttribute('aria-pressed', String(isActive));
+    });
+
+    const dashboard = document.getElementById('mainDashboardContent');
+    const household = document.getElementById('householdSection');
+    const datasetPage = document.getElementById('datasetViewSection');
+    const detailed = document.getElementById('detailedViewSection');
+    const analyzer = document.getElementById('dataAnalyzerSection');
+    const hypotheses = document.getElementById('populationHypothesesSection');
+    const about = document.getElementById('aboutProjectSection');
+    appLayout?.classList.toggle('home-route-active', sectionName === 'home');
+
+    if (detailed) detailed.style.display = 'none';
+    if (datasetPage) datasetPage.style.display = 'none';
+    if (hypotheses) hypotheses.style.display = 'none';
+    if (about) about.style.display = 'none';
+    document.querySelectorAll('.cat-subitem').forEach(el => el.classList.remove('active'));
+
+    if (sectionName === 'hypotheses') {
+      if (dashboard) dashboard.style.display = 'none';
+      if (dashboard) dashboard.classList.remove('program-analyzer-active');
+      if (household) household.style.display = 'none';
+      if (analyzer) analyzer.style.display = 'none';
+      if (hypotheses) hypotheses.style.display = 'block';
+    } else if (sectionName === 'about') {
+      if (dashboard) dashboard.style.display = 'none';
+      if (dashboard) dashboard.classList.remove('program-analyzer-active');
+      if (household) household.style.display = 'none';
+      if (analyzer) analyzer.style.display = 'none';
+      if (about) about.style.display = 'block';
+    } else if (sectionName === 'household') {
+      if (dashboard) dashboard.style.display = 'none';
+      if (dashboard) dashboard.classList.remove('program-analyzer-active');
+      if (household) household.style.display = 'block';
+      if (analyzer) analyzer.style.display = 'none';
+      await initHouseholdSection(window.API_BASE_URL || 'http://127.0.0.1:5000');
+    } else if (sectionName === 'data-analyzer') {
+      if (dashboard) {
+        dashboard.style.display = 'block';
+        dashboard.classList.add('program-analyzer-active');
+      }
+      if (household) household.style.display = 'none';
+      if (analyzer) analyzer.style.display = 'flex';
+
+      await openDataAnalyzerPage();
+    } else {
+      if (dashboard) dashboard.classList.remove('program-analyzer-active');
+      if (household) household.style.display = 'none';
+      if (analyzer) analyzer.style.display = 'none';
+      if (dashboard) dashboard.style.display = 'block';
+      if (sectionName === 'dashboard' && window.refreshDemographyCharts) {
+        await window.refreshDemographyCharts();
+      }
     }
+    });
+  } finally {
+    finishLoading();
   }
 };
 

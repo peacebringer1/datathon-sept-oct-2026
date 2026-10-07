@@ -120,7 +120,8 @@ export function initThemeToggle() {
       const isDark = document.body.classList.contains('dark-theme');
       const nextDark = !isDark;
 
-      if (document.startViewTransition) {
+      const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      if (document.startViewTransition && !reduceMotion) {
         const transition = document.startViewTransition(() => {
           document.body.classList.toggle('dark-theme', nextDark);
         });
@@ -149,13 +150,23 @@ export function initThemeToggle() {
       themeToggleBtn.textContent = nextDark ? '☀️' : '🌙';
       localStorage.setItem('theme', nextDark ? 'dark' : 'light');
       updateChartThemeColors();
+      window.dispatchEvent(new Event('app-theme-changed'));
       window.dispatchEvent(new Event('resize'));
     });
   }
 }
 
 export function initGlobalResizeListener() {
-  window.addEventListener('resize', () => {
+  let resizeFrame = 0;
+  const resizeAllCharts = () => {
+    if (resizeFrame) cancelAnimationFrame(resizeFrame);
+    resizeFrame = requestAnimationFrame(() => {
+      resizeFrame = 0;
+      if (window.echarts) {
+        document.querySelectorAll('[_echarts_instance_]').forEach((element) => {
+          window.echarts.getInstanceByDom(element)?.resize();
+        });
+      }
     if (yearChartInstance) yearChartInstance.resize();
     if (lineChartInstance) lineChartInstance.resize();
     if (pieChartInstance) pieChartInstance.resize();
@@ -169,5 +180,14 @@ export function initGlobalResizeListener() {
 
     const detailedEChartInstance = getDetailedInstance();
     if (detailedEChartInstance) detailedEChartInstance.resize();
-  });
+    });
+  };
+
+  window.addEventListener('resize', resizeAllCharts);
+  const content = document.querySelector('.main-content-area');
+  if (content && 'ResizeObserver' in window) {
+    const observer = new ResizeObserver(resizeAllCharts);
+    observer.observe(content);
+    observer.observe(document.querySelector('.container') || content);
+  }
 }
