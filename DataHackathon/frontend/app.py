@@ -24,15 +24,13 @@ ACTIVE_DATASET_NAME = None
 ACTIVE_DATASET_MODE = None
 _D004_CACHE_KEY = None
 _D004_CACHE_FRAME = None
-GEMINI_MODEL = os.environ.get('GEMINI_MODEL', 'gemini-3.8-flash').strip()
-GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '').strip()
-if GEMINI_MODEL.startswith('models/'):
-    GEMINI_MODEL = GEMINI_MODEL[len('models/'):]
+CLAUDE_MODEL = os.environ.get('CLAUDE_MODEL', 'claude-sonnet-5-5').strip()
+CLAUDE_API_KEY = os.environ.get('CLAUDE_API_KEY', '').strip()
 
 print(f"[Flask DB]: Используется база данных по пути -> {DB_FILE}")
 
 
-class GeminiAPIError(RuntimeError):
+class ClaudeAPIError(RuntimeError):
     def __init__(self, message, status=None, content_type=None):
         super().__init__(message)
         self.status = status
@@ -419,31 +417,33 @@ def d004_data():
         'source': 'data/sinte CSV'
     })
 
-@app.route('/api/settings/gemini-key', methods=['GET', 'POST', 'DELETE'])
-def gemini_key_settings():
-    global GEMINI_API_KEY
+@app.route('/api/settings/claude-key', methods=['GET', 'POST', 'DELETE'])
+def claude_key_settings():
+    global CLAUDE_API_KEY
 
     if request.method == 'GET':
-        return jsonify({'configured': bool(GEMINI_API_KEY)})
+        return jsonify({'configured': bool(CLAUDE_API_KEY)})
 
     if request.method == 'DELETE':
-        GEMINI_API_KEY = ''
+        CLAUDE_API_KEY = ''
         return jsonify({'configured': False})
 
     payload = request.get_json(silent=True)
     api_key = payload.get('api_key') if isinstance(payload, dict) else None
     if not isinstance(api_key, str):
-        return jsonify({'error': 'Введите API-ключ Gemini.'}), 400
+        return jsonify({'error': 'Введите API-ключ Claude из Anthropic Console.'}), 400
 
     api_key = api_key.strip()
     if len(api_key) < 20:
-        return jsonify({'error': 'Ключ выглядит слишком коротким. Вставьте полный API-ключ из Google AI Studio.'}), 400
+        return jsonify({'error': 'Ключ выглядит слишком коротким. Вставьте полный API-ключ из Anthropic Console.'}), 400
+    if not api_key.startswith('sk-ant-'):
+        return jsonify({'error': 'Ожидается ключ Anthropic, начинающийся с sk-ant-.'}), 400
     try:
         api_key.encode('ascii')
     except UnicodeEncodeError:
         return jsonify({'error': 'API-ключ должен содержать только ASCII-символы.'}), 400
 
-    GEMINI_API_KEY = api_key
+    CLAUDE_API_KEY = api_key
     return jsonify({'configured': True})
 
 
@@ -729,9 +729,9 @@ def ai_chat():
 
     try:
         dataset_overview = get_dataset_overview()
-        answer = call_gemini(contents, dataset_overview, dashboard_context)
+        answer = call_claude(contents, dataset_overview, dashboard_context)
         return jsonify({'answer': answer})
-    except GeminiAPIError as error:
+    except ClaudeAPIError as error:
         upstream = {}
         if error.status is not None:
             upstream['status'] = error.status
@@ -739,7 +739,7 @@ def ai_chat():
             upstream['content_type'] = error.content_type
         return jsonify({
             'error': {
-                'code': 'gemini_api_error',
+                'code': 'claude_api_error',
                 'message': str(error),
                 'upstream': upstream
             }
@@ -834,7 +834,7 @@ def chart_analysis():
     )
 
     try:
-        raw_analysis = call_gemini(
+        raw_analysis = call_claude(
             [{'role': 'user', 'parts': [{'text': prompt}]}],
             get_dataset_overview(),
             {
@@ -872,7 +872,7 @@ def chart_analysis():
                 'hypotheses': [item.strip()[:800] for item in analysis['hypotheses'][:3]]
             }
         })
-    except GeminiAPIError as error:
+    except ClaudeAPIError as error:
         return jsonify({'error': str(error)}), 503
     except RuntimeError as error:
         return jsonify({'error': str(error)}), 503
@@ -881,47 +881,79 @@ def chart_analysis():
         return jsonify({'error': f'Не удалось подготовить анализ графика: {error}'}), 503
 
 
-def call_gemini(contents, dataset_overview, dashboard_context, max_output_tokens=1200):
-    api_key = GEMINI_API_KEY
+def call_claude(contents, dataset_overview, dashboard_context, max_output_tokens=1200):
+    api_key = CLAUDE_API_KEY
     if not api_key:
-        raise RuntimeError('Не задан GEMINI_API_KEY. Добавьте ключ Gemini в переменные окружения и перезапустите приложение.')
-    try:
-        api_key.encode('ascii')
-    except UnicodeEncodeError as error:
-        raise RuntimeError(
-            'GEMINI_API_KEY содержит недопустимые символы. Скопируйте только ASCII-ключ Gemini '
-            'и перезапустите приложение.'
-        ) from error
+        raise RuntimeError('Не задан CLAUDE_API_KEY. Добавьте ключ Claude в настройках приложения.')
+    if not api_key.startswith('sk-ant-'):
+        raise RuntimeError('CLAUDE_API_KEY должен быть ключом Anthropic, начинающимся с sk-ant-.')
 
-    model = GEMINI_MODEL
     context_text = json.dumps({
         'dataset': dataset_overview,
         'dashboard_filters': dashboard_context
     }, ensure_ascii=False)
     system_instruction = f'{AI_SYSTEM_INSTRUCTION}\n\nФактический каталог базы и выбранные фильтры: {context_text}'
+    messages = []
+    for item in contents:
+        role = 'assistant' if item.get('role') in ('assistant', 'model') else 'user'
+        text = '\n'.join(
+            part.get('text', '')
+            for part in item.get('parts', [])
+            if isinstance(part, dict) and isinstance(part.get('text'), str)
+        ).strip()
+        if text:
+            messages.append({'role': role, 'content': text})
+
+    claude_tools = [
+        {
+            'name': 'get_dataset_overview',
+            'description': 'Получить каталог таблицы demographics: показатели, годы, регионы и количество записей.',
+            'input_schema': {'type': 'object', 'properties': {}}
+        },
+        {
+            'name': 'query_demographics',
+            'description': 'Прочитать агрегированные данные по показателям Казахстана. Вызывай для вычислений, сравнений, трендов и любых числовых выводов.',
+            'input_schema': {
+                'type': 'object',
+                'properties': {
+                    'indicator': {'type': 'string', 'description': 'Название показателя или его уникальная часть.'},
+                    'province': {'type': 'string', 'description': 'Название области/города или его уникальная часть.'},
+                    'start_year': {'type': 'integer', 'description': 'Начальный год включительно.'},
+                    'end_year': {'type': 'integer', 'description': 'Конечный год включительно.'},
+                    'group_by': {
+                        'type': 'string',
+                        'enum': ['none', 'indicator', 'year', 'province', 'province_year'],
+                        'description': 'Группировка результата.'
+                    },
+                    'limit': {'type': 'integer', 'description': 'Максимум строк результата, от 1 до 200.'}
+                }
+            }
+        }
+    ]
 
     for _ in range(4):
         body = {
-            'systemInstruction': {'parts': [{'text': system_instruction}]},
-            'contents': contents,
-            'tools': AI_TOOLS,
-            'generationConfig': {'temperature': 0.2, 'maxOutputTokens': max_output_tokens}
+            'model': CLAUDE_MODEL,
+            'max_tokens': max_output_tokens,
+            'system': system_instruction,
+            'messages': messages,
+            'tools': claude_tools
         }
         retry = 0
-        while retry < 3:
-            endpoint = f'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent'
+        while True:
             req = urllib.request.Request(
-                endpoint,
+                'https://api.anthropic.com/v1/messages',
                 data=json.dumps(body, ensure_ascii=False).encode('utf-8'),
                 headers={
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
-                    'x-goog-api-key': api_key
+                    'x-api-key': api_key,
+                    'anthropic-version': '2023-06-01'
                 },
                 method='POST'
             )
             try:
-                with urllib.request.urlopen(req, timeout=45) as response:
+                with urllib.request.urlopen(req, timeout=60) as response:
                     result = json.loads(response.read().decode('utf-8'))
                 break
             except urllib.error.HTTPError as error:
@@ -932,49 +964,43 @@ def call_gemini(contents, dataset_overview, dashboard_context, max_output_tokens
                     error_payload = None
 
                 api_error = error_payload.get('error') if isinstance(error_payload, dict) else None
-                if isinstance(api_error, dict) and isinstance(api_error.get('message'), str):
-                    details = api_error['message']
-                elif isinstance(api_error, str):
-                    details = api_error
-                else:
+                details = api_error.get('message') if isinstance(api_error, dict) else None
+                if not isinstance(details, str):
                     details = (
-                        f'Gemini вернул HTTP {error.code} без JSON-описания '
-                        f'(Content-Type: {error.headers.get_content_type()}). '
-                        f'Диагностика backend: GEMINI_API_KEY получен, длина после удаления '
-                        f'внешних пробелов — {len(api_key)} символов; модель — {model}. '
-                        'Сам ключ не отображается. Если длина не совпадает с полным ключом, '
-                        'полностью закройте приложение и запустите его из PowerShell, '
-                        'в котором задан GEMINI_API_KEY. Если длина верная, проверьте '
-                        'ограничения ключа и сетевой доступ к generativelanguage.googleapis.com.'
+                        f'Anthropic API вернул HTTP {error.code} без описания '
+                        f'(Content-Type: {error.headers.get_content_type()}). Модель: {CLAUDE_MODEL}.'
                     )
-                if error.code == 503 and retry < 2:
+                if error.code in (429, 500, 503, 529) and retry < 2:
                     time.sleep(2 ** (retry + 1))
                     retry += 1
                     continue
-                raise GeminiAPIError(
-                    f'Gemini API ({error.code}): {details}',
+                raise ClaudeAPIError(
+                    f'Claude API ({error.code}): {details}',
                     status=error.code,
                     content_type=error.headers.get_content_type()
                 ) from error
             except urllib.error.URLError as error:
-                raise GeminiAPIError(
-                    f'Не удалось подключиться к Gemini API: {error.reason}'
+                raise ClaudeAPIError(
+                    f'Не удалось подключиться к Anthropic API: {error.reason}'
                 ) from error
 
-        candidate = (result.get('candidates') or [{}])[0]
-        model_content = candidate.get('content', {})
-        parts = model_content.get('parts', [])
-        function_calls = [part['functionCall'] for part in parts if 'functionCall' in part]
-        if not function_calls:
-            answer = '\n'.join(part.get('text', '') for part in parts if part.get('text'))
+        blocks = result.get('content') or []
+        tool_calls = [block for block in blocks if block.get('type') == 'tool_use']
+        if not tool_calls:
+            answer = '\n'.join(
+                block.get('text', '')
+                for block in blocks
+                if block.get('type') == 'text' and block.get('text')
+            )
             if answer:
                 return answer
-            raise RuntimeError('Gemini вернул пустой ответ.')
+            raise RuntimeError('Claude вернул пустой ответ.')
 
-        contents.append(model_content)
-        for function_call in function_calls:
-            name = function_call.get('name')
-            arguments = function_call.get('args') or {}
+        messages.append({'role': 'assistant', 'content': blocks})
+        tool_results = []
+        for tool_call in tool_calls:
+            name = tool_call.get('name')
+            arguments = tool_call.get('input') or {}
             try:
                 if name == 'get_dataset_overview':
                     tool_result = dataset_overview
@@ -984,10 +1010,12 @@ def call_gemini(contents, dataset_overview, dashboard_context, max_output_tokens
                     tool_result = {'error': 'Запрошена неизвестная функция или переданы неверные параметры.'}
             except (AttributeError, TypeError, ValueError, sqlite3.Error):
                 tool_result = {'error': 'Переданы некорректные параметры фильтрации.'}
-            function_response = {'name': name, 'response': tool_result}
-            if function_call.get('id'):
-                function_response['id'] = function_call['id']
-            contents.append({'role': 'user', 'parts': [{'functionResponse': function_response}]})
+            tool_results.append({
+                'type': 'tool_result',
+                'tool_use_id': tool_call.get('id', ''),
+                'content': json.dumps(tool_result, ensure_ascii=False)
+            })
+        messages.append({'role': 'user', 'content': tool_results})
 
     raise RuntimeError('ИИ не завершил анализ после нескольких запросов к базе. Попробуйте уточнить вопрос.')
 

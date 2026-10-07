@@ -80,16 +80,23 @@
           <div class="settings-dropdown-container">
             <button id="settingsToggleBtn" class="settings-toggle-btn" title="Настройки"><span>⚙️</span></button>
             <div id="settingsDropdown" class="settings-dropdown-menu">
-              <form id="geminiApiKeyForm">
-                <label for="geminiApiKeyInput">API-ключ Gemini</label>
-                <input id="geminiApiKeyInput" type="password" autocomplete="off"
-                  placeholder="Вставьте API-ключ" spellcheck="false">
-                <div class="settings-api-actions">
-                  <button type="submit" id="saveGeminiApiKeyBtn">Подключить</button>
-                  <button type="button" id="clearGeminiApiKeyBtn">Удалить</button>
+              <form id="claudeApiKeyForm">
+                <div class="claude-settings-heading">
+                  <span class="claude-settings-icon" aria-hidden="true">AI</span>
+                  <div>
+                    <h2>Подключение Claude</h2>
+                    <p>Модель Anthropic для анализа данных</p>
+                  </div>
                 </div>
-                <p id="geminiApiKeyStatus" role="status" aria-live="polite"></p>
-                <small>Ключ хранится зашифрованным на этом компьютере.</small>
+                <label for="claudeApiKeyInput">API-ключ</label>
+                <input id="claudeApiKeyInput" type="password" autocomplete="new-password"
+                  placeholder="sk-ant-…" spellcheck="false">
+                <div class="settings-api-actions">
+                  <button type="submit" id="saveClaudeApiKeyBtn"><span aria-hidden="true">✓</span> Подключить</button>
+                  <button type="button" id="clearClaudeApiKeyBtn">Удалить ключ</button>
+                </div>
+                <p id="claudeApiKeyStatus" role="status" aria-live="polite"></p>
+                <small><span aria-hidden="true">🔒</span> Ключ хранится зашифрованным на этом компьютере.</small>
               </form>
             </div>
           </div>

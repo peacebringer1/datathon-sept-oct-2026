@@ -28,12 +28,12 @@ const analyzerPort = new URLSearchParams(window.location.search).get('analyzerPo
 window.DATA_ANALYZER_URL = analyzerPort ? `http://127.0.0.1:${analyzerPort}` : '';
 window.API_BASE_URL = API_BASE_URL;
 
-async function refreshGeminiApiKeyStatus() {
-  const status = document.getElementById('geminiApiKeyStatus');
+async function refreshClaudeApiKeyStatus() {
+  const status = document.getElementById('claudeApiKeyStatus');
   if (!status) return;
 
   try {
-    const response = await fetch(`${API_BASE_URL}/api/settings/gemini-key`);
+    const response = await fetch(`${API_BASE_URL}/api/settings/claude-key`);
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || 'Не удалось проверить настройки ИИ.');
     status.textContent = result.configured
@@ -46,22 +46,22 @@ async function refreshGeminiApiKeyStatus() {
   }
 }
 
-async function updateGeminiApiKey(method, apiKey) {
-  const status = document.getElementById('geminiApiKeyStatus');
-  const saveButton = document.getElementById('saveGeminiApiKeyBtn');
-  const clearButton = document.getElementById('clearGeminiApiKeyBtn');
+async function updateClaudeApiKey(method, apiKey) {
+  const status = document.getElementById('claudeApiKeyStatus');
+  const saveButton = document.getElementById('saveClaudeApiKeyBtn');
+  const clearButton = document.getElementById('clearClaudeApiKeyBtn');
   if (saveButton) saveButton.disabled = true;
   if (clearButton) clearButton.disabled = true;
 
   try {
     if (method === 'POST') {
-      if (!window.appSettings?.saveGeminiApiKey) {
+      if (!window.appSettings?.saveClaudeApiKey) {
         throw new Error('Безопасное хранилище приложения недоступно. Перезапустите приложение.');
       }
-      await window.appSettings.saveGeminiApiKey(apiKey);
+      await window.appSettings.saveClaudeApiKey(apiKey);
     }
 
-    const response = await fetch(`${API_BASE_URL}/api/settings/gemini-key`, {
+    const response = await fetch(`${API_BASE_URL}/api/settings/claude-key`, {
       method,
       headers: method === 'POST' ? { 'Content-Type': 'application/json' } : undefined,
       body: method === 'POST' ? JSON.stringify({ api_key: apiKey }) : undefined
@@ -70,19 +70,19 @@ async function updateGeminiApiKey(method, apiKey) {
     if (!response.ok) throw new Error(result.error || 'Не удалось обновить настройки ИИ.');
 
     if (method === 'DELETE') {
-      if (!window.appSettings?.clearGeminiApiKey) {
+      if (!window.appSettings?.clearClaudeApiKey) {
         throw new Error('Ключ удалён из текущего сеанса, но безопасное хранилище недоступно.');
       }
-      await window.appSettings.clearGeminiApiKey();
+      await window.appSettings.clearClaudeApiKey();
     }
 
     if (status) {
       status.textContent = method === 'POST'
-        ? 'Ключ сохранён и подключён. Gemini проверит его при первом запросе.'
+        ? 'Ключ Claude сохранён. Его действительность проверится при первом запросе.'
         : 'Сохранённый ключ удалён.';
       status.dataset.state = 'success';
     }
-    const input = document.getElementById('geminiApiKeyInput');
+    const input = document.getElementById('claudeApiKeyInput');
     if (input) input.value = '';
   } catch (error) {
     if (status) {
@@ -214,15 +214,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const settingsBtn = document.getElementById('settingsToggleBtn');
   const settingsMenu = document.getElementById('settingsDropdown');
-  const geminiApiKeyForm = document.getElementById('geminiApiKeyForm');
-  const clearGeminiApiKeyBtn = document.getElementById('clearGeminiApiKeyBtn');
+  const claudeApiKeyForm = document.getElementById('claudeApiKeyForm');
+  const clearClaudeApiKeyBtn = document.getElementById('clearClaudeApiKeyBtn');
 
   if (settingsBtn && settingsMenu) {
     settingsBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       const isOpen = settingsMenu.style.display === 'block';
       settingsMenu.style.display = isOpen ? 'none' : 'block';
-      if (!isOpen) refreshGeminiApiKeyStatus();
+      if (!isOpen) refreshClaudeApiKeyStatus();
     });
 
     document.addEventListener('click', (e) => {
@@ -232,24 +232,24 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  if (geminiApiKeyForm) {
-    geminiApiKeyForm.addEventListener('submit', (event) => {
+  if (claudeApiKeyForm) {
+    claudeApiKeyForm.addEventListener('submit', (event) => {
       event.preventDefault();
-      const input = document.getElementById('geminiApiKeyInput');
+      const input = document.getElementById('claudeApiKeyInput');
       if (!input?.value.trim()) {
-        const status = document.getElementById('geminiApiKeyStatus');
+        const status = document.getElementById('claudeApiKeyStatus');
         if (status) {
-          status.textContent = 'Вставьте API-ключ Gemini.';
+          status.textContent = 'Вставьте API-ключ Claude из Anthropic Console.';
           status.dataset.state = 'error';
         }
         return;
       }
-      updateGeminiApiKey('POST', input.value);
+      updateClaudeApiKey('POST', input.value);
     });
   }
 
-  if (clearGeminiApiKeyBtn) {
-    clearGeminiApiKeyBtn.addEventListener('click', () => updateGeminiApiKey('DELETE'));
+  if (clearClaudeApiKeyBtn) {
+    clearClaudeApiKeyBtn.addEventListener('click', () => updateClaudeApiKey('DELETE'));
   }
 
   const sidebar = document.getElementById('categorySidebar');
