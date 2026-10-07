@@ -3,6 +3,7 @@ from flask_cors import CORS
 sqlite3 = __import__('sqlite3')
 import os
 import json
+import re
 from pathlib import Path
 import math
 import time
@@ -108,12 +109,174 @@ def read_d004_csv(csv_path):
     return _D004_CACHE_FRAME
 
 
+def get_d004_db_catalog():
+    """Return imported D004 CSV tables indexed by (year, quarter, module)."""
+    if not Path(DB_FILE).is_file():
+        return {}
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        has_manifest = conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name='sinte_import_manifest'"
+        ).fetchone()
+        if not has_manifest:
+            return {}
+        catalog = {}
+        for source_path, table, row_count in conn.execute(
+            "SELECT source_path, sql_table, row_count FROM sinte_import_manifest WHERE form='d004'"
+        ):
+            parts = Path(source_path).parts
+            if len(parts) != 4:
+                continue
+            match = re.fullmatch(r'kv_vopr(\d+)\.csv', parts[3], flags=re.IGNORECASE)
+            if match:
+                catalog[(parts[1], parts[2].lower(), match.group(1))] = {
+                    'table': table,
+                    'rows': int(row_count)
+                }
+        return catalog
+    except sqlite3.Error as error:
+        print(f'[D004]: Не удалось прочитать каталог из SQLite: {error}')
+        return {}
+    finally:
+        if 'conn' in locals():
+            conn.close()
+
+
+def d004_data_from_sqlite(specs, year, quarter, module, page, page_size):
+    """Build the existing D004 API response from imported SQLite tables."""
+    conn = sqlite3.connect(DB_FILE)
+    conn.row_factory = sqlite3.Row
+    start = (page - 1) * page_size
+    total_rows = sum(spec['rows'] for _, _, spec in specs)
+    columns = []
+    territory_counts, territory_amounts = {}, {}
+    households, territory_households = set(), {}
+    has_amount = False
+    rows = []
+
+    try:
+        # Union columns across selected years because questionnaire schemas can change.
+        for _, _, spec in specs:
+            table = '"' + spec['table'].replace('"', '""') + '"'
+            table_columns = [row['name'] for row in conn.execute(f'PRAGMA table_info({table})')]
+            for column in table_columns:
+                if column not in columns:
+                    columns.append(column)
+        output_columns = columns + [field for field in ('ГОД', 'КВАРТАЛ') if field not in columns]
+
+        # Fetch only the requested raw page from the selected tables.
+        remaining_start, remaining_count = start, page_size
+        for source_year, source_quarter, spec in specs:
+            file_rows = spec['rows']
+            if remaining_count and remaining_start < file_rows:
+                offset = remaining_start
+                limit = min(remaining_count, file_rows - offset)
+                table = '"' + spec['table'].replace('"', '""') + '"'
+                for record in conn.execute(f'SELECT * FROM {table} LIMIT ? OFFSET ?', (limit, offset)):
+                    item = {column: ('' if record[column] is None else str(record[column])) for column in record.keys()}
+                    item['ГОД'] = source_year
+                    item['КВАРТАЛ'] = source_quarter.upper()
+                    rows.append(item)
+                remaining_count -= limit
+                remaining_start = 0
+            else:
+                remaining_start = max(0, remaining_start - file_rows)
+
+        # Aggregate territories and distinct households using the table's own
+        # column casing (for example, Nomer in one questionnaire year).
+        for _, _, spec in specs:
+            table = '"' + spec['table'].replace('"', '""') + '"'
+            actual_columns = [row['name'] for row in conn.execute(f'PRAGMA table_info({table})')]
+            lookup = {column.casefold(): column for column in actual_columns}
+            territory_column = lookup.get('te') or lookup.get('territory')
+            if not territory_column:
+                continue
+            quoted_territory = '"' + territory_column.replace('"', '""') + '"'
+            for code, count in conn.execute(
+                f'SELECT COALESCE(NULLIF({quoted_territory}, \'\'), \'Не указан\'), COUNT(*) '
+                f'FROM {table} GROUP BY {quoted_territory}'
+            ):
+                code = str(code)
+                territory_counts[code] = territory_counts.get(code, 0) + int(count)
+
+            amount_column = lookup.get('stoimk')
+            if amount_column:
+                has_amount = True
+                quoted_amount = '"' + amount_column.replace('"', '""') + '"'
+                for code, amount in conn.execute(
+                    f'SELECT COALESCE(NULLIF({quoted_territory}, \'\'), \'Не указан\'), '
+                    f'SUM(CAST(REPLACE({quoted_amount}, \',\', \'.\') AS REAL)) '
+                    f'FROM {table} GROUP BY {quoted_territory}'
+                ):
+                    code = str(code)
+                    territory_amounts[code] = territory_amounts.get(code, 0) + float(amount or 0)
+
+            household_columns = [lookup.get(key) for key in ('te', 'k', 'nomer') if lookup.get(key)]
+            if household_columns:
+                quoted_household_columns = [f'"{column.replace(chr(34), chr(34) * 2)}"' for column in household_columns]
+                select_columns = ', '.join(quoted_household_columns)
+                query = f'SELECT {select_columns} FROM {table} GROUP BY {select_columns}'
+                for identity in conn.execute(query):
+                    code = str(identity[0]) if identity[0] not in (None, '') else 'Не указан'
+                    household_key = tuple('' if value is None else str(value) for value in identity)
+                    households.add(household_key)
+                    territory_households.setdefault(code, set()).add(household_key)
+    finally:
+        conn.close()
+
+    territory_names = {
+        '10': 'Область Абай', '11': 'Акмолинская область', '15': 'Актюбинская область', '19': 'Алматинская область',
+        '23': 'Атырауская область', '27': 'Западно-Казахстанская область', '31': 'Жамбылская область',
+        '33': 'Область Жетысу', '35': 'Карагандинская область', '39': 'Костанайская область',
+        '43': 'Кызылординская область', '47': 'Мангистауская область', '51': 'Туркестанская область',
+        '55': 'Павлодарская область', '59': 'Северо-Казахстанская область', '61': 'Туркестанская область',
+        '62': 'Область Улытау', '63': 'Восточно-Казахстанская область', '71': 'г. Астана',
+        '75': 'г. Алматы', '79': 'г. Шымкент'
+    }
+    labels = list(territory_counts)
+    chart_metric = 'Сумма значений STOIMK в строках выборки' if has_amount else 'Количество записей'
+    chart_values = [territory_amounts.get(code, 0) for code in labels] if has_amount else [territory_counts[code] for code in labels]
+    summary = [{'code': code, 'territory': territory_names.get(code, 'Неизвестная территория'),
+                'records': territory_counts[code], 'households': len(territory_households.get(code, set())),
+                'amount': round(territory_amounts.get(code, 0), 2) if has_amount else None}
+               for code in labels]
+    summary.sort(key=lambda item: item['records'], reverse=True)
+    return {
+        'dataset': 'd004',
+        'year': 'Все годы' if year == 'all' else year,
+        'quarter': 'Все кварталы' if quarter == 'all' else quarter,
+        'module': int(module),
+        'module_label': D004_MODULES[int(module)],
+        'columns': output_columns,
+        'rows': [{column: item.get(column, '') for column in output_columns} for item in rows],
+        'page': page,
+        'page_size': page_size,
+        'total_rows': total_rows,
+        'households': len(households),
+        'territories': len(territory_counts),
+        'chart_metric': chart_metric,
+        'chart': {'labels': labels, 'values': chart_values},
+        'territory_summary': summary,
+        'source': 'database.sqlite'
+    }
+
+
 @app.route('/api/d004/options', methods=['GET'])
 def d004_options():
     d004_dir = DATA_DIR / 'd004'
     years = sorted((path.name for path in d004_dir.iterdir() if path.is_dir()), reverse=True) if d004_dir.is_dir() else []
+    db_catalog = get_d004_db_catalog()
+    years = sorted(set(years) | {key[0] for key in db_catalog}, reverse=True)
     quarters = ['1kv', '2kv', '3kv', '4kv']
-    modules = [{'id': module, 'label': label} for module, label in D004_MODULES.items()]
+    available_modules = {int(key[2]) for key in db_catalog}
+    if d004_dir.is_dir():
+        for selected_year in years:
+            for selected_quarter in quarters:
+                for selected_module in D004_MODULES:
+                    if get_d004_path(selected_year, selected_quarter, str(selected_module)):
+                        available_modules.add(selected_module)
+    modules = [{'id': module, 'label': label} for module, label in D004_MODULES.items()
+               if module in available_modules] or [{'id': module, 'label': label} for module, label in D004_MODULES.items()]
     return jsonify({'years': years, 'quarters': quarters, 'modules': modules})
 
 
@@ -130,13 +293,27 @@ def d004_data():
         return jsonify({'error': 'Выбранный раздел анкеты не поддерживается.'}), 400
 
     d004_dir = DATA_DIR / 'd004'
+    db_catalog = get_d004_db_catalog()
     years = sorted((path.name for path in d004_dir.iterdir() if path.is_dir()), reverse=True) if d004_dir.is_dir() else []
+    years = sorted(set(years) | {key[0] for key in db_catalog}, reverse=True)
     selected_years = years if year == 'all' else [year]
     selected_quarters = ['1kv', '2kv', '3kv', '4kv'] if quarter == 'all' else [quarter]
     paths = [path for selected_year in selected_years for selected_quarter in selected_quarters
              if (path := get_d004_path(selected_year, selected_quarter, module)) is not None]
+    selected_specs = [(selected_year, selected_quarter, db_catalog[(selected_year, selected_quarter, str(int(module)))])
+                      for selected_year in selected_years for selected_quarter in selected_quarters
+                      if (selected_year, selected_quarter, str(int(module))) in db_catalog]
+    expected_sources = len(selected_years) * len(selected_quarters)
+    if len(selected_specs) == expected_sources and len(paths) != expected_sources:
+        page = max(1, request.args.get('page', default=1, type=int))
+        page_size = min(100, max(10, request.args.get('page_size', default=50, type=int)))
+        try:
+            return jsonify(d004_data_from_sqlite(selected_specs, year, quarter, module, page, page_size))
+        except sqlite3.Error as error:
+            print(f'[D004]: Ошибка чтения SQLite таблиц: {error}')
+            return jsonify({'error': 'Не удалось прочитать таблицы D004 из database.sqlite.'}), 500
     if not paths:
-        return jsonify({'error': 'Для выбранного года, квартала и раздела файл не найден.'}), 404
+        return jsonify({'error': 'CSV D004 не найдены, а в database.sqlite нет полного набора таблиц для этого периода. Выполните import_sinte_to_db.py перед запуском.'}), 404
 
     page = max(1, request.args.get('page', default=1, type=int))
     page_size = min(100, max(10, request.args.get('page_size', default=50, type=int)))
@@ -238,7 +415,8 @@ def d004_data():
         'territories': len(territory_counts),
         'chart_metric': chart_metric,
         'chart': {'labels': labels, 'values': chart_values},
-        'territory_summary': summary
+        'territory_summary': summary,
+        'source': 'data/sinte CSV'
     })
 
 @app.route('/api/settings/gemini-key', methods=['GET', 'POST', 'DELETE'])
