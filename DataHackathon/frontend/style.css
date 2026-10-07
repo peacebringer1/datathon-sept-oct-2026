@@ -127,6 +127,10 @@ aside.category-sidebar-hover.pinned~.main-content-area {
     margin-right: 400px;
 }
 
+.app-layout.ai-sidebar-open .charts-grid-4 {
+    grid-template-columns: minmax(0, 1fr);
+}
+
 .sidebar-content-inner {
     width: 280px;
     height: 100%;
