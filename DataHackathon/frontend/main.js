@@ -12,7 +12,7 @@ let analyzerProcess = null;
 const PYTHON_SCRIPT_PATH = path.join(__dirname, 'app.py');
 const ANALYZER_SCRIPT_PATH = path.join(__dirname, '..', 'server.py');
 const INDEX_HTML_PATH = path.join(__dirname, 'index.html');
-const GEMINI_KEY_FILE = 'gemini-api-key.enc';
+const CLAUDE_KEY_FILE = 'claude-api-key.enc';
 
 const electron = require('electron');
 
@@ -52,19 +52,19 @@ function getAvailablePort() {
   });
 }
 
-function readSavedGeminiApiKey() {
-  const keyFile = path.join(app.getPath('userData'), GEMINI_KEY_FILE);
+function readSavedClaudeApiKey() {
+  const keyFile = path.join(app.getPath('userData'), CLAUDE_KEY_FILE);
   if (!fs.existsSync(keyFile)) return '';
   if (!safeStorage.isEncryptionAvailable()) {
-    throw new Error('Безопасное хранилище недоступно: сохранённый ключ Gemini нельзя расшифровать.');
+    throw new Error('Безопасное хранилище недоступно: сохранённый ключ Claude нельзя расшифровать.');
   }
   return safeStorage.decryptString(fs.readFileSync(keyFile));
 }
 
 function registerSettingsHandlers() {
-  ipcMain.handle('settings:save-gemini-key', (_event, apiKey) => {
-    if (typeof apiKey !== 'string' || apiKey.trim().length < 20) {
-      throw new Error('Введите полный API-ключ Gemini.');
+  ipcMain.handle('settings:save-claude-key', (_event, apiKey) => {
+    if (typeof apiKey !== 'string' || apiKey.trim().length < 20 || !apiKey.trim().startsWith('sk-ant-')) {
+      throw new Error('Введите полный API-ключ Claude, начинающийся с sk-ant-.');
     }
     const key = apiKey.trim();
     if (!/^[\x00-\x7F]+$/.test(key)) {
@@ -74,13 +74,13 @@ function registerSettingsHandlers() {
       throw new Error('Безопасное хранилище недоступно. Ключ не был сохранён.');
     }
 
-    const keyFile = path.join(app.getPath('userData'), GEMINI_KEY_FILE);
+    const keyFile = path.join(app.getPath('userData'), CLAUDE_KEY_FILE);
     fs.writeFileSync(keyFile, safeStorage.encryptString(key));
     return { saved: true };
   });
 
-  ipcMain.handle('settings:clear-gemini-key', () => {
-    const keyFile = path.join(app.getPath('userData'), GEMINI_KEY_FILE);
+  ipcMain.handle('settings:clear-claude-key', () => {
+    const keyFile = path.join(app.getPath('userData'), CLAUDE_KEY_FILE);
     if (fs.existsSync(keyFile)) fs.unlinkSync(keyFile);
     return { cleared: true };
   });
@@ -95,7 +95,7 @@ function startFlaskServer(port, savedApiKey) {
     cwd: path.dirname(PYTHON_SCRIPT_PATH),
     env: {
       ...process.env,
-      ...(savedApiKey ? { GEMINI_API_KEY: savedApiKey } : {}),
+      ...(savedApiKey ? { CLAUDE_API_KEY: savedApiKey } : {}),
       PYTHONUNBUFFERED: '1',
       FLASK_PORT: String(port)
     }
@@ -160,7 +160,7 @@ function createWindow(apiPort, analyzerPort) {
 
 app.whenReady().then(async () => {
   registerSettingsHandlers();
-  const savedApiKey = readSavedGeminiApiKey();
+  const savedApiKey = readSavedClaudeApiKey();
   const [apiPort, analyzerPort] = await Promise.all([
     getAvailablePort(),
     getAvailablePort()

@@ -2,14 +2,14 @@ import { cleanAIResponse } from './aiChat.js';
 
 const pendingAnalyses = new Map();
 let isProcessingQueue = false;
-let geminiStatusPromise = null;
-let geminiStatusCheckedAt = 0;
+let claudeStatusPromise = null;
+let claudeStatusCheckedAt = 0;
 
-function isGeminiConfigured(apiBaseUrl) {
+function isClaudeConfigured(apiBaseUrl) {
   const now = Date.now();
-  if (!geminiStatusPromise || now - geminiStatusCheckedAt > 15000) {
-    geminiStatusCheckedAt = now;
-    geminiStatusPromise = fetch(`${apiBaseUrl}/api/settings/gemini-key`)
+  if (!claudeStatusPromise || now - claudeStatusCheckedAt > 15000) {
+    claudeStatusCheckedAt = now;
+    claudeStatusPromise = fetch(`${apiBaseUrl}/api/settings/claude-key`)
       .then(async (response) => {
         if (!response.ok) return false;
         const result = await response.json();
@@ -17,7 +17,7 @@ function isGeminiConfigured(apiBaseUrl) {
       })
       .catch(() => false);
   }
-  return geminiStatusPromise;
+  return claudeStatusPromise;
 }
 
 function getChartData(chartElement) {
@@ -82,12 +82,12 @@ function renderLoading(element) {
   element.append(heading, text);
 }
 
-function renderGeminiNotConfigured(element, retry) {
+function renderClaudeNotConfigured(element, retry) {
   element.replaceChildren();
   const heading = document.createElement('h4');
   heading.textContent = 'ИИ-анализ и гипотезы';
   const text = document.createElement('p');
-  text.textContent = 'Подключите ключ Gemini в настройках, чтобы получить анализ этого графика.';
+  text.textContent = 'Подключите ключ Claude в настройках, чтобы получить анализ этого графика.';
   const button = document.createElement('button');
   button.type = 'button';
   button.className = 'chart-ai-retry';
@@ -115,9 +115,9 @@ function renderError(element, message, retry) {
   const heading = document.createElement('h4');
   heading.textContent = 'ИИ-анализ и гипотезы';
   const text = document.createElement('p');
-  const quotaExceeded = /Gemini API \(429\)|HTTP 429|quota|exceeded your current quota/i.test(message);
+  const quotaExceeded = /Claude API \(429\)|HTTP 429|rate.?limit|quota/i.test(message);
   text.textContent = quotaExceeded
-    ? 'Лимит запросов Gemini исчерпан. Попробуйте получить анализ позже.'
+    ? 'Достигнут лимит запросов Claude. Попробуйте получить анализ позже.'
     : 'Не удалось получить анализ. Проверьте подключение и попробуйте ещё раз.';
   const details = document.createElement('details');
   const detailsSummary = document.createElement('summary');
@@ -137,12 +137,12 @@ function renderError(element, message, retry) {
 async function requestAnalysis(job) {
   const { element, apiBaseUrl, requestId, context } = job;
   try {
-    const configured = await isGeminiConfigured(apiBaseUrl);
+    const configured = await isClaudeConfigured(apiBaseUrl);
     if (!configured) {
       if (element.dataset.requestId === requestId) {
-        renderGeminiNotConfigured(element, () => {
-          geminiStatusPromise = null;
-          geminiStatusCheckedAt = 0;
+        renderClaudeNotConfigured(element, () => {
+          claudeStatusPromise = null;
+          claudeStatusCheckedAt = 0;
           renderLoading(element);
           pendingAnalyses.set(element, job);
           void processQueue();

@@ -135,16 +135,16 @@ const translations = {
   'Тип:': ['Түрі:', 'Type:'],
   'Сменить язык': ['Тілді ауыстыру', 'Change language'],
   'Настройки': ['Баптаулар', 'Settings'],
-  'API-ключ Gemini': ['Gemini API кілті', 'Gemini API key'],
-  'Вставьте API-ключ': ['API кілтін енгізіңіз', 'Paste API key'],
+  'API-ключ Claude': ['Claude API кілті', 'Claude API key'],
+  'Вставьте ключ Anthropic (sk-ant-…)': ['Anthropic кілтін енгізіңіз (sk-ant-…)', 'Paste Anthropic key (sk-ant-…)'],
   'Подключить': ['Қосу', 'Connect'],
   'Удалить': ['Жою', 'Remove'],
   'Ключ хранится зашифрованным на этом компьютере.': ['Кілт осы компьютерде шифрланған түрде сақталады.', 'The key is stored encrypted on this computer.'],
   'Ключ подключён. Его действительность проверится при первом запросе.': ['Кілт қосылған. Оның жарамдылығы алғашқы сұрауда тексеріледі.', 'Key connected. It will be validated on the first request.'],
   'Ключ не подключён.': ['Кілт қосылмаған.', 'No key connected.'],
-  'Ключ сохранён и подключён. Gemini проверит его при первом запросе.': ['Кілт сақталды және қосылды. Gemini оны алғашқы сұрауда тексереді.', 'Key saved and connected. Gemini will validate it on the first request.'],
+  'Ключ Claude сохранён. Его действительность проверится при первом запросе.': ['Claude кілті сақталды. Оның жарамдылығы алғашқы сұрауда тексеріледі.', 'Claude key saved. It will be validated on the first request.'],
   'Сохранённый ключ удалён.': ['Сақталған кілт жойылды.', 'Saved key removed.'],
-  'Вставьте API-ключ Gemini.': ['Gemini API кілтін енгізіңіз.', 'Paste a Gemini API key.']
+  'Вставьте API-ключ Claude из Anthropic Console.': ['Anthropic Console ішінен Claude API кілтін енгізіңіз.', 'Paste a Claude API key from the Anthropic Console.']
 };
 
 const textNodes = new WeakMap();
