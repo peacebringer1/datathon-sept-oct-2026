@@ -187,7 +187,7 @@ async function renderD004Map(summary, metric, period) {
       tooltip: { trigger: 'item', formatter: (params) => `${params.name}<br>${metricConfig.label}: ${params.value == null ? 'Нет данных' : Number(params.value).toLocaleString('ru-RU')}` },
       visualMap: { min: low, max: high, left: 'right', bottom: 24, calculable: true, inRange: { color: ['#dbeafe', '#60a5fa', '#1d4ed8'] } },
       series: [{
-        type: 'map', map: 'KZ_D004', roam: true, selectedMode: 'single', data,
+        type: 'map', map: 'KZ_D004', roam: true, zoom: 1.35, selectedMode: 'single', data,
         emphasis: { label: { show: true } },
         select: { itemStyle: { areaColor: '#f59e0b', borderColor: '#92400e', borderWidth: 2 }, label: { show: true, color: '#111827' } }
       }]
@@ -278,7 +278,10 @@ async function loadD004Page() {
     renderD004Summary(result.territory_summary || []);
     await renderD004Map(result.territory_summary || [], result.chart_metric, `${result.year}, ${result.quarter.toUpperCase()}`);
     status.dataset.state = 'success';
-    status.textContent = `${Number(totalRows).toLocaleString('ru-RU')} строк в выбранном периоде.`;
+    const sourceNote = result.source === 'database.sqlite'
+      ? ' Используем таблицы из database.sqlite.'
+      : ' Источник: CSV в data/sinte.';
+    status.textContent = `${Number(totalRows).toLocaleString('ru-RU')} строк в выбранном периоде.${sourceNote}`;
   } catch (error) {
     status.dataset.state = 'error';
     status.textContent = error.message;
@@ -302,7 +305,7 @@ async function initializeD004(apiBaseUrl) {
       throw new Error('Запущена старая версия локального сервера. Полностью закройте и снова откройте приложение, чтобы загрузить API D004.');
     }
     if (!response.ok) throw new Error(options.error || 'Не удалось получить список файлов D004.');
-    if (!options.years.length) throw new Error('Папка с файлами D004 не найдена. Проверьте локальную папку data/sinte/d004.');
+    if (!options.years.length) throw new Error('Не найдены данные D004: проверьте CSV в data/sinte/d004 или убедитесь, что таблицы D004 импортированы в database.sqlite.');
 
     appendOptions(document.getElementById('d004YearSelect'), ['all', ...options.years], String, (value) => value === 'all' ? 'Все годы' : value);
     appendOptions(document.getElementById('d004QuarterSelect'), ['all', ...options.quarters], String, (value) => value === 'all' ? 'Все кварталы' : value.toUpperCase());
