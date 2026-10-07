@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+*.py[cod]
+
+# Local datasets and generated database
+data/
+database.sqlite
+
+# Source archive for the separately distributed analyzer
+DataAnalyzer_v1.8.3.rar
