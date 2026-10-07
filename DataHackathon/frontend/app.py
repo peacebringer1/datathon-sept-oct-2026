@@ -84,6 +84,114 @@ D004_MODULES = {
     12: 'Заемные средства'
 }
 
+D002_FORMS = {
+    'subject': {
+        'label': 'Удовлетворённость и условия жизни',
+        'description': 'Личные оценки жизни, здоровья, жилья, финансов и услуг, а также социальные условия и продовольственная безопасность.'
+    },
+    'ocenka': {
+        'label': 'Материальные ограничения и дети',
+        'description': 'Возможность оплачивать необходимые расходы и пользоваться услугами, а также материальные потребности и лишения детей.'
+    }
+}
+
+D002_QUESTION_OVERRIDES = {
+    'subject': {
+        'GR1': 'Насколько Вы удовлетворены своей жизнью в целом?',
+        'GR2': 'Насколько Вы удовлетворены условиями жизни?',
+        'GR3': 'Насколько Вы удовлетворены состоянием здоровья?',
+        'GR4': 'Насколько Вы удовлетворены финансовым положением?',
+        'GR5': 'Насколько Вы удовлетворены профессиональной деятельностью?',
+        'GR6_1': 'Удовлетворённость общением с родственниками',
+        'GR6_2': 'Удовлетворённость общением с друзьями',
+        'GR6_3': 'Удовлетворённость общением с коллегами',
+        'GR7': 'Удовлетворённость экономическим положением семьи',
+        'GR8': 'Удовлетворённость качеством жилья',
+        'GR9_1': 'Удовлетворённость чистотой территории рядом с домом',
+        'GR9_2': 'Удовлетворённость чистотой воздуха',
+        'GR9_3': 'Удовлетворённость качеством питьевой воды',
+        'GR10': 'Удовлетворённость уровнем внешнего шума дома',
+        'GR11': 'Оценка возможности самостоятельно приобрести или улучшить жильё',
+        'GR12': 'Оценка государственной поддержки при улучшении жилищных условий',
+        'GR13': 'Удовлетворённость количеством свободного времени',
+        'GR14_1': 'Удовлетворённость качеством государственных медицинских услуг',
+        'GR14_2': 'Удовлетворённость качеством частных медицинских услуг',
+        'GR15_1': 'Удовлетворённость доступностью государственных медицинских услуг',
+        'GR15_2': 'Удовлетворённость доступностью частных медицинских услуг',
+        'GR16_1': 'Удовлетворённость качеством дошкольного образования',
+        'GR16_2': 'Удовлетворённость качеством школьного образования',
+        'GR16_3': 'Удовлетворённость качеством среднего профессионального образования',
+        'GR16_4': 'Удовлетворённость качеством высшего образования',
+        'GR17_1': 'Удовлетворённость доступностью дошкольного образования',
+        'GR17_2': 'Удовлетворённость доступностью школьного образования',
+        'GR17_3': 'Удовлетворённость доступностью среднего профессионального образования',
+        'GR17_4': 'Удовлетворённость доступностью высшего образования',
+        'GR18_1': 'Удовлетворённость услугами «Правительства для граждан»',
+        'GR18_2': 'Удовлетворённость услугами налоговых органов',
+        'GR18_3': 'Удовлетворённость работой полиции',
+        'GR18_4': 'Удовлетворённость работой скорой помощи',
+        'GR18_5': 'Удовлетворённость работой пожарной службы',
+        'GR18_6': 'Удовлетворённость другими государственными услугами',
+        'GR19': 'Уверенность, что можно рассчитывать на моральную поддержку',
+        'GR21': 'К какому уровню материального обеспечения Вы себя относите?',
+        'GR22_1': 'Причина уровня обеспеченности: нет оплачиваемой работы',
+        'GR22_2': 'Причина уровня обеспеченности: нет постоянной работы по месту жительства',
+        'GR22_3': 'Причина уровня обеспеченности: недостаточная квалификация или опыт',
+        'GR22_4': 'Причина уровня обеспеченности: низкая оплата труда',
+        'GR22_5': 'Причина уровня обеспеченности: низкая пенсия',
+        'GR22_6': 'Причина уровня обеспеченности: низкое социальное пособие',
+        'GR22_7': 'Причина уровня обеспеченности: высокая долговая нагрузка',
+        'GR22_8': 'Причина уровня обеспеченности: недостаточный уровень образования',
+        'GR22_9': 'Причина уровня обеспеченности: необходимость ухода за членом семьи',
+        'GR22_10': 'Причина уровня обеспеченности: плохое состояние здоровья',
+        'GR22_11': 'Причина уровня обеспеченности: чрезвычайная ситуация или стихийное бедствие',
+        'GR22_12': 'Причина уровня обеспеченности: утрата имущества',
+        'GR22_13': 'Причина уровня обеспеченности: уход за дошкольным ребёнком',
+        'GR22_14': 'Другая причина уровня обеспеченности',
+        'GR23': 'Как изменилось Ваше благосостояние за последний год?',
+        'GR24': 'Как Вы оцениваете своё благосостояние в ближайший год?',
+        'GR25': 'Как часто Вы встречаетесь с друзьями, родственниками или коллегами?',
+        'GR26': 'Беспокоились ли Вы о нехватке еды из-за недостатка средств?',
+        'GR27': 'Могли ли Вы есть здоровую и питательную пищу?',
+        'GR28_1': 'Причина отсутствия здорового питания: недостаток денег',
+        'GR28_2': 'Причина отсутствия здорового питания: нет огорода или подсобного хозяйства',
+        'GR28_3': 'Причина отсутствия здорового питания: недостаток знаний о питании',
+        'GR28_4': 'Другая причина отсутствия здорового питания',
+        'GR28_5': 'Не применимо или затрудняюсь ответить'
+    },
+    'ocenka': {
+        'GR31_1': 'За последний год не смогли оплатить аренду жилья',
+        'GR31_2': 'За последний год не смогли оплатить коммунальные услуги',
+        'GR31_3': 'За последний год не смогли выплатить кредит или ипотеку',
+        'GR31_4': 'За последний год не смогли оплатить рассрочку',
+        'GR32': 'Может ли семья оплачивать отопление и поддерживать тепло дома?',
+        'GR33': 'Может ли семья заменить изношенную или повреждённую мебель?',
+        'GR34': 'Может ли семья есть горячее блюдо с белком хотя бы раз в два дня?',
+        'GR35': 'Может ли семья оплатить непредвиденные расходы без займа?',
+        'GR36': 'Может ли семья позволить себе недельный отдых вне дома?',
+        'GR37': 'Можете ли Вы встречаться с близкими хотя бы раз в месяц?',
+        'GR38': 'Может ли семья организовать обряды без тяжёлых долгов?',
+        'GR39': 'Доступны ли Вам зимняя и летняя пары обуви?',
+        'GR310': 'Можете ли Вы заменить изношенную одежду и обувь?',
+        'GR311': 'Можете ли Вы самостоятельно потратить определённую сумму?',
+        'GR312': 'Можете ли Вы регулярно посещать развлекательные мероприятия?',
+        'GR313': 'Пользовались ли члены семьи интернетом в течение последнего года?',
+        'GR314': 'Как часто члены семьи пользовались интернетом?',
+        'GR315': 'Есть ли дома постоянный доступ к интернету?',
+        'GR317': 'Есть ли дошкольник, который не посещает детский сад?',
+        'GR319': 'Были ли случаи, когда Вы не смогли получить медицинскую помощь?',
+        'GR40': 'Есть ли в домохозяйстве дети младше 18 лет?',
+        'GR46': 'Получил ли ребёнок необходимое лечение или лекарства?'
+    }
+}
+
+D002_LABELS_FILE = Path(FRONTEND_DIR) / 'src' / 'components' / 'd002QuestionLabels.json'
+try:
+    with D002_LABELS_FILE.open('r', encoding='utf-8') as labels_file:
+        D002_QUESTION_LABELS = json.load(labels_file)
+except (OSError, json.JSONDecodeError):
+    D002_QUESTION_LABELS = {}
+
 
 def get_d004_path(year, quarter, module):
     if year not in {'2021', '2022', '2023', '2024'}:
@@ -94,6 +202,205 @@ def get_d004_path(year, quarter, module):
         return None
     csv_path = DATA_DIR / 'd004' / year / quarter / f'kv_vopr{int(module)}.csv'
     return csv_path if csv_path.is_file() else None
+
+
+def get_d002_db_catalog():
+    if not Path(DB_FILE).is_file():
+        return {}
+    conn = None
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        if not conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name='sinte_import_manifest'"
+        ).fetchone():
+            return {}
+        catalog = {}
+        for source_path, table, row_count in conn.execute(
+            "SELECT source_path, sql_table, row_count FROM sinte_import_manifest WHERE form='d002'"
+        ):
+            parts = Path(source_path).parts
+            if len(parts) == 3 and parts[2].lower().endswith('.csv'):
+                form = Path(parts[2]).stem.lower()
+                if form in D002_FORMS:
+                    catalog[(parts[1], form)] = {'table': table, 'rows': int(row_count)}
+        return catalog
+    except sqlite3.Error as error:
+        print(f'[D002]: Не удалось прочитать каталог SQLite: {error}')
+        return {}
+    finally:
+        if conn:
+            conn.close()
+
+
+def get_d002_frame(year, form, catalog):
+    csv_path = DATA_DIR / 'd002' / year / f'{form}.csv'
+    if csv_path.is_file():
+        try:
+            return pd.read_csv(csv_path, dtype=str, keep_default_na=False, encoding='utf-8-sig'), 'data/sinte CSV'
+        except UnicodeDecodeError:
+            return pd.read_csv(csv_path, dtype=str, keep_default_na=False, encoding='cp1251'), 'data/sinte CSV'
+
+    spec = catalog.get((year, form))
+    if not spec or not Path(DB_FILE).is_file():
+        return None, None
+    table = '"' + spec['table'].replace('"', '""') + '"'
+    conn = sqlite3.connect(DB_FILE)
+    try:
+        frame = pd.read_sql_query(f'SELECT * FROM {table}', conn, dtype=str).fillna('')
+        return frame, 'database.sqlite'
+    finally:
+        conn.close()
+
+
+def normalize_d002_question(column):
+    return re.sub(r'[^A-Z0-9]+', '_', str(column).upper()).strip('_')
+
+
+def d002_question_label(year, form, column):
+    override = D002_QUESTION_OVERRIDES.get(form, {}).get(normalize_d002_question(column))
+    if override:
+        return override
+    labels = D002_QUESTION_LABELS.get(str(year), {}).get(form, {})
+    return labels.get(normalize_d002_question(column), f'Вопрос анкеты {column}')
+
+
+def d002_answer_label(form, question, value):
+    """Return a respondent-facing label for documented D002 response codes."""
+    normalized = normalize_d002_question(question)
+    binary = {'1': 'Да', '2': 'Нет'}
+    food_security = {'1': 'Да', '2': 'Нет', '3': 'Затрудняюсь ответить', '4': 'Отказ от ответа'}
+    if form == 'subject':
+        if normalized == 'GR21':
+            return {
+                '1': 'Низкий уровень обеспеченности', '2': 'Обеспеченность ниже среднего',
+                '3': 'Средний уровень обеспеченности', '4': 'Обеспеченность выше среднего',
+                '5': 'Достаточный уровень обеспеченности', '6': 'Высокий уровень обеспеченности'
+            }.get(value, f'Код ответа {value}')
+        if normalized == 'GR23':
+            return {'1': 'Не изменилось', '2': 'Улучшилось', '3': 'Ухудшилось'}.get(value, f'Код ответа {value}')
+        if normalized == 'GR24':
+            return {
+                '1': 'Уверены, что будем жить лучше', '2': 'Предполагаем улучшение',
+                '3': 'Останемся на достигнутом уровне', '4': 'Возможно некоторое ухудшение',
+                '5': 'Будем жить хуже'
+            }.get(value, f'Код ответа {value}')
+        if normalized == 'GR25':
+            return {
+                '1': 'Никогда', '2': 'Реже раза в месяц', '3': 'Раз в месяц или чаще',
+                '4': 'Раз в неделю', '5': 'Несколько раз в неделю', '6': 'Каждый день'
+            }.get(value, f'Код ответа {value}')
+        if normalized.startswith(('GR22_', 'GR28_')):
+            return 'Отмечено'
+        if normalized in {'GR26', 'GR27', 'GR29', 'GR210', 'GR211', 'GR212', 'GR213', 'GR214'}:
+            return food_security.get(value, f'Код ответа {value}')
+    if form == 'ocenka':
+        if normalized.startswith('GR31_'):
+            return {'1': 'Да, один раз', '2': 'Да, два раза или чаще', '3': 'Нет', '4': 'Не актуально'}.get(value, f'Код ответа {value}')
+        if normalized in {'GR32', 'GR35', 'GR36', 'GR38', 'GR40', 'GR41', 'GR313', 'GR315', 'GR317'}:
+            return binary.get(value, f'Код ответа {value}')
+        if normalized == 'GR314':
+            return {
+                '1': 'Несколько раз в день', '2': 'Не менее раза в день',
+                '3': 'Не менее раза в неделю', '4': 'Не менее раза в месяц',
+                '5': 'Реже раза в месяц'
+            }.get(value, f'Код ответа {value}')
+        if normalized in {'GR33', 'GR34', 'GR37', 'GR39', 'GR310', 'GR311', 'GR312'}:
+            return {'1': 'Да', '2': 'Нет, не хватает средств', '3': 'Нет, по другой причине'}.get(value, f'Код ответа {value}')
+    return f'Код ответа {value}'
+
+
+@app.route('/api/d002/options', methods=['GET'])
+def d002_options():
+    d002_dir = DATA_DIR / 'd002'
+    years = {path.name for path in d002_dir.iterdir() if path.is_dir()} if d002_dir.is_dir() else set()
+    catalog = get_d002_db_catalog()
+    years.update(year for year, _ in catalog)
+    available_forms = {
+        form for form in D002_FORMS
+        if any((year, form) in catalog or (DATA_DIR / 'd002' / year / f'{form}.csv').is_file() for year in years)
+    }
+    return jsonify({
+        'years': sorted(years, reverse=True),
+        'forms': [{'id': form, **D002_FORMS[form]} for form in D002_FORMS if form in available_forms],
+        'source_available': bool(years)
+    })
+
+
+@app.route('/api/d002/data', methods=['GET'])
+def d002_data():
+    year = request.args.get('year', '2024')
+    form = request.args.get('form', 'subject').lower()
+    if year not in {'2021', '2022', '2023', '2024'}:
+        return jsonify({'error': 'Выбранный год обследования D002 не поддерживается.'}), 400
+    if form not in D002_FORMS:
+        return jsonify({'error': 'Выберите раздел анкеты D002 из списка.'}), 400
+
+    catalog = get_d002_db_catalog()
+    frame, source = get_d002_frame(year, form, catalog)
+    if frame is None:
+        return jsonify({'error': f'Данные D002 за {year} не найдены ни в data/sinte, ни в database.sqlite.'}), 404
+
+    questions = [str(column) for column in frame.columns if re.match(r'^GR', str(column), flags=re.IGNORECASE)]
+    if not questions:
+        return jsonify({'error': 'В таблице D002 не найдены вопросы анкеты.'}), 500
+    question_items = []
+    for question in questions:
+        values = frame[question].fillna('').astype(str).str.strip()
+        missing_count = int(values.eq('').sum())
+        answer_values = values[values.ne('')]
+        response_counts = answer_values.value_counts().to_dict()
+        normalized_question = normalize_d002_question(question)
+        match = re.match(r'^GR(\d+)', normalized_question)
+        is_satisfaction_scale = form == 'subject' and bool(match) and int(match.group(1)) <= 19
+
+        if is_satisfaction_scale:
+            scale_groups = [
+                ('1–3', 'Низкая удовлетворённость', {'1', '2', '3'}),
+                ('4–7', 'Частичная удовлетворённость', {'4', '5', '6', '7'}),
+                ('8–10', 'Высокая удовлетворённость', {'8', '9', '10'}),
+                ('89', 'Не применимо / затруднились ответить', {'89'})
+            ]
+            distribution = [{'code': code, 'label': label,
+                             'count': sum(int(response_counts.get(value, 0)) for value in group)}
+                            for code, label, group in scale_groups]
+            distribution = [item for item in distribution if item['count'] > 0]
+            chart_note = 'Оценки 1–3 объединены в низкую удовлетворённость, 4–7 — в частичную, 8–10 — в высокую; 89 — «не применимо / затрудняюсь ответить».'
+        else:
+            def answer_sort(value):
+                try:
+                    return (0, float(value))
+                except ValueError:
+                    return (1, value.casefold())
+            distribution = [{'code': value, 'label': d002_answer_label(form, question, value), 'count': int(count)}
+                            for value, count in sorted(response_counts.items(), key=lambda pair: answer_sort(pair[0]))]
+            chart_note = 'Подписи вариантов взяты из анкеты D-002. Если для редкого поля в документации указан только код, он показан как «Код ответа».'
+
+        valid_count = int(len(answer_values))
+        for item in distribution:
+            item['share'] = round(item['count'] / valid_count * 100, 1) if valid_count else 0
+        question_items.append({
+            'id': question,
+            'label': d002_question_label(year, form, question),
+            'answered': valid_count,
+            'missing': missing_count,
+            'distribution': distribution,
+            'chart_note': chart_note,
+            'is_satisfaction_scale': is_satisfaction_scale
+        })
+
+    territories = int(frame['TE'].replace('', pd.NA).nunique()) if 'TE' in frame.columns else 0
+    return jsonify({
+        'dataset': 'd002',
+        'year': year,
+        'form': form,
+        'form_label': D002_FORMS[form]['label'],
+        'form_description': D002_FORMS[form]['description'],
+        'source': source,
+        'respondents': int(len(frame)),
+        'territories': territories,
+        'questions': question_items,
+        'question_count': len(question_items)
+    })
 
 
 def read_d004_csv(csv_path):

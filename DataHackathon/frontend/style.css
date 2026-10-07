@@ -580,6 +580,181 @@ aside.category-sidebar-hover.pinned .sidebar-settings-footer {
     color: var(--text-primary);
 }
 
+.dataset-filter-panel input[type="search"] {
+    width: 100%;
+    min-width: 0;
+    padding: 10px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--card-bg);
+    color: var(--text-primary);
+}
+
+.d002-question-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 390px), 1fr));
+    gap: 18px;
+    margin-top: 20px;
+}
+
+.d002-gallery-heading {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid color-mix(in srgb, #c9aace 45%, var(--border-color));
+}
+
+.d002-gallery-eyebrow {
+    margin: 0 0 6px;
+    color: #a987b0;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+}
+
+.d002-gallery-heading h2 {
+    margin-bottom: 7px;
+    color: #222222;
+    font-size: clamp(1.2rem, 2vw, 1.45rem);
+}
+
+.d002-gallery-heading .dataset-panel-caption {
+    margin-bottom: 0;
+}
+
+.d002-gallery-guide {
+    max-width: 330px;
+    margin: 0;
+    color: var(--text-secondary, #64748b);
+    font-size: 0.84rem;
+    line-height: 1.55;
+}
+
+.d002-question-card {
+    position: relative;
+    overflow: hidden;
+    min-width: 0;
+    padding: 19px;
+    border: 1px solid color-mix(in srgb, #c9aace 50%, var(--border-color));
+    border-radius: 18px;
+    background: var(--card-bg);
+    box-shadow: 0 8px 24px rgba(34, 34, 34, 0.045);
+    transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.d002-question-card::before {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 5px;
+    background: linear-gradient(90deg, #fbb085 0%, #c9aace 100%);
+    content: '';
+}
+
+.d002-question-card:hover {
+    transform: translateY(-3px);
+    border-color: #c9aace;
+    box-shadow: 0 14px 32px rgba(34, 34, 34, 0.1);
+}
+
+.d002-question-card h3 {
+    margin: 8px 0 5px;
+    color: #222222;
+    font-size: 0.98rem;
+    line-height: 1.45;
+}
+
+.d002-question-code,
+.d002-question-meta,
+.d002-question-note {
+    color: var(--text-secondary, #64748b);
+    font-size: 0.78rem;
+}
+
+.d002-question-code {
+    display: inline-block;
+    margin-bottom: 9px;
+    padding: 3px 7px;
+    border-radius: 999px;
+    background: rgba(201, 170, 206, 0.18);
+    color: #725a78;
+    font-size: 0.7rem;
+    font-weight: 700;
+}
+
+.d002-question-meta {
+    min-height: 2.5em;
+    margin: 0;
+}
+
+.d002-question-hint {
+    margin: 8px 0 -1px;
+    color: #a987b0;
+    font-size: 0.73rem;
+}
+
+.d002-question-chart {
+    width: 100%;
+    height: 274px;
+}
+
+.d002-question-note {
+    min-height: 3.2em;
+    margin: 3px 0 0;
+    padding-top: 10px;
+    border-top: 1px solid rgba(201, 170, 206, 0.28);
+    line-height: 1.45;
+}
+
+.d002-load-more-wrap {
+    display: grid;
+    justify-items: center;
+    gap: 10px;
+    margin: 24px 0 4px;
+}
+
+.d002-load-more-wrap .dataset-panel-caption {
+    margin: 0;
+}
+
+.d002-load-more {
+    padding: 11px 19px;
+    border: 1px solid #c9aace;
+    border-radius: 999px;
+    background: #222222;
+    color: #ffffff;
+    font: inherit;
+    font-size: 0.87rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 160ms ease, background 160ms ease, box-shadow 160ms ease;
+}
+
+.d002-load-more:hover {
+    background: #3b333b;
+    box-shadow: 0 7px 16px rgba(34, 34, 34, 0.18);
+    transform: translateY(-1px);
+}
+
+.d002-load-more:focus-visible {
+    outline: 3px solid rgba(251, 176, 133, 0.6);
+    outline-offset: 3px;
+}
+
+body.dark-theme .d002-gallery-heading h2,
+body.dark-theme .d002-question-card h3 {
+    color: var(--text-primary);
+}
+
+body.dark-theme .d002-question-card {
+    border-color: rgba(201, 170, 206, 0.34);
+    box-shadow: none;
+}
+
 .dataset-status {
     min-height: 1.4em;
     color: var(--text-secondary, #64748b);
@@ -796,6 +971,18 @@ aside.category-sidebar-hover.pinned .sidebar-settings-footer {
 
     .dataset-chart {
         height: 280px;
+    }
+
+    .d002-gallery-heading {
+        display: block;
+    }
+
+    .d002-gallery-guide {
+        margin-top: 11px;
+    }
+
+    .d002-question-chart {
+        height: 255px;
     }
 }
 

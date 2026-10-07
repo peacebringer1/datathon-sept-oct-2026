@@ -397,6 +397,53 @@
             <p id="datasetPageDescription"></p>
           </header>
 
+          <div id="d002Dashboard" hidden>
+            <div class="dataset-filter-panel">
+              <label>Год обследования
+                <select id="d002YearSelect" aria-label="Год обследования D002"></select>
+              </label>
+              <label>Раздел анкеты
+                <select id="d002FormSelect" aria-label="Раздел анкеты D002"></select>
+              </label>
+              <label>Найти вопрос
+                <input id="d002QuestionSearch" type="search" placeholder="Например: здоровье" aria-label="Поиск по вопросам D002">
+              </label>
+            </div>
+
+            <p id="d002Status" class="dataset-status" role="status" aria-live="polite">Загрузка параметров D002…</p>
+
+            <div class="dataset-stat-grid">
+              <article class="dataset-stat-card"><span>Участников обследования</span><strong id="d002RespondentsStat">—</strong></article>
+              <article class="dataset-stat-card"><span>Вопросов в разделе</span><strong id="d002QuestionCountStat">—</strong></article>
+              <article class="dataset-stat-card"><span>Территорий</span><strong id="d002TerritoriesStat">—</strong></article>
+            </div>
+
+            <article class="dataset-panel">
+              <div class="d002-gallery-heading">
+                <div>
+                  <p class="d002-gallery-eyebrow">Карточки вопросов</p>
+                  <h2>Как распределились ответы</h2>
+                  <p id="d002ChartCaption" class="dataset-panel-caption"></p>
+                </div>
+                <p class="d002-gallery-guide">Каждая карточка показывает один вопрос. Выберите год или раздел анкеты, чтобы обновить результаты.</p>
+              </div>
+              <p id="d002NoResults" class="dataset-panel-caption" hidden>По этому запросу вопросы не найдены.</p>
+              <div id="d002QuestionCharts" class="d002-question-grid"></div>
+              <div class="d002-load-more-wrap">
+                <p id="d002ShownStatus" class="dataset-panel-caption" aria-live="polite"></p>
+                <button id="d002LoadMore" class="d002-load-more" type="button">Показать ещё 10 вопросов</button>
+              </div>
+              <div class="dataset-explainer">
+                <h3>Что это за обследование</h3>
+                <p id="d002FormDescription"></p>
+                <p>Форма D-002 «Качество жизни населения» проводится раз в год. В ней участвует один член домохозяйства в возрасте от 15 лет.</p>
+                <p>Круг показывает, как распределились ответы среди участников, которые ответили на вопрос. Наведите курсор на сектор, чтобы увидеть число и долю ответов.</p>
+                <p><strong>Обратите внимание:</strong> CSV и таблицы D002 в базе — синтетические учебные данные, созданные по структуре настоящей анкеты. Они не являются официальными результатами обследования и не описывают реальных людей.</p>
+              </div>
+            </article>
+
+          </div>
+
           <div id="d004Dashboard" hidden>
             <div class="dataset-filter-panel">
               <label>Год
