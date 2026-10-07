@@ -127,6 +127,10 @@ aside.category-sidebar-hover.pinned~.main-content-area {
     margin-right: 400px;
 }
 
+.app-layout.ai-sidebar-open .charts-grid-4 {
+    grid-template-columns: minmax(0, 1fr);
+}
+
 .sidebar-content-inner {
     width: 280px;
     height: 100%;
@@ -444,7 +448,8 @@ aside.category-sidebar-hover.pinned .sidebar-settings-footer {
 }
 
 .widget-controls {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
     gap: 20px;
     background: linear-gradient(135deg, var(--card-bg) 0%, var(--bg-input) 100%);
     padding: 14px 20px;
@@ -457,19 +462,20 @@ aside.category-sidebar-hover.pinned .sidebar-settings-footer {
 }
 
 .widget-controls .control-group {
-    display: flex;
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
     align-items: center;
-    justify-content: left;
     gap: 12px;
     font-size: 0.9rem;
     font-weight: 600;
     color: var(--text-primary);
-    flex: 1;
-    min-width: 250px;
+    min-width: 0;
 }
 
 .widget-controls select,
 .control-group select {
+    width: 100%;
+    min-width: 0;
     padding: 8px 14px;
     border-radius: 8px;
     border: 1px solid var(--border-color);
@@ -677,7 +683,7 @@ aside.category-sidebar-hover.pinned .sidebar-settings-footer {
     padding: 8px 12px;
     border: 1px solid var(--border-color);
     border-radius: 8px;
-    width: 250px;
+    width: 220px;
     outline: none;
     font-size: 0.88rem;
     background: var(--bg-input);
@@ -1142,8 +1148,71 @@ th {
     border-radius: 12px;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
     padding: 12px;
-    width: 180px;
+    width: 250px;
+    max-width: calc(100vw - 24px);
     z-index: 1000;
+}
+
+.settings-dropdown-container {
+    position: relative;
+}
+
+#geminiApiKeyForm {
+    display: grid;
+    gap: 7px;
+}
+
+#geminiApiKeyForm label {
+    color: var(--text-primary);
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+#geminiApiKeyInput {
+    width: 100%;
+    min-width: 0;
+    padding: 7px 9px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-input);
+    color: var(--text-primary);
+    font-size: 0.78rem;
+}
+
+.settings-api-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.settings-api-actions button {
+    flex: 1;
+    padding: 6px 8px;
+    border: 0;
+    border-radius: 8px;
+    background: var(--accent-color);
+    color: #fff;
+    cursor: pointer;
+    font-size: 0.75rem;
+}
+
+.settings-api-actions button:disabled {
+    cursor: wait;
+    opacity: 0.65;
+}
+
+#geminiApiKeyStatus,
+#geminiApiKeyForm small {
+    color: var(--text-secondary);
+    font-size: 0.68rem;
+    line-height: 1.3;
+}
+
+#geminiApiKeyStatus[data-state="error"] {
+    color: #dc2626;
+}
+
+#geminiApiKeyStatus[data-state="success"] {
+    color: #15803d;
 }
 
 /* ========================================================================== */
@@ -1175,18 +1244,6 @@ body.dark-theme .widget-controls {
 body.dark-theme .custom-add-card:hover {
     background: rgba(37, 99, 235, 0.08) !important;
     border-color: var(--accent-color) !important;
-}
-
-/* Google Translate Frame скрытие */
-.goog-te-banner-frame.skiptranslate,
-#goog-gt-tt,
-.goog-te-balloon-frame {
-    display: none !important;
-}
-
-.goog-text-highlight {
-    background-color: transparent !important;
-    box-shadow: none !important;
 }
 
 /* ========================================================================== */
