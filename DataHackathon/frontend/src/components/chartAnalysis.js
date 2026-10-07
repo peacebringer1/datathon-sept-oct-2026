@@ -2,6 +2,23 @@ import { cleanAIResponse } from './aiChat.js';
 
 const pendingAnalyses = new Map();
 let isProcessingQueue = false;
+let geminiStatusPromise = null;
+let geminiStatusCheckedAt = 0;
+
+function isGeminiConfigured(apiBaseUrl) {
+  const now = Date.now();
+  if (!geminiStatusPromise || now - geminiStatusCheckedAt > 15000) {
+    geminiStatusCheckedAt = now;
+    geminiStatusPromise = fetch(`${apiBaseUrl}/api/settings/gemini-key`)
+      .then(async (response) => {
+        if (!response.ok) return false;
+        const result = await response.json();
+        return result.configured === true;
+      })
+      .catch(() => false);
+  }
+  return geminiStatusPromise;
+}
 
 function getChartData(chartElement) {
   const chart = window.echarts?.getInstanceByDom(chartElement);
@@ -65,6 +82,34 @@ function renderLoading(element) {
   element.append(heading, text);
 }
 
+function renderGeminiNotConfigured(element, retry) {
+  element.replaceChildren();
+  const heading = document.createElement('h4');
+  heading.textContent = 'ИИ-анализ и гипотезы';
+  const text = document.createElement('p');
+  text.textContent = 'Подключите ключ Gemini в настройках, чтобы получить анализ этого графика.';
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'chart-ai-retry';
+  button.textContent = 'Проверить снова';
+  button.addEventListener('click', retry, { once: true });
+  element.append(heading, text, button);
+}
+
+function renderAnalysisPrompt(element, onRequest) {
+  element.replaceChildren();
+  const heading = document.createElement('h4');
+  heading.textContent = 'ИИ-анализ и гипотезы';
+  const text = document.createElement('p');
+  text.textContent = 'Чтобы не отправлять лишние запросы, анализ запускается по кнопке.';
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'chart-ai-retry';
+  button.textContent = 'Получить анализ';
+  button.addEventListener('click', onRequest, { once: true });
+  element.append(heading, text, button);
+}
+
 function renderError(element, message, retry) {
   element.replaceChildren();
   const heading = document.createElement('h4');
@@ -92,6 +137,20 @@ function renderError(element, message, retry) {
 async function requestAnalysis(job) {
   const { element, apiBaseUrl, requestId, context } = job;
   try {
+    const configured = await isGeminiConfigured(apiBaseUrl);
+    if (!configured) {
+      if (element.dataset.requestId === requestId) {
+        renderGeminiNotConfigured(element, () => {
+          geminiStatusPromise = null;
+          geminiStatusCheckedAt = 0;
+          renderLoading(element);
+          pendingAnalyses.set(element, job);
+          void processQueue();
+        });
+      }
+      return;
+    }
+
     const response = await fetch(`${apiBaseUrl}/api/chart-analysis`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -160,13 +219,9 @@ async function requestAnalysis(job) {
   } catch (error) {
     if (element.dataset.requestId !== requestId) return;
     renderError(element, error.message || 'Ошибка соединения с сервером.', () => {
-      updateChartAnalysis(
-        job.chartId,
-        job.apiBaseUrl,
-        job.indicator,
-        job.category,
-        job.year
-      );
+      renderLoading(element);
+      pendingAnalyses.set(element, job);
+      void processQueue();
     });
   }
 }
@@ -196,7 +251,6 @@ export function updateChartAnalysis(chartId, apiBaseUrl, indicator, category, ye
   const element = getAnalysisElement(chartElement);
   const requestId = String(Number(element.dataset.requestId || 0) + 1);
   element.dataset.requestId = requestId;
-  renderLoading(element);
 
   const context = {
     indicator,
@@ -207,8 +261,7 @@ export function updateChartAnalysis(chartId, apiBaseUrl, indicator, category, ye
       ...data
     }
   };
-  pendingAnalyses.delete(element);
-  pendingAnalyses.set(element, {
+  const job = {
     element,
     chartId,
     apiBaseUrl,
@@ -217,6 +270,12 @@ export function updateChartAnalysis(chartId, apiBaseUrl, indicator, category, ye
     year,
     requestId,
     context
+  };
+  pendingAnalyses.delete(element);
+  renderAnalysisPrompt(element, () => {
+    if (element.dataset.requestId !== requestId) return;
+    renderLoading(element);
+    pendingAnalyses.set(element, job);
+    void processQueue();
   });
-  void processQueue();
 }

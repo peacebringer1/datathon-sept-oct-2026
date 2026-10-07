@@ -370,10 +370,6 @@ aside.category-sidebar-hover.pinned .sidebar-settings-footer {
     animation: tickerScroll 25s linear infinite;
 }
 
-.ticker-track:hover {
-    animation-play-state: paused;
-}
-
 @keyframes tickerScroll {
     0% {
         transform: translateX(0);
