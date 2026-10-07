@@ -58,35 +58,29 @@
         </div>
 
         <div class="category-tree" id="categoryTree">
+          <!-- Категория: Экономика -->
           <div class="cat-group">
             <div class="cat-header active" onclick="switchMainSection('dashboard', this)">
-              <span class="cat-text">Население</span>
-            </div>
-          </div>
-          <div class="cat-group">
-            <div class="cat-header" onclick="switchMainSection('dashboard', this)">
+              <span class="cat-icon">📊</span>
               <span class="cat-text">Экономика</span>
             </div>
-          </div>
-          <div class="cat-group">
-            <div class="cat-header" onclick="switchMainSection('dashboard', this)">
-              <span class="cat-text">Образование</span>
+            <div class="cat-subitems">
+              <div class="cat-subitem" onclick="switchSubSection('t001', this)">Труд и занятость <span class="badge">t001, 1t</span></div>
+              <div class="cat-subitem" onclick="switchSubSection('2t', this)">Заработная плата <span class="badge">2t</span></div>
             </div>
           </div>
-          <div class="cat-group">
-            <div class="cat-header" onclick="switchMainSection('dashboard', this)">
-              <span class="cat-text">Промышленность</span>
-            </div>
-          </div>
-          <div class="cat-group">
-            <div class="cat-header" onclick="switchMainSection('dashboard', this)">
-              <span class="cat-text">Сельское хозяйство</span>
-            </div>
-          </div>
-          <!-- Категория Домохозяйство -->
+
+          <!-- Категория: Население -->
           <div class="cat-group">
             <div class="cat-header" onclick="switchMainSection('household', this)">
-              <span class="cat-text">Домохозяйство</span>
+              <span class="cat-icon">👥</span>
+              <span class="cat-text">Население</span>
+            </div>
+            <div class="cat-subitems">
+              <div class="cat-subitem" onclick="switchSubSection('d008', this)">Демография <span class="badge">d008</span></div>
+              <div class="cat-subitem" onclick="switchSubSection('d004', this)">Уровень жизни <span class="badge">d004</span></div>
+              <div class="cat-subitem" onclick="switchSubSection('d006', this)">Жилищные условия <span class="badge">d006</span></div>
+              <div class="cat-subitem" onclick="switchSubSection('d002', this)">Социальные оценки <span class="badge">d002</span></div>
             </div>
           </div>
         </div>
@@ -198,40 +192,6 @@
                 <div id="chartTypeHBar" class="chart-box-h330"></div>
               </div>
 
-              <!-- Карточка 5 -->
-              <div class="sub-chart-card">
-                <div class="card-header-controls">
-                  <div class="left-local-controls">
-                    <select class="mini-select" id="card5Indicator" onchange="onCardFilterChange(5)"></select>
-                    <select class="mini-select" id="card5Year" onchange="onCardFilterChange(5)"></select>
-                    <button class="custom-analytics-btn" onclick="openAnalyticsFromCard(this)"
-                      title="Открыть детальный анализ графика">📊</button>
-                  </div>
-                </div>
-                <div id="barAnimationChart" class="chart-box-h330"></div>
-              </div>
-
-              <!-- Карточка 6 -->
-              <div class="sub-chart-card custom-add-card" id="customCardContainer">
-                <div class="card-header-controls" id="customCardHeader">
-                  <div class="left-local-controls">
-                    <select class="mini-select" id="card6Indicator" onchange="onCardFilterChange(6)"></select>
-                    <select class="mini-select" id="card6Year" onchange="onCardFilterChange(6)"></select>
-                    <button class="custom-analytics-btn" onclick="openAnalyticsFromCard(this)"
-                      title="Открыть детальный анализ графика">📊</button>
-                    <button class="custom-analytics-btn btn-danger-custom" onclick="resetCustomCard()"
-                      title="Сбросить график">✕</button>
-                  </div>
-                </div>
-
-                <div id="customCardPrompt" class="center-add-prompt" onclick="openAddChartModal()">
-                  <div class="add-circle-icon">+</div>
-                  <span>Добавить свой график</span>
-                </div>
-
-                <div id="chartTypeCustom" class="chart-box-h330" style="display: none;"></div>
-              </div>
-
               <!-- Модальное окно настройки пользовательского графика -->
               <div id="addChartModal" class="modal-backdrop">
                 <div class="modal-card">
@@ -264,6 +224,93 @@
               </div>
             </div>
           </div>
+
+          <div class="wrapper-wishlist">
+            <div class="wishlist-header-flex">
+              <div class="wishlist-title">
+                <!-- Заголовок при необходимости -->
+              </div>
+            </div>
+
+            <!-- Внешняя обертка, выстраивающая элементы в ряд: Кнопка слева -> Лента -> Кнопка справа -->
+            <div class="wishlist-wrapper-outer">
+              <button class="wishlist-nav-btn" onclick="scrollWishlist('left')">←</button>
+
+              <div class="wishlist-track-container">
+                <div class="wishlist-track" id="wishlistTrack">
+                  
+                  <!-- Карточка 1: Взлет -->
+                  <div class="wishlist-card">
+                    <div class="wishlist-card-top">
+                      <span class="trend-badge up">Рост +14.2%</span>
+                      <span style="font-size: 0.75rem; color: var(--text-secondary);">Экономика</span>
+                    </div>
+                    <h5>Инвестиции в основной капитал</h5>
+                    <p>Зафиксирован значительный прирост инвестиционной активности в регионах за последний отчетный период.</p>
+                  </div>
+
+                  <!-- Карточка 2: Падение -->
+                  <div class="wishlist-card">
+                    <div class="wishlist-card-top">
+                      <span class="trend-badge down">Снижение -3.5%</span>
+                      <span style="font-size: 0.75rem; color: var(--text-secondary);">Население</span>
+                    </div>
+                    <h5>Демографическая динамика миграции</h5>
+                    <p>Отмечается локальное уменьшение коэффициента внешней миграции в отдельных промышленных центрах.</p>
+                  </div>
+
+                  <!-- Карточка 3: Взлет -->
+                  <div class="wishlist-card">
+                    <div class="wishlist-card-top">
+                      <span class="trend-badge up">Рост +22.8%</span>
+                      <span style="font-size: 0.75rem; color: var(--text-secondary);">Образование</span>
+                    </div>
+                    <h5>Цифровизация учебных заведений</h5>
+                    <p>Существенное расширение высокоскоростного интернет-покрытия и внедрение интерактивных платформ.</p>
+                  </div>
+
+                  <!-- Карточка 4: Стабильность / Тренд -->
+                  <div class="wishlist-card">
+                    <div class="wishlist-card-top">
+                      <span class="trend-badge up">📈 Рост +8.1%</span>
+                      <span style="font-size: 0.75rem; color: var(--text-secondary);">Сельское хозяйство</span>
+                    </div>
+                    <h5>Объемы вапа продукции АПК</h5>
+                    <p>Успешное внедрение автоматизированного полива и субсидирования повысило общую урожайность.</p>
+                  </div>
+
+                </div>
+              </div>
+
+              <button class="wishlist-nav-btn" onclick="scrollWishlist('right')">→</button>
+            </div>
+          </div>
+
+                        <!-- Отдельный див с пользовательским графиком -->
+          <div class="sub-chart-card custom-add-card wrapper-create" id="customCardContainer">
+            <div class="card-header-controls" id="customCardHeader">
+              <div class="left-local-controls">
+                <select class="mini-select" id="card6Indicator" onchange="onCardFilterChange(6)"></select>
+                <select class="mini-select" id="card6Year" onchange="onCardFilterChange(6)"></select>
+                <button class="custom-analytics-btn" onclick="openAnalyticsFromCard(this)"
+                  title="Открыть детальный анализ графика">📊</button>
+                <button class="custom-analytics-btn btn-danger-custom" onclick="resetCustomCard()"
+                  title="Сбросить график">✕</button>
+              </div>
+            </div>
+
+            <div id="customCardPrompt" class="center-add-prompt" onclick="openAddChartModal()">
+              <div class="add-circle-icon">+</div>
+              <span>Создать свой график</span>
+            </div>
+
+            <div id="chartTypeCustom" class="chart-box-h330" style="display: none;"></div>
+          </div>
+
+
+
+
+          
 
           <div id="mapChartSection" class="chart-section-block map-section-spacing">
             <div class="widget-controls">
