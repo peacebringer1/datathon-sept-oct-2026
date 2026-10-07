@@ -13,6 +13,7 @@ import { renderDynamicSwitchChart } from './dynamicCharts.js';
 import { fetchAIInsights } from './insightsTicker.js';
 import { setSelectValuePrecise } from './appInit.js';
 import { updateChartAnalysis } from './chartAnalysis.js';
+import { openSidebarDatasetPage } from './datasetPages.js';
 
 const categoryDashboards = {
   "Население": [
@@ -158,4 +159,8 @@ export async function onSummaryFilterChange(API_BASE_URL) {
   if (!indicator) return;
 
   await updateSummaryChart(API_BASE_URL, indicator);
+}
+
+export async function switchSubSection(subDataset, el, apiBaseUrl) {
+  await openSidebarDatasetPage(subDataset, el, apiBaseUrl);
 }

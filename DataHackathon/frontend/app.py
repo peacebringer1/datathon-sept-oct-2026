@@ -1,33 +1,34 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import sqlite3
+sqlite3 = __import__('sqlite3')
 import os
 import json
+from pathlib import Path
 import math
 import time
 import urllib.error
 import urllib.request
+import pandas as pd
 
 app = Flask(__name__)
 CORS(app)
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
-# Путь к папке frontend/
 FRONTEND_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Путь к файлу database.sqlite в корневом каталоге DataHackathon/
 DB_FILE = os.path.abspath(os.path.join(FRONTEND_DIR, '..', 'database.sqlite'))
+DATA_DIR = Path(FRONTEND_DIR).parent / 'data' / 'sinte'
 ACTIVE_DEMOGRAPHICS = None
 ACTIVE_DATASET_NAME = None
 ACTIVE_DATASET_MODE = None
+_D004_CACHE_KEY = None
+_D004_CACHE_FRAME = None
 GEMINI_MODEL = os.environ.get('GEMINI_MODEL', 'gemini-3.8-flash').strip()
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '').strip()
 if GEMINI_MODEL.startswith('models/'):
     GEMINI_MODEL = GEMINI_MODEL[len('models/'):]
 
 print(f"[Flask DB]: Используется база данных по пути -> {DB_FILE}")
-
-from flask import jsonify
 
 
 class GeminiAPIError(RuntimeError):
@@ -36,6 +37,209 @@ class GeminiAPIError(RuntimeError):
         self.status = status
         self.content_type = content_type
 
+
+def get_db_connection():
+    conn = sqlite3.connect(DB_FILE)
+    conn.row_factory = sqlite3.Row
+    conn.create_function('casefold', 1, lambda value: str(value).casefold() if value is not None else '')
+    
+    cursor = conn.cursor()
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='demographics';")
+    if not cursor.fetchone():
+        print("[Flask DB]: Таблица 'demographics' не найдена. Создаем дефолтную таблицу...")
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS demographics (
+                indicator TEXT,
+                year INTEGER,
+                province TEXT,
+                value REAL
+            )
+        ''')
+        cursor.executemany('INSERT INTO demographics VALUES (?, ?, ?, ?)', [
+            ("Естественный прирост населения", 2021, "г. Алматы", 15000.0),
+            ("Естественный прирост населения", 2021, "г. Астана", 12000.0),
+            ("Число зарегистрированных браков", 2021, "г. Алматы", 8000.0),
+            ("Число зарегистрированных браков", 2021, "г. Астана", 6500.0),
+            ("Число зарегистрированных разводов", 2021, "г. Алматы", 3000.0),
+            ("Число умерших", 2021, "г. Алматы", 9000.0)
+        ])
+        conn.commit()
+    
+    return conn
+
+
+D004_MODULES = {
+    0: 'Сведения о домохозяйстве',
+    1: 'Непродовольственные товары',
+    2: 'Жилищные услуги, вода, энергия и топливо',
+    3: 'Связь',
+    4: 'Образование',
+    5: 'Здравоохранение',
+    6: 'Отдых, культура и прочие услуги',
+    7: 'Транспорт',
+    9: 'Производство и услуги домохозяйства, часть 1',
+    10: 'Производство и услуги домохозяйства, часть 2',
+    11: 'Доходы',
+    12: 'Заемные средства'
+}
+
+
+def get_d004_path(year, quarter, module):
+    if year not in {'2021', '2022', '2023', '2024'}:
+        return None
+    if quarter not in {'1kv', '2kv', '3kv', '4kv'}:
+        return None
+    if not module.isdigit() or int(module) not in D004_MODULES:
+        return None
+    csv_path = DATA_DIR / 'd004' / year / quarter / f'kv_vopr{int(module)}.csv'
+    return csv_path if csv_path.is_file() else None
+
+
+def read_d004_csv(csv_path):
+    global _D004_CACHE_KEY, _D004_CACHE_FRAME
+    cache_key = (str(csv_path), csv_path.stat().st_mtime_ns)
+    if _D004_CACHE_KEY != cache_key:
+        try:
+            frame = pd.read_csv(csv_path, dtype=str, keep_default_na=False, encoding='utf-8-sig', low_memory=False)
+        except UnicodeDecodeError:
+            frame = pd.read_csv(csv_path, dtype=str, keep_default_na=False, encoding='cp1251', low_memory=False)
+        _D004_CACHE_KEY = cache_key
+        _D004_CACHE_FRAME = frame
+    return _D004_CACHE_FRAME
+
+
+@app.route('/api/d004/options', methods=['GET'])
+def d004_options():
+    d004_dir = DATA_DIR / 'd004'
+    years = sorted((path.name for path in d004_dir.iterdir() if path.is_dir()), reverse=True) if d004_dir.is_dir() else []
+    quarters = ['1kv', '2kv', '3kv', '4kv']
+    modules = [{'id': module, 'label': label} for module, label in D004_MODULES.items()]
+    return jsonify({'years': years, 'quarters': quarters, 'modules': modules})
+
+
+@app.route('/api/d004/data', methods=['GET'])
+def d004_data():
+    year = request.args.get('year', '2024')
+    quarter = request.args.get('quarter', '4kv')
+    module = request.args.get('module', '1')
+    if year != 'all' and year not in {'2021', '2022', '2023', '2024'}:
+        return jsonify({'error': 'Выбранный год не поддерживается.'}), 400
+    if quarter != 'all' and quarter not in {'1kv', '2kv', '3kv', '4kv'}:
+        return jsonify({'error': 'Выбранный квартал не поддерживается.'}), 400
+    if not module.isdigit() or int(module) not in D004_MODULES:
+        return jsonify({'error': 'Выбранный раздел анкеты не поддерживается.'}), 400
+
+    d004_dir = DATA_DIR / 'd004'
+    years = sorted((path.name for path in d004_dir.iterdir() if path.is_dir()), reverse=True) if d004_dir.is_dir() else []
+    selected_years = years if year == 'all' else [year]
+    selected_quarters = ['1kv', '2kv', '3kv', '4kv'] if quarter == 'all' else [quarter]
+    paths = [path for selected_year in selected_years for selected_quarter in selected_quarters
+             if (path := get_d004_path(selected_year, selected_quarter, module)) is not None]
+    if not paths:
+        return jsonify({'error': 'Для выбранного года, квартала и раздела файл не найден.'}), 404
+
+    page = max(1, request.args.get('page', default=1, type=int))
+    page_size = min(100, max(10, request.args.get('page_size', default=50, type=int)))
+    start = (page - 1) * page_size
+    rows, columns, total_rows = [], [], 0
+    territory_counts, territory_amounts, households, territory_households = {}, {}, set(), {}
+    has_amount = False
+    try:
+        for csv_path in paths:
+            try:
+                chunks = pd.read_csv(csv_path, dtype=str, keep_default_na=False, encoding='utf-8-sig', chunksize=50000, low_memory=False)
+                for chunk in chunks:
+                    if not columns:
+                        columns = [str(column) for column in chunk.columns]
+                    chunk_size = len(chunk)
+                    left, right = max(start - total_rows, 0), min(start + page_size - total_rows, chunk_size)
+                    if left < right:
+                        selected = chunk.iloc[left:right].copy()
+                        selected['ГОД'] = csv_path.parents[1].name
+                        selected['КВАРТАЛ'] = csv_path.parent.name.upper()
+                        rows.extend(selected.to_dict(orient='records'))
+                    total_rows += chunk_size
+                    territory_column = next((column for column in ('TE', 'Te', 'territory') if column in chunk.columns), None)
+                    if territory_column:
+                        codes = chunk[territory_column].replace('', 'Не указан')
+                        counts = codes.value_counts()
+                        for code, count in counts.items():
+                            territory_counts[str(code)] = territory_counts.get(str(code), 0) + int(count)
+                        if 'STOIMK' in chunk.columns:
+                            has_amount = True
+                            amounts = pd.to_numeric(chunk['STOIMK'], errors='coerce').fillna(0).groupby(codes).sum()
+                            for code, amount in amounts.items():
+                                territory_amounts[str(code)] = territory_amounts.get(str(code), 0) + float(amount)
+                        id_columns = [column for column in ('TE', 'K', 'NOMER') if column in chunk.columns]
+                        if id_columns:
+                            ids = chunk[id_columns].astype(str).agg('|'.join, axis=1)
+                            households.update(ids.tolist())
+                            for code, group in ids.groupby(codes):
+                                territory_households.setdefault(str(code), set()).update(group.tolist())
+            except UnicodeDecodeError:
+                for chunk in pd.read_csv(csv_path, dtype=str, keep_default_na=False, encoding='cp1251', chunksize=50000, low_memory=False):
+                    if not columns:
+                        columns = [str(column) for column in chunk.columns]
+                    chunk_size = len(chunk)
+                    left, right = max(start - total_rows, 0), min(start + page_size - total_rows, chunk_size)
+                    if left < right:
+                        selected = chunk.iloc[left:right].copy()
+                        selected['ГОД'] = csv_path.parents[1].name
+                        selected['КВАРТАЛ'] = csv_path.parent.name.upper()
+                        rows.extend(selected.to_dict(orient='records'))
+                    total_rows += chunk_size
+                    territory_column = next((column for column in ('TE', 'Te', 'territory') if column in chunk.columns), None)
+                    if territory_column:
+                        codes = chunk[territory_column].replace('', 'Не указан')
+                        for code, count in codes.value_counts().items():
+                            territory_counts[str(code)] = territory_counts.get(str(code), 0) + int(count)
+                        id_columns = [column for column in ('TE', 'K', 'NOMER') if column in chunk.columns]
+                        if id_columns:
+                            households.update(chunk[id_columns].astype(str).agg('|'.join, axis=1).tolist())
+        # Keep origin fields visible in both single-file and combined views.
+        columns = columns + [field for field in ('ГОД', 'КВАРТАЛ') if field not in columns]
+    except (OSError, pd.errors.ParserError, UnicodeError) as error:
+        print(f'[D004]: Не удалось прочитать {paths}: {error}')
+        return jsonify({'error': 'Не удалось прочитать CSV-файл D004.'}), 500
+
+    territory_names = {
+        '10': 'Область Абай', '11': 'Акмолинская область', '15': 'Актюбинская область', '19': 'Алматинская область',
+        '23': 'Атырауская область', '27': 'Западно-Казахстанская область', '31': 'Жамбылская область',
+        '33': 'Область Жетысу', '35': 'Карагандинская область', '39': 'Костанайская область',
+        '43': 'Кызылординская область', '47': 'Мангистауская область', '51': 'Туркестанская область',
+        '55': 'Павлодарская область', '59': 'Северо-Казахстанская область', '61': 'Туркестанская область',
+        '62': 'Область Улытау', '63': 'Восточно-Казахстанская область', '71': 'г. Астана',
+        '75': 'г. Алматы', '79': 'г. Шымкент'
+    }
+    labels = list(territory_counts)
+    chart_metric = 'Сумма значений STOIMK в строках выборки' if has_amount else 'Количество записей'
+    chart_values = [territory_amounts.get(code, 0) for code in labels] if has_amount else [territory_counts[code] for code in labels]
+    summary = [{'code': code, 'territory': territory_names.get(code, 'Неизвестная территория'),
+                'records': territory_counts[code], 'households': len(territory_households.get(code, set())),
+                'amount': round(territory_amounts.get(code, 0), 2) if has_amount else None}
+               for code in labels]
+    summary.sort(key=lambda item: item['records'], reverse=True)
+    for row in rows:
+        row['ГОД'] = row.get('ГОД', '')
+        row['КВАРТАЛ'] = row.get('КВАРТАЛ', '')
+
+    return jsonify({
+        'dataset': 'd004',
+        'year': 'Все годы' if year == 'all' else year,
+        'quarter': 'Все кварталы' if quarter == 'all' else quarter,
+        'module': int(module),
+        'module_label': D004_MODULES[int(module)],
+        'columns': columns,
+        'rows': rows,
+        'page': page,
+        'page_size': page_size,
+        'total_rows': total_rows,
+        'households': len(households),
+        'territories': len(territory_counts),
+        'chart_metric': chart_metric,
+        'chart': {'labels': labels, 'values': chart_values},
+        'territory_summary': summary
+    })
 
 @app.route('/api/settings/gemini-key', methods=['GET', 'POST', 'DELETE'])
 def gemini_key_settings():
@@ -65,24 +269,25 @@ def gemini_key_settings():
     return jsonify({'configured': True})
 
 
+
 @app.route('/api/household-radar', methods=['GET'])
 def household_radar():
+    print("[API Request]: /api/household-radar -> читаем из таблицы 'household_survey'")
     conn = get_db_connection()
     
-    # Функция для подсчета распределения оценок от 1 до 10 для конкретной колонки
     def get_score_distribution(col_name):
-        query = f'''
-            SELECT {col_name} as score, COUNT(*) as count 
-            FROM household_survey 
-            WHERE {col_name} BETWEEN 1 AND 10 
-            GROUP BY {col_name}
-        '''
-        rows = conn.execute(query).fetchall()
-        # Превращаем в словарь вида { '10': count, '9': count, ... }
-        counts = {str(r['score']): r['count'] for r in rows}
-        
-        # Возвращаем массив от 10 до 1 балла для радара
-        return {f"score_{score}": counts.get(str(score), 0) for score in range(10, 0, -1)}
+        try:
+            query = f'''
+                SELECT {col_name} as score, COUNT(*) as count 
+                FROM household_survey 
+                WHERE {col_name} BETWEEN 1 AND 10 
+                GROUP BY {col_name}
+            '''
+            rows = conn.execute(query).fetchall()
+            counts = {str(r['score']): r['count'] for r in rows}
+            return {f"score_{score}": counts.get(str(score), 0) for score in range(10, 0, -1)}
+        except sqlite3.Error:
+            return {f"score_{score}": 0 for score in range(10, 0, -1)}
 
     data = {
         'block1': get_score_distribution('GR1'),
@@ -94,35 +299,11 @@ def household_radar():
     
     conn.close()
     return jsonify(data)
-    conn = get_db_connection()
-    query = '''
-        SELECT 
-            AVG(GR1) as gr1, AVG(GR2) as gr2, AVG(GR3) as gr3,
-            AVG(GR4) as gr4, AVG(GR5) as gr5, AVG(GR6) as gr6,
-            AVG(GR7) as gr7, AVG(GR81) as gr8, AVG(GR9) as gr9,
-            AVG(GR101) as gr10, AVG(GR11) as gr11, AVG(GR12) as gr12,
-            AVG(GR13) as gr13, AVG(GR14) as gr14, AVG(GR151) as gr15
-        FROM household_survey
-    '''
-    row = conn.execute(query).fetchone()
-    conn.close()
-    
-    if not row:
-        return jsonify({'error': 'No data found'})
 
-    def safe_val(val):
-        return round(val if val and val < 80 else 5.0, 2) # Исключаем коды пропусков вроде 89 и заменяем на средний балл
-
-    return jsonify({
-        'block1': {'gr1': safe_val(row['gr1']), 'gr2': safe_val(row['gr2']), 'gr3': safe_val(row['gr3'])},
-        'block2': {'gr4': safe_val(row['gr4']), 'gr5': safe_val(row['gr5']), 'gr6': safe_val(row['gr6'])},
-        'block3': {'gr7': safe_val(row['gr7']), 'gr8': safe_val(row['gr8']), 'gr9': safe_val(row['gr9'])},
-        'block4': {'gr10': safe_val(row['gr10']), 'gr11': safe_val(row['gr11']), 'gr12': safe_val(row['gr12'])},
-        'block5': {'gr13': safe_val(row['gr13']), 'gr14': safe_val(row['gr14']), 'gr15': safe_val(row['gr15'])}
-    })
 
 @app.route('/api/indicators', methods=['GET'])
 def get_indicators():
+    print("[API Request]: /api/indicators -> отдаем список показателей")
     indicators_list = [
         "Естественный прирост населения",
         "Число зарегистрированных браков",
@@ -130,12 +311,6 @@ def get_indicators():
         "Число умерших"
     ]
     return jsonify(indicators_list)
-
-def get_db_connection():
-    conn = sqlite3.connect(DB_FILE)
-    conn.row_factory = sqlite3.Row
-    conn.create_function('casefold', 1, lambda value: str(value).casefold() if value is not None else '')
-    return conn
 
 
 @app.route('/api/active-dataset', methods=['POST', 'DELETE'])
@@ -238,6 +413,7 @@ def _escape_like(value):
 
 
 def get_dataset_overview():
+    print("[DB Query]: get_dataset_overview() -> таблица 'demographics'")
     conn = get_db_connection()
     try:
         row_count = conn.execute('SELECT COUNT(*) FROM demographics').fetchone()[0]
@@ -263,6 +439,7 @@ def get_dataset_overview():
 
 
 def query_demographics(arguments):
+    print(f"[DB Query]: query_demographics() с аргументами -> {arguments}")
     group_by = arguments.get('group_by', 'none')
     group_columns = {
         'none': [],
@@ -339,6 +516,7 @@ def query_demographics(arguments):
 
 @app.route('/api/ai-chat', methods=['POST'])
 def ai_chat():
+    print("[API Request]: /api/ai-chat -> запрос к ИИ")
     payload = request.get_json(silent=True) or {}
     if not isinstance(payload, dict):
         return jsonify({'error': 'Ожидался JSON-объект.'}), 400
@@ -635,8 +813,10 @@ def call_gemini(contents, dataset_overview, dashboard_context, max_output_tokens
 
     raise RuntimeError('ИИ не завершил анализ после нескольких запросов к базе. Попробуйте уточнить вопрос.')
 
+
 @app.route('/api/init-filters', methods=['GET'])
 def init_filters():
+    print("[API Request]: /api/init-filters -> читаем списки из таблицы 'demographics'")
     active_rows = active_dataset_rows()
     if active_rows is not None:
         indicators = sorted({row['indicator'] for row in active_rows}, key=str.casefold)
@@ -656,10 +836,12 @@ def init_filters():
     conn.close()
     return jsonify({'indicators': indicators, 'years': years})
 
+
 @app.route('/api/chart-year', methods=['GET'])
 def chart_year():
     indicator = request.args.get('indicator')
     year = request.args.get('year')
+    print(f"[API Request]: /api/chart-year -> indicator='{indicator}', year='{year}' (таблица 'demographics')")
 
     active_rows = active_dataset_rows()
     if active_rows is not None:
@@ -689,9 +871,11 @@ def chart_year():
         'values': [r['total'] for r in rows]
     })
 
+
 @app.route('/api/chart-summary', methods=['GET'])
 def chart_summary():
     indicator = request.args.get('indicator')
+    print(f"[API Request]: /api/chart-summary -> indicator='{indicator}' (таблица 'demographics')")
 
     active_rows = active_dataset_rows()
     if active_rows is not None:
@@ -722,12 +906,14 @@ def chart_summary():
         'values': [r['total'] for r in rows]
     })
 
+
 @app.route('/api/table-data', methods=['GET'])
 def table_data():
     page = int(request.args.get('page', 1))
     limit = int(request.args.get('limit', 5000))
     search = request.args.get('search', '').strip().casefold()
     indicator = request.args.get('indicator', '')
+    print(f"[API Request]: /api/table-data -> страница {page}, лимит {limit}, поиск='{search}', индикатор='{indicator}' (таблица 'demographics')")
 
     offset = (page - 1) * limit
     active_rows = active_dataset_rows()
@@ -775,9 +961,11 @@ def table_data():
         'data': [dict(r) for r in rows]
     })
 
+
 @app.route('/api/ai-insights', methods=['GET'])
 def ai_insights():
     indicator = request.args.get('indicator')
+    print(f"[API Request]: /api/ai-insights -> indicator='{indicator}' (таблица 'demographics')")
     active_rows = active_dataset_rows()
     if active_rows is not None:
         totals = {}
@@ -815,6 +1003,7 @@ def ai_insights():
         })
 
     return jsonify({'insights': insights})
+
 
 if __name__ == '__main__':
     app.run(host='127.0.0.1', port=int(os.environ.get('FLASK_PORT', '5000')))
