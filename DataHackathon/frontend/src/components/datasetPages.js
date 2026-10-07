@@ -27,7 +27,7 @@ const PAGE_CONFIG = {
   d002: {
     title: 'Социальные оценки',
     breadcrumb: 'Население · Социальные оценки · D002',
-    description: 'Обследование качества жизни и оценок населения. Данные D002 будут подключены отдельным этапом.'
+    description: 'Ежегодное обследование о том, как люди оценивают свою жизнь, какие условия и услуги им доступны и с какими трудностями сталкиваются домохозяйства.'
   }
 };
 
@@ -35,6 +35,11 @@ let activeApiUrl = '';
 let currentPage = 1;
 let totalRows = 0;
 let d004Chart = null;
+let d002Charts = new Map();
+let d002ChartObserver = null;
+let d002Questions = [];
+let d002Respondents = 0;
+let d002VisibleQuestionCount = 10;
 let d004Map = null;
 let d004GeoJSON = null;
 let d004MapSummary = [];
@@ -55,6 +60,177 @@ function appendOptions(select, items, valueOf, labelOf) {
     option.textContent = labelOf(item);
     select.append(option);
   });
+}
+
+function disposeD002Charts() {
+  if (d002ChartObserver) d002ChartObserver.disconnect();
+  d002ChartObserver = null;
+  d002Charts.forEach((chart) => chart.dispose());
+  d002Charts.clear();
+}
+
+function renderD002QuestionChart(element, question) {
+  if (!element || !window.echarts || !question.distribution.length) return;
+  const chart = window.echarts.init(element);
+  d002Charts.set(element, chart);
+  const card = element.closest('.d002-question-card');
+  const styles = getComputedStyle(card);
+  const textColor = styles.getPropertyValue('--text-primary').trim() || '#222222';
+  const surfaceColor = styles.backgroundColor || '#ffffff';
+  chart.setOption({
+    color: ['#fbb085', '#c9aace', '#222222', '#e9d4c2', '#a987b0', '#756b6b', '#f4c7aa', '#d9c8dc'],
+    tooltip: {
+      trigger: 'item',
+      formatter: ({ name, value, percent }) => `${name}<br>${Number(value).toLocaleString('ru-RU')} ответов · ${percent}%`
+    },
+    legend: {
+      top: '5%', left: 'center', type: 'scroll', width: '88%',
+      textStyle: { color: textColor, fontSize: 11 }
+    },
+    series: [{
+      name: 'Ответы', type: 'pie', radius: ['40%', '70%'], center: ['50%', '58%'],
+      avoidLabelOverlap: false, padAngle: 5,
+      data: question.distribution.map((item) => ({ value: item.count, name: item.label })),
+      label: { show: false, position: 'center' },
+      emphasis: {
+        scaleSize: 8,
+        label: {
+          show: true, color: textColor, fontSize: 19, fontWeight: 'bold',
+          formatter: ({ name, percent }) => `${name}\n${percent}%`
+        }
+      },
+      labelLine: { show: false },
+      itemStyle: { borderRadius: 10, borderColor: surfaceColor, borderWidth: 3 }
+    }]
+  });
+  chart.resize();
+}
+
+function renderD002QuestionCards() {
+  const grid = document.getElementById('d002QuestionCharts');
+  const query = document.getElementById('d002QuestionSearch').value.trim().toLocaleLowerCase('ru-RU');
+  const matchingQuestions = d002Questions.filter((question) => `${question.label} ${question.id}`.toLocaleLowerCase('ru-RU').includes(query));
+  const shownQuestions = matchingQuestions.slice(0, d002VisibleQuestionCount);
+  disposeD002Charts();
+  const fragment = document.createDocumentFragment();
+  shownQuestions.forEach((question, index) => {
+    const card = document.createElement('article');
+    card.className = 'd002-question-card';
+    const heading = document.createElement('h3');
+    heading.textContent = question.label;
+    const code = document.createElement('span');
+    code.className = 'd002-question-code';
+    code.textContent = question.id;
+    const meta = document.createElement('p');
+    meta.className = 'd002-question-meta';
+    meta.textContent = `Ответили: ${Number(question.answered).toLocaleString('ru-RU')} из ${Number(d002Respondents).toLocaleString('ru-RU')} · без ответа: ${Number(question.missing).toLocaleString('ru-RU')}`;
+    const visualHint = document.createElement('p');
+    visualHint.className = 'd002-question-hint';
+    visualHint.textContent = 'Наведите на сектор, чтобы увидеть долю ответа';
+    const chart = document.createElement('div');
+    chart.className = 'd002-question-chart';
+    chart.setAttribute('role', 'img');
+    chart.setAttribute('aria-label', `Диаграмма ответов: ${question.label}`);
+    chart.dataset.questionIndex = String(index);
+    const note = document.createElement('p');
+    note.className = 'd002-question-note';
+    note.textContent = question.chart_note;
+    card.append(heading, code, meta, visualHint, chart, note);
+    fragment.append(card);
+  });
+  grid.replaceChildren(fragment);
+
+  const noResults = document.getElementById('d002NoResults');
+  noResults.hidden = matchingQuestions.length > 0;
+  const loadMore = document.getElementById('d002LoadMore');
+  loadMore.hidden = shownQuestions.length >= matchingQuestions.length;
+  const shownStatus = document.getElementById('d002ShownStatus');
+  shownStatus.textContent = matchingQuestions.length ? `Показано ${shownQuestions.length} из ${matchingQuestions.length} вопросов` : '';
+
+  const renderChart = (chartElement) => renderD002QuestionChart(chartElement, shownQuestions[Number(chartElement.dataset.questionIndex)]);
+  if ('IntersectionObserver' in window) {
+    d002ChartObserver = new IntersectionObserver((entries, observer) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        renderChart(entry.target);
+        observer.unobserve(entry.target);
+      });
+    }, { rootMargin: '300px 0px' });
+    grid.querySelectorAll('.d002-question-chart').forEach((element) => d002ChartObserver.observe(element));
+  } else {
+    grid.querySelectorAll('.d002-question-chart').forEach(renderChart);
+  }
+}
+
+async function loadD002Page() {
+  const status = document.getElementById('d002Status');
+  const params = new URLSearchParams({
+    year: document.getElementById('d002YearSelect').value,
+    form: document.getElementById('d002FormSelect').value,
+  });
+  status.dataset.state = 'loading';
+  status.textContent = 'Загружаем ответы обследования…';
+  try {
+    const response = await fetch(`${activeApiUrl}/api/d002/data?${params}`);
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(result.error || 'Не удалось загрузить D002.');
+
+    setText('d002FormDescription', result.form_description);
+    setText('d002ChartCaption', `${result.year} · ${result.form_label}. Найдено вопросов: ${Number(result.question_count).toLocaleString('ru-RU')}.`);
+    setText('d002RespondentsStat', Number(result.respondents).toLocaleString('ru-RU'));
+    setText('d002QuestionCountStat', Number(result.question_count).toLocaleString('ru-RU'));
+    setText('d002TerritoriesStat', Number(result.territories).toLocaleString('ru-RU'));
+    d002Questions = result.questions;
+    d002Respondents = result.respondents;
+    d002VisibleQuestionCount = 10;
+    document.getElementById('d002QuestionSearch').value = '';
+    renderD002QuestionCards();
+    status.dataset.state = 'success';
+    status.textContent = `${result.year}: ${Number(result.respondents).toLocaleString('ru-RU')} анкет. Источник: ${result.source === 'database.sqlite' ? 'database.sqlite' : 'CSV в data/sinte'}.`;
+  } catch (error) {
+    status.dataset.state = 'error';
+    status.textContent = error.message;
+    disposeD002Charts();
+    document.getElementById('d002QuestionCharts').replaceChildren();
+  }
+}
+
+async function initializeD002(apiBaseUrl) {
+  activeApiUrl = apiBaseUrl;
+  const dashboard = document.getElementById('d002Dashboard');
+  try {
+    const response = await fetch(`${apiBaseUrl}/api/d002/options`);
+    const options = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(options.error || 'Не удалось получить список данных D002.');
+    if (!options.years.length || !options.forms.length) {
+      throw new Error('Не найдены данные D002 в папке data/sinte или таблицы D002 в database.sqlite.');
+    }
+
+    appendOptions(document.getElementById('d002YearSelect'), options.years, String, String);
+    appendOptions(document.getElementById('d002FormSelect'), options.forms, (item) => item.id, (item) => item.label);
+    if (options.years.includes('2024')) document.getElementById('d002YearSelect').value = '2024';
+    if (!dashboard.dataset.listenersReady) {
+      ['d002YearSelect', 'd002FormSelect'].forEach((id) => {
+        document.getElementById(id).addEventListener('change', loadD002Page);
+      });
+      document.getElementById('d002QuestionSearch').addEventListener('input', () => {
+        d002VisibleQuestionCount = 10;
+        renderD002QuestionCards();
+      });
+      document.getElementById('d002LoadMore').addEventListener('click', () => {
+        d002VisibleQuestionCount += 10;
+        renderD002QuestionCards();
+      });
+      dashboard.dataset.listenersReady = 'true';
+    }
+    dashboard.hidden = false;
+    await loadD002Page();
+  } catch (error) {
+    dashboard.hidden = false;
+    const status = document.getElementById('d002Status');
+    status.dataset.state = 'error';
+    status.textContent = error.message;
+  }
 }
 
 function activeD004Query() {
@@ -379,10 +555,14 @@ export async function openSidebarDatasetPage(datasetId, element, apiBaseUrl) {
   setText('datasetPageBreadcrumb', page.breadcrumb);
   setText('datasetPageDescription', page.description);
 
+  const d002 = datasetId === 'd002';
   const d004 = datasetId === 'd004';
+  document.getElementById('d002Dashboard').hidden = !d002;
   document.getElementById('d004Dashboard').hidden = !d004;
-  document.getElementById('datasetPlaceholder').hidden = d004;
-  if (d004) {
+  document.getElementById('datasetPlaceholder').hidden = d002 || d004;
+  if (d002) {
+    await initializeD002(apiBaseUrl);
+  } else if (d004) {
     await initializeD004(apiBaseUrl);
   } else {
     const placeholder = document.getElementById('datasetPlaceholder');
