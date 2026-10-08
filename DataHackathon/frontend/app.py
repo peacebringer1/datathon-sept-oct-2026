@@ -82,8 +82,6 @@ D004_MODULES = {
     12: 'Заемные средства'
 }
 
-<<<<<<< HEAD
-=======
 D002_FORMS = {
     'subject': {
         'label': 'Удовлетворённость и условия жизни',
@@ -254,7 +252,6 @@ try:
 except (OSError, json.JSONDecodeError):
     D002_QUESTION_LABELS = {}
 
->>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
 
 def get_d004_path(year, quarter, module):
     if year not in {'2021', '2022', '2023', '2024'}:
@@ -267,8 +264,6 @@ def get_d004_path(year, quarter, module):
     return csv_path if csv_path.is_file() else None
 
 
-<<<<<<< HEAD
-=======
 def get_d002_db_catalog():
     if not Path(DB_FILE).is_file():
         return {}
@@ -796,7 +791,6 @@ def d008_data():
     })
 
 
->>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
 def read_d004_csv(csv_path):
     global _D004_CACHE_KEY, _D004_CACHE_FRAME
     cache_key = (str(csv_path), csv_path.stat().st_mtime_ns)
@@ -1150,8 +1144,6 @@ def claude_key_settings():
     return jsonify({'configured': True})
 
 
-<<<<<<< HEAD
-=======
 @app.route('/api/ai-status', methods=['GET'])
 def ai_status():
     if not CLAUDE_API_KEY:
@@ -1179,7 +1171,6 @@ def ai_status():
         return jsonify({'status': 'offline', 'reason': 'network_unavailable'})
 
 
->>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
 
 @app.route('/api/household-radar', methods=['GET'])
 def household_radar():

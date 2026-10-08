@@ -23,17 +23,12 @@ DS: dict[str, dict] = {}  # id -> {name, raw, clean, report}
 
 
 @app.get("/", include_in_schema=False)
-<<<<<<< HEAD
-def analyzer_ui():
-    return FileResponse(os.path.join(PROJECT_DIR, "index.html"))
-=======
 @app.get("/analyzer/", include_in_schema=False)
 def analyzer_ui():
     html_path = os.path.join(PROJECT_DIR, "index.html")
     if not os.path.isfile(html_path):
         raise HTTPException(404, "Файл анализатора index.html не найден в корне проекта")
     return FileResponse(html_path)
->>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
 
 
 def clean_json(o):
@@ -50,8 +45,6 @@ def js(data):
     return Response(json.dumps(clean_json(data), default=str, ensure_ascii=False), media_type="application/json")
 
 
-<<<<<<< HEAD
-=======
 @app.get("/api/health")
 def analyzer_health():
     html_path = os.path.join(PROJECT_DIR, "index.html")
@@ -61,7 +54,6 @@ def analyzer_health():
     })
 
 
->>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
 def get(i):
     if i not in DS:
         raise HTTPException(404, "Датасет не найден")

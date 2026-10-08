@@ -14,25 +14,15 @@
   <link href="https://fonts.googleapis.com/css2?family=Raleway:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
 
   <!-- Библиотеки графиков и таблиц -->
-<<<<<<< HEAD
-  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script src="./node_modules/xlsx/xlsx.js"></script>
-=======
   <script defer src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script defer src="./node_modules/xlsx/xlsx.js"></script>
->>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
 
 </head>
 
 <body>
 
-<<<<<<< HEAD
-  <div class="app-layout">
-=======
   <div class="app-layout home-route-active">
->>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
 
     <aside class="category-sidebar-hover" id="categorySidebar">
       <div class="sidebar-collapsed-indicator">
@@ -48,13 +38,6 @@
 
         <div class="sidebar-search-box">
           <input type="text" id="categorySearchInput" placeholder="Поиск категорий..."
-<<<<<<< HEAD
-            oninput="filterCategoriesSidebar()">
-        </div>
-
-        <div class="category-tree" id="categoryTree">
-          <!-- Категория: Экономика -->
-=======
             oninput="filterCategoriesSidebar()" autocomplete="off" aria-controls="globalSearchResults" aria-expanded="false">
           <div id="globalSearchResults" class="sidebar-search-results" role="listbox" aria-label="Результаты поиска" hidden></div>
         </div>
@@ -67,7 +50,6 @@
             <span class="sidebar-home-icon sidebar-about-icon" aria-hidden="true">i</span><span class="sidebar-home-label">О проекте</span>
           </button>
           <!-- Экономика временно отключена; разметка сохранена для будущего включения.
->>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
           <div class="cat-group">
             <div class="cat-header active" onclick="switchMainSection('dashboard', this)">
               <span class="cat-icon">📊</span>
@@ -78,32 +60,15 @@
               <div class="cat-subitem" onclick="switchSubSection('2t', this)">Заработная плата <span class="badge">2t</span></div>
             </div>
           </div>
-<<<<<<< HEAD
-
-          <!-- Категория: Население -->
-          <div class="cat-group">
-            <div class="cat-header" onclick="switchMainSection('household', this)">
-=======
           -->
 
           <!-- Категория: Население -->
           <div class="cat-group">
             <div class="cat-header" data-search-section="hypotheses" onclick="switchMainSection('hypotheses', this)">
->>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
               <span class="cat-icon">👥</span>
               <span class="cat-text">Население</span>
             </div>
             <div class="cat-subitems">
-<<<<<<< HEAD
-              <div class="cat-subitem" onclick="switchSubSection('d008', this)">Демография <span class="badge">d008</span></div>
-              <div class="cat-subitem" onclick="switchSubSection('d004', this)">Уровень жизни <span class="badge">d004</span></div>
-              <div class="cat-subitem" onclick="switchSubSection('d006', this)">Жилищные условия <span class="badge">d006</span></div>
-              <div class="cat-subitem" onclick="switchSubSection('d002', this)">Социальные оценки <span class="badge">d002</span></div>
-            </div>
-          </div>
-          <div class="cat-group">
-            <div class="cat-header" onclick="switchMainSection('data-analyzer', this)">
-=======
               <div id="navD008" class="cat-subitem" data-search-dataset="d008" onclick="switchSubSection('d008', this)">Демография <span class="badge">d008</span></div>
               <div id="navD004" class="cat-subitem" data-search-dataset="d004" onclick="switchSubSection('d004', this)">Уровень жизни <span class="badge">d004</span></div>
               <div id="navD006" class="cat-subitem" data-search-dataset="d006" onclick="switchSubSection('d006', this)">Жилищные условия <span class="badge">d006</span></div>
@@ -112,7 +77,6 @@
           </div>
           <div class="cat-group">
             <div class="cat-header" data-search-section="data-analyzer" onclick="switchMainSection('data-analyzer', this)">
->>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
               <span class="cat-text">Анализ данных</span>
             </div>
           </div>
@@ -156,8 +120,6 @@
         <!-- Главный дашборд -->
         <div id="mainDashboardContent" class="main-dashboard-content">
 
-<<<<<<< HEAD
-=======
           <section class="home-landing" aria-labelledby="homeLandingTitle">
             <div class="home-hero">
               <div class="home-hero-copy">
@@ -214,7 +176,6 @@
 
           <div id="legacyMainDashboardContent" hidden>
 
->>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
           <div class="wrapper-header">
             <div class="header">
               <div class="header-left">
@@ -458,12 +419,7 @@
                 <select id="mapYearSelect" onchange="onMapFilterChange()"></select>
               </div>
             </div>
-<<<<<<< HEAD
-            <div class="map-container-wrapper" id="mapWrapper" onclick="activateMapZoom()">
-              <button id="enableMapBtn" onclick="activateMapZoom()">Нажмите, чтобы включить карту</button>
-=======
             <div class="map-container-wrapper" id="mapWrapper">
->>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
               <div id="kazakhstanMapChart" class="chart-container map-h500"></div>
             </div>
           </div>
@@ -508,10 +464,7 @@
             </div>
           </div>
 
-<<<<<<< HEAD
-=======
           </div><!-- /legacyMainDashboardContent -->
->>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
         </div><!-- /mainDashboardContent -->
 
 
@@ -522,8 +475,6 @@
             <p id="datasetPageDescription"></p>
           </header>
 
-<<<<<<< HEAD
-=======
           <div id="d002Dashboard" hidden>
             <div class="dataset-filter-panel">
               <label>Год обследования
@@ -593,7 +544,6 @@
 
           </div>
 
->>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
           <div id="d004Dashboard" hidden>
             <div class="dataset-filter-panel">
               <label>Год
@@ -681,8 +631,6 @@
             </article>
           </div>
 
-<<<<<<< HEAD
-=======
           <div id="d006Dashboard" hidden>
             <div class="dataset-filter-panel d006-filter-panel">
               <label>Год обследования
@@ -797,7 +745,6 @@
             <p id="d008SourceNote" class="d006-source-note"></p>
           </div>
 
->>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
           <div id="datasetPlaceholder" class="dataset-panel" hidden></div>
         </section>
 
@@ -885,13 +832,10 @@
         </div>
 
         <section id="dataAnalyzerSection" class="data-analyzer-section" style="display: none;">
-<<<<<<< HEAD
-=======
           <div id="dataAnalyzerNotice" class="data-analyzer-notice" role="status" aria-live="polite" hidden>
             <span id="dataAnalyzerNoticeText">Подключаем страницу анализа данных…</span>
             <button id="retryDataAnalyzerBtn" type="button" class="data-analyzer-retry" hidden>Повторить</button>
           </div>
->>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
           <iframe
             id="dataAnalyzerFrame"
             title="Анализ и очистка данных"
@@ -899,8 +843,6 @@
           </iframe>
         </section>
 
-<<<<<<< HEAD
-=======
         <section id="populationHypothesesSection" class="project-page hypotheses-page" style="display: none;" aria-labelledby="hypothesesTitle">
           <header class="project-page-hero hypotheses-hero">
             <div class="project-page-hero-copy">
@@ -972,13 +914,12 @@
             <p>Мы собираем датасеты в одном приложении, показываем ключевые показатели на графиках и добавляем пояснения, чтобы результаты было проще исследовать и обсуждать.</p>
           </section>
           <section class="about-team-section" aria-labelledby="aboutTeamTitle">
-            <div class="about-section-heading"><div><span class="project-eyebrow">ЛЮДИ ЗА ПРОЕКТОМ</span><h2 id="aboutTeamTitle">Команда проекта</h2></div><p>Макет из пяти карточек: направления предварительные. Укажите реальные имена и подтверждённый вклад участников.</p></div>
             <div class="about-team-grid">
-              <article class="about-team-card"><span class="about-team-index">01</span><div class="about-avatar">01</div><h3>Участник команды</h3><p>Имя участника</p><span class="about-team-role">Данные и исследование</span></article>
-              <article class="about-team-card"><span class="about-team-index">02</span><div class="about-avatar">02</div><h3>Участник команды</h3><p>Имя участника</p><span class="about-team-role">Данные и исследование</span></article>
-              <article class="about-team-card"><span class="about-team-index">03</span><div class="about-avatar">03</div><h3>Участник команды</h3><p>Имя участника</p><span class="about-team-role">Разработка и дизайн приложения</span></article>
-              <article class="about-team-card"><span class="about-team-index">04</span><div class="about-avatar">04</div><h3>Участник команды</h3><p>Имя участника</p><span class="about-team-role">Разработка и дизайн приложения</span></article>
-              <article class="about-team-card"><span class="about-team-index">05</span><div class="about-avatar">05</div><h3>Участник команды</h3><p>Имя участника</p><span class="about-team-role">Документации и презентации</span></article>
+              <article class="about-team-card"><span class="about-team-index">01</span><div class="about-avatar">01</div><h3>Участник команды</h3><p>Мусин Абукадыр</p><span class="about-team-role">Исследование датасетов</span></article>
+              <article class="about-team-card"><span class="about-team-index">02</span><div class="about-avatar">02</div><h3>Участник команды</h3><p>Пупков Максим</p><span class="about-team-role">Исследование данных и разработка функционала</span></article>
+              <article class="about-team-card"><span class="about-team-index">03</span><div class="about-avatar">03</div><h3>Участник команды</h3><p>Штеркель Даниил</p><span class="about-team-role">Разработка и дизайн приложения</span></article>
+              <article class="about-team-card"><span class="about-team-index">04</span><div class="about-avatar">04</div><h3>Участник команды</h3><p>Баянова Айдана</p><span class="about-team-role">Разработка и дизайн ИИ-ассистента</span></article>
+              <article class="about-team-card"><span class="about-team-index">05</span><div class="about-avatar">05</div><h3>Участник команды</h3><p>Силищев Никита</p><span class="about-team-role">Документации и презентации</span></article>
             </div>
           </section>
           <section class="about-university-card">
@@ -991,7 +932,6 @@
           <footer class="about-footer"><span>Создано командой из пяти участников</span><span>Казахстан · данные, аналитика, технологии</span></footer>
         </section>
 
->>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
       </div>
     </main>
 
@@ -1013,11 +953,7 @@
       <div class="ai-card-header">
         <h3>Аналитический AI</h3>
         <div class="ai-header-controls">
-<<<<<<< HEAD
-          <span class="ai-status-badge">Online</span>
-=======
           <span id="aiStatusBadge" class="ai-status-badge" data-state="checking" title="Проверяем доступ к ИИ">Проверка…</span>
->>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
           <button class="close-chat-btn" onclick="toggleAIChat()">✕</button>
         </div>
       </div>
@@ -1028,20 +964,11 @@
       <div class="chat-input-area">
         <textarea id="chatInput" rows="1" placeholder="Спросите о данных..."
           onkeydown="handleChatKeyDown(event)"></textarea>
-<<<<<<< HEAD
-        <button onclick="sendMessageToAI()">Отправить</button>
-=======
         <button id="chatSendButton" onclick="sendMessageToAI()"><span id="chatSendButtonLabel">Отправить</span><span class="loading-spinner chat-send-spinner" aria-hidden="true" hidden></span></button>
->>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
       </div>
     </div>
   </div>
 
-<<<<<<< HEAD
-  <script src="./src/components/translator.js"></script>
-  <script type="module" src="./src/components/householdComponent.js"></script>
-  <script type="module" src="renderer.js"></script>
-=======
   <div id="appLoadingOverlay" class="app-loading-overlay" role="status" aria-live="polite" aria-hidden="true" hidden>
     <div class="app-loading-card">
       <div class="app-loading-mark" aria-hidden="true"><span></span><span></span><span></span></div>
@@ -1054,7 +981,6 @@
   <script type="module" src="./src/components/householdComponent.js"></script>
   <script type="module" src="renderer.js"></script>
   <script type="module" src="./src/components/homeLanding.js"></script>
->>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
   <script type="module" src="./src/components/sidebarAI.js"></script>
 </body>
 

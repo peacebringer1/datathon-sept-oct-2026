@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-import { initApp } from './src/components/appInit.js';
-=======
->>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
 import {
   selectCategoryDashboard,
   switchSubSection,
@@ -23,12 +19,8 @@ import {
   initGlobalResizeListener
 } from './src/components/uiInteractions.js';
 import { openDetailedAnalytics, openAnalyticsFromCard, initDetailedViewClose } from './src/components/detailedView.js';
-<<<<<<< HEAD
-import { updateSummaryChart, updateMultiSummaryChart } from './src/components/chartsMap.js';
-=======
 import { startAppLoading } from './src/components/loadingIndicator.js';
 import './src/components/projectPages.js';
->>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
 
 const apiPort = new URLSearchParams(window.location.search).get('apiPort') || '5000';
 const API_BASE_URL = `http://127.0.0.1:${apiPort}`;
@@ -36,9 +28,7 @@ const analyzerPort = new URLSearchParams(window.location.search).get('analyzerPo
 window.DATA_ANALYZER_URL = analyzerPort ? `http://127.0.0.1:${analyzerPort}` : '';
 window.API_BASE_URL = API_BASE_URL;
 
-<<<<<<< HEAD
-=======
-window.syncAnalyzerPreferences = function() {
+window.syncAnalyzerPreferences = function () {
   document.getElementById('dataAnalyzerFrame')?.contentWindow?.postMessage({
     type: 'da-settings',
     lang: window.getAppLanguage?.() === 'en' ? 'en' : 'ru',
@@ -69,7 +59,6 @@ void waitForBackendStartup().finally(() => {
   void refreshAIStatus();
 });
 
->>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
 async function refreshClaudeApiKeyStatus() {
   const status = document.getElementById('claudeApiKeyStatus');
   if (!status) return;
@@ -88,8 +77,6 @@ async function refreshClaudeApiKeyStatus() {
   }
 }
 
-<<<<<<< HEAD
-=======
 async function refreshAIStatus() {
   const badge = document.getElementById('aiStatusBadge');
   if (!badge) return;
@@ -120,7 +107,6 @@ async function refreshAIStatus() {
   }
 }
 
->>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
 async function updateClaudeApiKey(method, apiKey) {
   const status = document.getElementById('claudeApiKeyStatus');
   const saveButton = document.getElementById('saveClaudeApiKeyBtn');
@@ -167,10 +153,7 @@ async function updateClaudeApiKey(method, apiKey) {
   } finally {
     if (saveButton) saveButton.disabled = false;
     if (clearButton) clearButton.disabled = false;
-<<<<<<< HEAD
-=======
     void refreshAIStatus();
->>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
   }
 }
 
@@ -193,19 +176,7 @@ window.resetCustomCard = resetCustomCard;
 window.openDetailedAnalytics = openDetailedAnalytics;
 window.openAnalyticsFromCard = (button) => openAnalyticsFromCard(button, API_BASE_URL);
 
-<<<<<<< HEAD
-const dashboardCallbacks = {
-  onRegionFilterChange: () => onRegionFilterChange(API_BASE_URL),
-  onMapFilterChange: () => onMapFilterChange(API_BASE_URL),
-  onSummaryFilterChange: () => onSummaryFilterChange(API_BASE_URL)
-};
-window.refreshDemographyCharts = async () => {
-  await initApp(API_BASE_URL, dashboardCallbacks);
-  await Promise.all([1, 2, 3, 4].map(card => onCardFilterChange(card, API_BASE_URL)));
-};
-=======
-window.refreshDemographyCharts = async () => {};
->>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
+window.refreshDemographyCharts = async () => { };
 
 let analyzerDatasetSync = Promise.resolve(true);
 let analyzerDatasetSyncQueue = Promise.resolve(true);
@@ -294,11 +265,8 @@ document.addEventListener('DOMContentLoaded', () => {
   initSidebarSearch();
   initThemeToggle();
   initGlobalResizeListener();
-<<<<<<< HEAD
-=======
   void refreshAIStatus();
   window.setInterval(refreshAIStatus, 60000);
->>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
 
   const settingsBtn = document.getElementById('settingsToggleBtn');
   const settingsMenu = document.getElementById('settingsDropdown');
@@ -360,25 +328,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-<<<<<<< HEAD
-// Запуск старта приложения
-initApp(API_BASE_URL, {
-  ...dashboardCallbacks
-});
-
 initAIChat(API_BASE_URL);
 
-// Корректный вызов сводных графиков при старте
-const summaryIndEl = document.getElementById('summaryIndicatorSelect');
-if (summaryIndEl && summaryIndEl.value) {
-  await updateSummaryChart(API_BASE_URL, summaryIndEl.value);
-  await updateMultiSummaryChart(API_BASE_URL);
-}
-
-=======
-initAIChat(API_BASE_URL);
-
->>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
 // Функция управления каруселью аналитики
 let wishlistScrollPosition = 0;
 
@@ -394,7 +345,7 @@ function updateWishlistNavigation() {
   track.style.transform = `translateX(-${wishlistScrollPosition}px)`;
 }
 
-window.scrollWishlist = function(direction) {
+window.scrollWishlist = function (direction) {
   const track = document.getElementById('wishlistTrack');
   const firstCard = track?.querySelector('.wishlist-card');
   if (!track || !firstCard) return;
