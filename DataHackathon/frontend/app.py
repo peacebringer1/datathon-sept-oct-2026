@@ -82,6 +82,179 @@ D004_MODULES = {
     12: 'Заемные средства'
 }
 
+<<<<<<< HEAD
+=======
+D002_FORMS = {
+    'subject': {
+        'label': 'Удовлетворённость и условия жизни',
+        'description': 'Личные оценки жизни, здоровья, жилья, финансов и услуг, а также социальные условия и продовольственная безопасность.'
+    },
+    'ocenka': {
+        'label': 'Материальные ограничения и дети',
+        'description': 'Возможность оплачивать необходимые расходы и пользоваться услугами, а также материальные потребности и лишения детей.'
+    }
+}
+
+D006_HOME_TYPES = {
+    '1': 'Индивидуальный дом', '2': 'Комната в доме', '3': 'Двухквартирный дом',
+    '4': 'Дом на три и более квартир', '5': 'Комната в квартире'
+}
+D006_OWNERSHIP = {
+    '1': 'В собственности одного члена семьи', '2': 'В совместной собственности семьи',
+    '3': 'Частное жильё предоставлено бесплатно', '4': 'Частное жильё арендуется',
+    '5': 'Жильё организации предоставлено бесплатно', '6': 'Жильё организации арендуется',
+    '7': 'Государственное жильё'
+}
+D006_AMENITIES = [
+    'Электричество', 'Электроплита', 'Природный газ', 'Сжиженный газ', 'Центральное отопление',
+    'Печное отопление на твёрдом топливе', 'Печное отопление на жидком топливе', 'Печное отопление на газу',
+    'Печное отопление от электричества', 'Солнечная энергия', 'Энергия ветра', 'Энергия воды',
+    'Топливо из органических отходов', 'Водопровод внутри жилья', 'Водопровод вне жилья',
+    'Колодец или колонка', 'Привозная вода', 'Родник, река или озеро', 'Туалет с центральной канализацией',
+    'Туалет с септиком', 'Туалет с выгребной ямой', 'Биотуалет', 'Туалет отсутствует',
+    'Центральная канализация', 'Другая канализация', 'Ванна', 'Душ', 'Баня или сауна',
+    'Центральное горячее водоснабжение', 'Индивидуальный водонагреватель', 'Мусоропровод',
+    'Сбор и вывоз мусора', 'Стационарный телефон', 'Фиксированный интернет', 'Мобильный интернет',
+    'Лифт', 'Домофон', 'Спутниковое телевидение', 'Кабельное телевидение', 'Эфирное телевидение',
+    'Гараж', 'Паркинг'
+]
+D006_DURABLE_GOODS = [
+    'Телевизор', 'Домашний кинотеатр', 'Радиоприёмник', 'Музыкальный центр', 'Спутниковая антенна',
+    'Другое аудио- и видеооборудование', 'Видеокамера', 'Цифровой фотоаппарат', 'Другое фотооборудование',
+    'Ноутбук', 'Другое оборудование для обработки информации', 'Холодильник', 'Морозильная камера',
+    'Стиральная машина', 'Посудомоечная машина', 'Швейная машина', 'Микроволновая печь', 'Пылесос',
+    'Кухонная плита', 'Кондиционер', 'Мультиварка', 'Обогреватель', 'Крупные инструменты для дома и сада',
+    'Другие крупные бытовые приборы', 'Факсимильный аппарат', 'Телефонный аппарат', 'Мобильный телефон',
+    'Стенка или горка', 'Мягкая мебель', 'Мебель для спальни', 'Кухонная мебель', 'Произведения искусства',
+    'Ковры', 'Другая мебель и предметы обихода', 'Легковой автомобиль', 'Грузовой автомобиль',
+    'Мотоцикл', 'Скутер или мопед', 'Велосипед для взрослых', 'Гужевой транспорт',
+    'Клавишный музыкальный инструмент', 'Гитара', 'Домбра', 'Другие музыкальные инструменты',
+    'Крупные товары для отдыха вне помещений', 'Другой товар длительного пользования'
+]
+
+D008_RELATIONSHIPS = {
+    '1': 'Глава домохозяйства', '2': 'Супруг или супруга', '3': 'Сын или дочь',
+    '4': 'Отец или мать', '5': 'Брат или сестра', '6': 'Дедушка или бабушка',
+    '7': 'Внук или внучка', '8': 'Другая степень родства', '9': 'Не родственник'
+}
+D008_MARITAL_STATUS = {
+    '1': 'Никогда не состоял(а) в браке', '2': 'Состоит в браке',
+    '3': 'Вдовец или вдова', '4': 'Разведён(а)'
+}
+D008_EDUCATION = {
+    '1': 'Дошкольное образование', '2': 'Начальное образование', '3': 'Основное среднее',
+    '4': 'Среднее или техническое и профессиональное', '5': 'Высшее образование',
+    '6': 'Послевузовское образование', '7': 'Нет достигнутого уровня образования'
+}
+D008_ACTIVITY = {
+    '1': 'Работа по найму', '2': 'Работа не по найму или предпринимательство',
+    '3': 'Ищет работу', '4': 'Неработающий пенсионер', '5': 'Учащийся или студент',
+    '6': 'Домашнее хозяйство или уход', '7': 'Временно или длительно нетрудоспособен',
+    '8': 'Не работает и не ищет работу по другим причинам'
+}
+D008_AGE_GROUPS = [
+    ('0–14 лет', 0, 14), ('15–24 года', 15, 24), ('25–39 лет', 25, 39),
+    ('40–59 лет', 40, 59), ('60 лет и старше', 60, 130)
+]
+
+D002_QUESTION_OVERRIDES = {
+    'subject': {
+        'GR1': 'Насколько Вы удовлетворены своей жизнью в целом?',
+        'GR2': 'Насколько Вы удовлетворены условиями жизни?',
+        'GR3': 'Насколько Вы удовлетворены состоянием здоровья?',
+        'GR4': 'Насколько Вы удовлетворены финансовым положением?',
+        'GR5': 'Насколько Вы удовлетворены профессиональной деятельностью?',
+        'GR6_1': 'Удовлетворённость общением с родственниками',
+        'GR6_2': 'Удовлетворённость общением с друзьями',
+        'GR6_3': 'Удовлетворённость общением с коллегами',
+        'GR7': 'Удовлетворённость экономическим положением семьи',
+        'GR8': 'Удовлетворённость качеством жилья',
+        'GR9_1': 'Удовлетворённость чистотой территории рядом с домом',
+        'GR9_2': 'Удовлетворённость чистотой воздуха',
+        'GR9_3': 'Удовлетворённость качеством питьевой воды',
+        'GR10': 'Удовлетворённость уровнем внешнего шума дома',
+        'GR11': 'Оценка возможности самостоятельно приобрести или улучшить жильё',
+        'GR12': 'Оценка государственной поддержки при улучшении жилищных условий',
+        'GR13': 'Удовлетворённость количеством свободного времени',
+        'GR14_1': 'Удовлетворённость качеством государственных медицинских услуг',
+        'GR14_2': 'Удовлетворённость качеством частных медицинских услуг',
+        'GR15_1': 'Удовлетворённость доступностью государственных медицинских услуг',
+        'GR15_2': 'Удовлетворённость доступностью частных медицинских услуг',
+        'GR16_1': 'Удовлетворённость качеством дошкольного образования',
+        'GR16_2': 'Удовлетворённость качеством школьного образования',
+        'GR16_3': 'Удовлетворённость качеством среднего профессионального образования',
+        'GR16_4': 'Удовлетворённость качеством высшего образования',
+        'GR17_1': 'Удовлетворённость доступностью дошкольного образования',
+        'GR17_2': 'Удовлетворённость доступностью школьного образования',
+        'GR17_3': 'Удовлетворённость доступностью среднего профессионального образования',
+        'GR17_4': 'Удовлетворённость доступностью высшего образования',
+        'GR18_1': 'Удовлетворённость услугами «Правительства для граждан»',
+        'GR18_2': 'Удовлетворённость услугами налоговых органов',
+        'GR18_3': 'Удовлетворённость работой полиции',
+        'GR18_4': 'Удовлетворённость работой скорой помощи',
+        'GR18_5': 'Удовлетворённость работой пожарной службы',
+        'GR18_6': 'Удовлетворённость другими государственными услугами',
+        'GR19': 'Уверенность, что можно рассчитывать на моральную поддержку',
+        'GR21': 'К какому уровню материального обеспечения Вы себя относите?',
+        'GR22_1': 'Причина уровня обеспеченности: нет оплачиваемой работы',
+        'GR22_2': 'Причина уровня обеспеченности: нет постоянной работы по месту жительства',
+        'GR22_3': 'Причина уровня обеспеченности: недостаточная квалификация или опыт',
+        'GR22_4': 'Причина уровня обеспеченности: низкая оплата труда',
+        'GR22_5': 'Причина уровня обеспеченности: низкая пенсия',
+        'GR22_6': 'Причина уровня обеспеченности: низкое социальное пособие',
+        'GR22_7': 'Причина уровня обеспеченности: высокая долговая нагрузка',
+        'GR22_8': 'Причина уровня обеспеченности: недостаточный уровень образования',
+        'GR22_9': 'Причина уровня обеспеченности: необходимость ухода за членом семьи',
+        'GR22_10': 'Причина уровня обеспеченности: плохое состояние здоровья',
+        'GR22_11': 'Причина уровня обеспеченности: чрезвычайная ситуация или стихийное бедствие',
+        'GR22_12': 'Причина уровня обеспеченности: утрата имущества',
+        'GR22_13': 'Причина уровня обеспеченности: уход за дошкольным ребёнком',
+        'GR22_14': 'Другая причина уровня обеспеченности',
+        'GR23': 'Как изменилось Ваше благосостояние за последний год?',
+        'GR24': 'Как Вы оцениваете своё благосостояние в ближайший год?',
+        'GR25': 'Как часто Вы встречаетесь с друзьями, родственниками или коллегами?',
+        'GR26': 'Беспокоились ли Вы о нехватке еды из-за недостатка средств?',
+        'GR27': 'Могли ли Вы есть здоровую и питательную пищу?',
+        'GR28_1': 'Причина отсутствия здорового питания: недостаток денег',
+        'GR28_2': 'Причина отсутствия здорового питания: нет огорода или подсобного хозяйства',
+        'GR28_3': 'Причина отсутствия здорового питания: недостаток знаний о питании',
+        'GR28_4': 'Другая причина отсутствия здорового питания',
+        'GR28_5': 'Не применимо или затрудняюсь ответить'
+    },
+    'ocenka': {
+        'GR31_1': 'За последний год не смогли оплатить аренду жилья',
+        'GR31_2': 'За последний год не смогли оплатить коммунальные услуги',
+        'GR31_3': 'За последний год не смогли выплатить кредит или ипотеку',
+        'GR31_4': 'За последний год не смогли оплатить рассрочку',
+        'GR32': 'Может ли семья оплачивать отопление и поддерживать тепло дома?',
+        'GR33': 'Может ли семья заменить изношенную или повреждённую мебель?',
+        'GR34': 'Может ли семья есть горячее блюдо с белком хотя бы раз в два дня?',
+        'GR35': 'Может ли семья оплатить непредвиденные расходы без займа?',
+        'GR36': 'Может ли семья позволить себе недельный отдых вне дома?',
+        'GR37': 'Можете ли Вы встречаться с близкими хотя бы раз в месяц?',
+        'GR38': 'Может ли семья организовать обряды без тяжёлых долгов?',
+        'GR39': 'Доступны ли Вам зимняя и летняя пары обуви?',
+        'GR310': 'Можете ли Вы заменить изношенную одежду и обувь?',
+        'GR311': 'Можете ли Вы самостоятельно потратить определённую сумму?',
+        'GR312': 'Можете ли Вы регулярно посещать развлекательные мероприятия?',
+        'GR313': 'Пользовались ли члены семьи интернетом в течение последнего года?',
+        'GR314': 'Как часто члены семьи пользовались интернетом?',
+        'GR315': 'Есть ли дома постоянный доступ к интернету?',
+        'GR317': 'Есть ли дошкольник, который не посещает детский сад?',
+        'GR319': 'Были ли случаи, когда Вы не смогли получить медицинскую помощь?',
+        'GR40': 'Есть ли в домохозяйстве дети младше 18 лет?',
+        'GR46': 'Получил ли ребёнок необходимое лечение или лекарства?'
+    }
+}
+
+D002_LABELS_FILE = Path(FRONTEND_DIR) / 'src' / 'components' / 'd002QuestionLabels.json'
+try:
+    with D002_LABELS_FILE.open('r', encoding='utf-8') as labels_file:
+        D002_QUESTION_LABELS = json.load(labels_file)
+except (OSError, json.JSONDecodeError):
+    D002_QUESTION_LABELS = {}
+
+>>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
 
 def get_d004_path(year, quarter, module):
     if year not in {'2021', '2022', '2023', '2024'}:
@@ -94,6 +267,536 @@ def get_d004_path(year, quarter, module):
     return csv_path if csv_path.is_file() else None
 
 
+<<<<<<< HEAD
+=======
+def get_d002_db_catalog():
+    if not Path(DB_FILE).is_file():
+        return {}
+    conn = None
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        if not conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name='sinte_import_manifest'"
+        ).fetchone():
+            return {}
+        catalog = {}
+        for source_path, table, row_count in conn.execute(
+            "SELECT source_path, sql_table, row_count FROM sinte_import_manifest WHERE form='d002'"
+        ):
+            parts = Path(source_path).parts
+            if len(parts) == 3 and parts[2].lower().endswith('.csv'):
+                form = Path(parts[2]).stem.lower()
+                if form in D002_FORMS:
+                    catalog[(parts[1], form)] = {'table': table, 'rows': int(row_count)}
+        return catalog
+    except sqlite3.Error as error:
+        print(f'[D002]: Не удалось прочитать каталог SQLite: {error}')
+        return {}
+    finally:
+        if conn:
+            conn.close()
+
+
+def get_d002_frame(year, form, catalog):
+    csv_path = DATA_DIR / 'd002' / year / f'{form}.csv'
+    if csv_path.is_file():
+        try:
+            return pd.read_csv(csv_path, dtype=str, keep_default_na=False, encoding='utf-8-sig'), 'data/sinte CSV'
+        except UnicodeDecodeError:
+            return pd.read_csv(csv_path, dtype=str, keep_default_na=False, encoding='cp1251'), 'data/sinte CSV'
+
+    spec = catalog.get((year, form))
+    if not spec or not Path(DB_FILE).is_file():
+        return None, None
+    table = '"' + spec['table'].replace('"', '""') + '"'
+    conn = sqlite3.connect(DB_FILE)
+    try:
+        frame = pd.read_sql_query(f'SELECT * FROM {table}', conn, dtype=str).fillna('')
+        return frame, 'database.sqlite'
+    finally:
+        conn.close()
+
+
+def normalize_d002_question(column):
+    return re.sub(r'[^A-Z0-9]+', '_', str(column).upper()).strip('_')
+
+
+def d002_question_label(year, form, column):
+    override = D002_QUESTION_OVERRIDES.get(form, {}).get(normalize_d002_question(column))
+    if override:
+        return override
+    labels = D002_QUESTION_LABELS.get(str(year), {}).get(form, {})
+    return labels.get(normalize_d002_question(column), f'Вопрос анкеты {column}')
+
+
+def d002_answer_label(form, question, value):
+    """Return a respondent-facing label for documented D002 response codes."""
+    normalized = normalize_d002_question(question)
+    binary = {'1': 'Да', '2': 'Нет'}
+    food_security = {'1': 'Да', '2': 'Нет', '3': 'Затрудняюсь ответить', '4': 'Отказ от ответа'}
+    if form == 'subject':
+        if normalized == 'GR21':
+            return {
+                '1': 'Низкий уровень обеспеченности', '2': 'Обеспеченность ниже среднего',
+                '3': 'Средний уровень обеспеченности', '4': 'Обеспеченность выше среднего',
+                '5': 'Достаточный уровень обеспеченности', '6': 'Высокий уровень обеспеченности'
+            }.get(value, f'Код ответа {value}')
+        if normalized == 'GR23':
+            return {'1': 'Не изменилось', '2': 'Улучшилось', '3': 'Ухудшилось'}.get(value, f'Код ответа {value}')
+        if normalized == 'GR24':
+            return {
+                '1': 'Уверены, что будем жить лучше', '2': 'Предполагаем улучшение',
+                '3': 'Останемся на достигнутом уровне', '4': 'Возможно некоторое ухудшение',
+                '5': 'Будем жить хуже'
+            }.get(value, f'Код ответа {value}')
+        if normalized == 'GR25':
+            return {
+                '1': 'Никогда', '2': 'Реже раза в месяц', '3': 'Раз в месяц или чаще',
+                '4': 'Раз в неделю', '5': 'Несколько раз в неделю', '6': 'Каждый день'
+            }.get(value, f'Код ответа {value}')
+        if normalized.startswith(('GR22_', 'GR28_')):
+            return 'Отмечено'
+        if normalized in {'GR26', 'GR27', 'GR29', 'GR210', 'GR211', 'GR212', 'GR213', 'GR214'}:
+            return food_security.get(value, f'Код ответа {value}')
+    if form == 'ocenka':
+        if normalized.startswith('GR31_'):
+            return {'1': 'Да, один раз', '2': 'Да, два раза или чаще', '3': 'Нет', '4': 'Не актуально'}.get(value, f'Код ответа {value}')
+        if normalized in {'GR32', 'GR35', 'GR36', 'GR38', 'GR40', 'GR41', 'GR313', 'GR315', 'GR317'}:
+            return binary.get(value, f'Код ответа {value}')
+        if normalized == 'GR314':
+            return {
+                '1': 'Несколько раз в день', '2': 'Не менее раза в день',
+                '3': 'Не менее раза в неделю', '4': 'Не менее раза в месяц',
+                '5': 'Реже раза в месяц'
+            }.get(value, f'Код ответа {value}')
+        if normalized in {'GR33', 'GR34', 'GR37', 'GR39', 'GR310', 'GR311', 'GR312'}:
+            return {'1': 'Да', '2': 'Нет, не хватает средств', '3': 'Нет, по другой причине'}.get(value, f'Код ответа {value}')
+    return f'Код ответа {value}'
+
+
+D002_TERRITORY_NAMES = {
+    '10': 'Область Абай', '11': 'Акмолинская область', '15': 'Актюбинская область',
+    '19': 'Алматинская область', '23': 'Атырауская область', '27': 'Западно-Казахстанская область',
+    '31': 'Жамбылская область', '33': 'Область Жетысу', '35': 'Карагандинская область',
+    '39': 'Костанайская область', '43': 'Кызылординская область', '47': 'Мангистауская область',
+    '51': 'Туркестанская область', '55': 'Павлодарская область', '59': 'Северо-Казахстанская область',
+    '61': 'Туркестанская область', '62': 'Область Улытау', '63': 'Восточно-Казахстанская область',
+    '71': 'г. Астана', '75': 'г. Алматы', '79': 'г. Шымкент'
+}
+
+
+@app.route('/api/d002/options', methods=['GET'])
+def d002_options():
+    d002_dir = DATA_DIR / 'd002'
+    years = {path.name for path in d002_dir.iterdir() if path.is_dir()} if d002_dir.is_dir() else set()
+    catalog = get_d002_db_catalog()
+    years.update(year for year, _ in catalog)
+    available_forms = {
+        form for form in D002_FORMS
+        if any((year, form) in catalog or (DATA_DIR / 'd002' / year / f'{form}.csv').is_file() for year in years)
+    }
+    return jsonify({
+        'years': sorted(years, reverse=True),
+        'forms': [{'id': form, **D002_FORMS[form]} for form in D002_FORMS if form in available_forms],
+        'source_available': bool(years)
+    })
+
+
+@app.route('/api/d002/data', methods=['GET'])
+def d002_data():
+    year = request.args.get('year', '2024')
+    form = request.args.get('form', 'subject').lower()
+    if year not in {'2021', '2022', '2023', '2024'}:
+        return jsonify({'error': 'Выбранный год обследования D002 не поддерживается.'}), 400
+    if form not in D002_FORMS:
+        return jsonify({'error': 'Выберите раздел анкеты D002 из списка.'}), 400
+
+    catalog = get_d002_db_catalog()
+    frame, source = get_d002_frame(year, form, catalog)
+    if frame is None:
+        return jsonify({'error': f'Данные D002 за {year} не найдены ни в data/sinte, ни в database.sqlite.'}), 404
+
+    questions = [str(column) for column in frame.columns if re.match(r'^GR', str(column), flags=re.IGNORECASE)]
+    if not questions:
+        return jsonify({'error': 'В таблице D002 не найдены вопросы анкеты.'}), 500
+    question_items = []
+    for question in questions:
+        values = frame[question].fillna('').astype(str).str.strip()
+        missing_count = int(values.eq('').sum())
+        answer_values = values[values.ne('')]
+        response_counts = answer_values.value_counts().to_dict()
+        normalized_question = normalize_d002_question(question)
+        match = re.match(r'^GR(\d+)', normalized_question)
+        is_satisfaction_scale = form == 'subject' and bool(match) and int(match.group(1)) <= 19
+
+        if is_satisfaction_scale:
+            scale_groups = [
+                ('1–3', 'Низкая удовлетворённость', {'1', '2', '3'}),
+                ('4–7', 'Частичная удовлетворённость', {'4', '5', '6', '7'}),
+                ('8–10', 'Высокая удовлетворённость', {'8', '9', '10'}),
+                ('89', 'Не применимо / затруднились ответить', {'89'})
+            ]
+            distribution = [{'code': code, 'label': label,
+                             'count': sum(int(response_counts.get(value, 0)) for value in group)}
+                            for code, label, group in scale_groups]
+            distribution = [item for item in distribution if item['count'] > 0]
+            chart_note = 'Оценки 1–3 объединены в низкую удовлетворённость, 4–7 — в частичную, 8–10 — в высокую; 89 — «не применимо / затрудняюсь ответить».'
+        else:
+            def answer_sort(value):
+                try:
+                    return (0, float(value))
+                except ValueError:
+                    return (1, value.casefold())
+            distribution = [{'code': value, 'label': d002_answer_label(form, question, value), 'count': int(count)}
+                            for value, count in sorted(response_counts.items(), key=lambda pair: answer_sort(pair[0]))]
+            chart_note = 'Подписи вариантов взяты из анкеты D-002. Если для редкого поля в документации указан только код, он показан как «Код ответа».'
+
+        valid_count = int(len(answer_values))
+        for item in distribution:
+            item['share'] = round(item['count'] / valid_count * 100, 1) if valid_count else 0
+        question_items.append({
+            'id': question,
+            'label': d002_question_label(year, form, question),
+            'answered': valid_count,
+            'missing': missing_count,
+            'distribution': distribution,
+            'chart_note': chart_note,
+            'is_satisfaction_scale': is_satisfaction_scale
+        })
+
+    territories = int(frame['TE'].replace('', pd.NA).nunique()) if 'TE' in frame.columns else 0
+    return jsonify({
+        'dataset': 'd002',
+        'year': year,
+        'form': form,
+        'form_label': D002_FORMS[form]['label'],
+        'form_description': D002_FORMS[form]['description'],
+        'source': source,
+        'respondents': int(len(frame)),
+        'territories': territories,
+        'questions': question_items,
+        'question_count': len(question_items)
+    })
+
+
+@app.route('/api/d002/map', methods=['GET'])
+def d002_map_data():
+    year = request.args.get('year', '2024')
+    form = request.args.get('form', 'subject').lower()
+    question = request.args.get('question', '').strip()
+    if year not in {'2021', '2022', '2023', '2024'} or form not in D002_FORMS:
+        return jsonify({'error': 'Выберите доступный год и раздел анкеты D002.'}), 400
+
+    frame, source = get_d002_frame(year, form, get_d002_db_catalog())
+    if frame is None:
+        return jsonify({'error': f'Данные D002 за {year} не найдены.'}), 404
+    question_column = next((str(column) for column in frame.columns if str(column).casefold() == question.casefold()), None)
+    territory_column = next((str(column) for column in frame.columns if str(column).casefold() == 'te'), None)
+    if not question_column or not re.match(r'^GR', question_column, flags=re.IGNORECASE):
+        return jsonify({'error': 'Выбранный вопрос D002 не найден.'}), 404
+    if not territory_column:
+        return jsonify({'available': False, 'reason': 'В наборе D002 нет кода территории.'}), 200
+
+    values = frame[[territory_column, question_column]].copy()
+    values[territory_column] = values[territory_column].fillna('').astype(str).str.strip()
+    values[question_column] = values[question_column].fillna('').astype(str).str.strip()
+    values = values[(values[territory_column] != '') & (values[question_column] != '')]
+    normalized_question = normalize_d002_question(question_column)
+    match = re.match(r'^GR(\d+)', normalized_question)
+    is_satisfaction_scale = form == 'subject' and bool(match) and int(match.group(1)) <= 19
+
+    if is_satisfaction_scale:
+        answer_groups = {
+            '1–3': {'label': 'Низкая удовлетворённость', 'values': {'1', '2', '3'}},
+            '4–7': {'label': 'Частичная удовлетворённость', 'values': {'4', '5', '6', '7'}},
+            '8–10': {'label': 'Высокая удовлетворённость', 'values': {'8', '9', '10'}},
+            '89': {'label': 'Не применимо / затруднились ответить', 'values': {'89'}}
+        }
+        categories = [
+            {'code': code, 'label': details['label']}
+            for code, details in answer_groups.items()
+            if values[question_column].isin(details['values']).any()
+        ]
+        values['_answer_group'] = values[question_column].map({
+            raw: code for code, details in answer_groups.items() for raw in details['values']
+        })
+    else:
+        answer_codes = sorted(values[question_column].unique(), key=lambda value: (not value.isdigit(), int(value) if value.isdigit() else value.casefold()))
+        categories = [{'code': code, 'label': d002_answer_label(form, question_column, code)} for code in answer_codes]
+        values['_answer_group'] = values[question_column]
+
+    regions = []
+    for code, group in values.groupby(territory_column, sort=True):
+        answered = int(len(group))
+        counts = group['_answer_group'].value_counts().to_dict()
+        regions.append({
+            'code': str(code),
+            'territory': D002_TERRITORY_NAMES.get(str(code), f'Код территории {code}'),
+            'answered': answered,
+            'distribution': [
+                {
+                    **category,
+                    'count': int(counts.get(category['code'], 0)),
+                    'share': round(int(counts.get(category['code'], 0)) / answered * 100, 1) if answered else 0
+                }
+                for category in categories
+            ]
+        })
+    return jsonify({
+        'year': year,
+        'form': form,
+        'question': question_column,
+        'source': source,
+        'categories': categories,
+        'regions': regions
+    })
+
+
+def get_d006_catalog():
+    if not Path(DB_FILE).is_file():
+        return {}
+    conn = None
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        if not conn.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='sinte_import_manifest'").fetchone():
+            return {}
+        catalog = {}
+        for source_path, table, row_count in conn.execute(
+            "SELECT source_path, sql_table, row_count FROM sinte_import_manifest WHERE form='d006'"
+        ):
+            parts = Path(source_path).parts
+            if len(parts) == 3 and parts[2].lower().endswith('.csv'):
+                catalog[parts[1]] = {'table': table, 'rows': int(row_count)}
+        return catalog
+    except sqlite3.Error as error:
+        print(f'[D006]: Не удалось прочитать каталог SQLite: {error}')
+        return {}
+    finally:
+        if conn:
+            conn.close()
+
+
+def get_d006_frame(year, catalog):
+    csv_dir = DATA_DIR / 'd006' / year
+    csv_path = next((path for path in csv_dir.glob('*.csv')), None) if csv_dir.is_dir() else None
+    if csv_path:
+        try:
+            return pd.read_csv(csv_path, dtype=str, keep_default_na=False, encoding='utf-8-sig'), 'data/sinte CSV'
+        except UnicodeDecodeError:
+            return pd.read_csv(csv_path, dtype=str, keep_default_na=False, encoding='cp1251'), 'data/sinte CSV'
+    spec = catalog.get(year)
+    if not spec or not Path(DB_FILE).is_file():
+        return None, None
+    table = '"' + spec['table'].replace('"', '""') + '"'
+    conn = sqlite3.connect(DB_FILE)
+    try:
+        return pd.read_sql_query(f'SELECT * FROM {table}', conn, dtype=str).fillna(''), 'database.sqlite'
+    finally:
+        conn.close()
+
+
+@app.route('/api/d006/options', methods=['GET'])
+def d006_options():
+    d006_dir = DATA_DIR / 'd006'
+    years = {path.name for path in d006_dir.iterdir() if path.is_dir() and path.name.isdigit()} if d006_dir.is_dir() else set()
+    catalog = get_d006_catalog()
+    years.update(catalog)
+    return jsonify({'years': sorted(years, reverse=True), 'source_available': bool(years)})
+
+
+@app.route('/api/d006/data', methods=['GET'])
+def d006_data():
+    year = request.args.get('year', '2024')
+    if year not in {'2021', '2022', '2023', '2024'}:
+        return jsonify({'error': 'Выбранный год D006 не поддерживается.'}), 400
+    frame, source = get_d006_frame(year, get_d006_catalog())
+    if frame is None:
+        return jsonify({'error': f'Данные D006 за {year} не найдены ни в data/sinte, ни в database.sqlite.'}), 404
+    frame.columns = [str(column).strip().upper() for column in frame.columns]
+    respondents = len(frame)
+
+    def distribution(column, labels):
+        if column not in frame.columns:
+            return []
+        counts = frame[column].astype(str).str.strip().value_counts()
+        denominator = int(counts.sum())
+        return [
+            {'code': code, 'label': labels.get(code, f'Код {code}'), 'count': int(count),
+             'share': round(int(count) / denominator * 100, 1) if denominator else 0}
+            for code, count in counts.items() if code and code in labels
+        ]
+
+    city_rural = distribution('K', {'1': 'Город', '2': 'Село'})
+    home_types = distribution('TIP_J', D006_HOME_TYPES)
+    ownership = distribution('VLAD1', D006_OWNERSHIP)
+    land_access = distribution('ZEM', {'1': 'Есть доступ', '2': 'Нет доступа'})
+    amenities = []
+    for index, label in enumerate(D006_AMENITIES, start=1):
+        column = f'U{index}'
+        if column not in frame.columns:
+            continue
+        values = frame[column].astype(str).str.strip()
+        valid = values[values.isin({'1', '2'})]
+        available = int(valid.eq('1').sum())
+        amenities.append({
+            'code': column, 'label': label, 'count': available,
+            'share': round(available / len(valid) * 100, 1) if len(valid) else 0
+        })
+
+    goods = []
+    for index, label in enumerate(D006_DURABLE_GOODS, start=1):
+        column = f'TDP{index}'
+        if column not in frame.columns:
+            continue
+        values = pd.to_numeric(frame[column].astype(str).str.strip(), errors='coerce').dropna()
+        goods.append({'code': column, 'label': label, 'count': round(float(values.sum()), 1), 'households_reported': int(len(values))})
+    goods.sort(key=lambda item: item['count'], reverse=True)
+
+    def mean_value(column):
+        if column not in frame.columns:
+            return None
+        values = pd.to_numeric(frame[column].astype(str).str.strip(), errors='coerce').dropna()
+        return round(float(values.mean()), 1) if len(values) else None
+
+    territories = int(frame['TE'].replace('', pd.NA).nunique()) if 'TE' in frame.columns else 0
+    return jsonify({
+        'dataset': 'd006', 'year': year, 'source': source, 'respondents': respondents,
+        'territories': territories, 'city_rural': city_rural, 'home_types': home_types,
+        'ownership': ownership, 'land_access': land_access, 'amenities': amenities,
+        'durable_goods': goods[:15], 'average_total_area': mean_value('OB_PL'),
+        'average_living_area': mean_value('J_PL'), 'average_rooms': mean_value('KOL_K')
+    })
+
+
+def get_d008_catalog():
+    if not Path(DB_FILE).is_file():
+        return {}
+    conn = None
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        if not conn.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='sinte_import_manifest'").fetchone():
+            return {}
+        catalog = {}
+        for source_path, table, row_count in conn.execute(
+            "SELECT source_path, sql_table, row_count FROM sinte_import_manifest WHERE form='d008'"
+        ):
+            parts = Path(source_path).parts
+            if len(parts) == 3 and parts[2].lower().endswith('.csv'):
+                catalog[parts[1]] = {'table': table, 'rows': int(row_count)}
+        return catalog
+    except sqlite3.Error as error:
+        print(f'[D008]: Не удалось прочитать каталог SQLite: {error}')
+        return {}
+    finally:
+        if conn:
+            conn.close()
+
+
+def get_d008_frame(year, catalog):
+    csv_dir = DATA_DIR / 'd008' / year
+    csv_path = next((path for path in csv_dir.glob('*.csv')), None) if csv_dir.is_dir() else None
+    if csv_path:
+        try:
+            return pd.read_csv(csv_path, dtype=str, keep_default_na=False, encoding='utf-8-sig'), 'data/sinte CSV'
+        except UnicodeDecodeError:
+            return pd.read_csv(csv_path, dtype=str, keep_default_na=False, encoding='cp1251'), 'data/sinte CSV'
+    spec = catalog.get(year)
+    if not spec or not Path(DB_FILE).is_file():
+        return None, None
+    table = '"' + spec['table'].replace('"', '""') + '"'
+    conn = sqlite3.connect(DB_FILE)
+    try:
+        return pd.read_sql_query(f'SELECT * FROM {table}', conn, dtype=str).fillna(''), 'database.sqlite'
+    finally:
+        conn.close()
+
+
+@app.route('/api/d008/options', methods=['GET'])
+def d008_options():
+    d008_dir = DATA_DIR / 'd008'
+    years = {path.name for path in d008_dir.iterdir() if path.is_dir() and path.name.isdigit()} if d008_dir.is_dir() else set()
+    catalog = get_d008_catalog()
+    years.update(catalog)
+    return jsonify({'years': sorted(years, reverse=True), 'source_available': bool(years)})
+
+
+@app.route('/api/d008/data', methods=['GET'])
+def d008_data():
+    year = request.args.get('year', '2024')
+    if year not in {'2021', '2022', '2023', '2024'}:
+        return jsonify({'error': 'Выбранный год D008 не поддерживается.'}), 400
+    frame, source = get_d008_frame(year, get_d008_catalog())
+    if frame is None:
+        return jsonify({'error': f'Данные D008 за {year} не найдены ни в data/sinte, ни в database.sqlite.'}), 404
+    frame.columns = [str(column).strip().upper() for column in frame.columns]
+    people_count = int(len(frame))
+
+    def distribution(column, labels):
+        if column not in frame.columns:
+            return []
+        counts = frame[column].astype(str).str.strip().value_counts()
+        known = [(code, int(count)) for code, count in counts.items() if code in labels]
+        denominator = sum(count for _, count in known)
+        return [
+            {'code': code, 'label': labels[code], 'count': count,
+             'share': round(count / denominator * 100, 1) if denominator else 0}
+            for code, count in sorted(known, key=lambda item: (int(item[0]) if item[0].isdigit() else 999, item[0]))
+        ]
+
+    settlement = distribution('K', {'1': 'Город', '2': 'Село'})
+    gender = distribution('POL', {'1': 'Мужчины', '2': 'Женщины'})
+    relationships = distribution('RODSTVO', D008_RELATIONSHIPS)
+    education = distribution('UROV', D008_EDUCATION)
+    marital_status = distribution('SEM_POL', D008_MARITAL_STATUS)
+    activity = distribution('STATUS', D008_ACTIVITY)
+
+    ages = pd.Series(dtype='float64')
+    if 'GOD_ROJD' in frame.columns:
+        birth_year = pd.to_numeric(frame['GOD_ROJD'], errors='coerce')
+        age = pd.to_numeric(year, errors='coerce') - birth_year
+        if 'MES_ROJD' in frame.columns:
+            birth_month = pd.to_numeric(frame['MES_ROJD'], errors='coerce')
+            age = age - (birth_month.gt(1)).astype('int64')
+        ages = age[age.between(0, 120)].dropna()
+    age_structure = []
+    if len(ages):
+        for label, lower, upper in D008_AGE_GROUPS:
+            count = int(ages.between(lower, upper).sum())
+            age_structure.append({
+                'label': label, 'count': count,
+                'share': round(count / len(ages) * 100, 1)
+            })
+
+    if 'NOMER' in frame.columns:
+        household_sizes = frame.groupby(frame['NOMER'].astype(str).str.strip()).size()
+        household_sizes = household_sizes[household_sizes.index.astype(str) != '']
+    elif 'KOL_CHL' in frame.columns:
+        household_sizes = pd.to_numeric(frame['KOL_CHL'], errors='coerce').dropna()
+    else:
+        household_sizes = pd.Series(dtype='float64')
+    size_counts = household_sizes.value_counts().sort_index()
+    household_size_distribution = [
+        {'label': f'{int(size)} ' + ('человек' if int(size) % 10 == 1 and int(size) % 100 != 11 else 'человека' if int(size) % 10 in {2, 3, 4} and int(size) % 100 not in {12, 13, 14} else 'человек'),
+         'count': int(count), 'share': round(int(count) / len(household_sizes) * 100, 1) if len(household_sizes) else 0}
+        for size, count in size_counts.items()
+    ]
+    territories = int(frame['TE'].replace('', pd.NA).nunique()) if 'TE' in frame.columns else 0
+    average_household_size = round(float(household_sizes.mean()), 1) if len(household_sizes) else None
+    average_age = round(float(ages.mean()), 1) if len(ages) else None
+    under_15_share = round(float(ages.lt(15).mean()) * 100, 1) if len(ages) else None
+
+    return jsonify({
+        'dataset': 'd008', 'year': year, 'source': source,
+        'people': people_count, 'households': int(len(household_sizes)), 'territories': territories,
+        'average_household_size': average_household_size, 'average_age': average_age,
+        'under_15_share': under_15_share, 'age_available': len(ages) > 0,
+        'settlement': settlement, 'gender': gender, 'relationships': relationships,
+        'education': education, 'marital_status': marital_status, 'activity': activity,
+        'age_structure': age_structure, 'household_sizes': household_size_distribution
+    })
+
+
+>>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
 def read_d004_csv(csv_path):
     global _D004_CACHE_KEY, _D004_CACHE_FRAME
     cache_key = (str(csv_path), csv_path.stat().st_mtime_ns)
@@ -447,6 +1150,36 @@ def claude_key_settings():
     return jsonify({'configured': True})
 
 
+<<<<<<< HEAD
+=======
+@app.route('/api/ai-status', methods=['GET'])
+def ai_status():
+    if not CLAUDE_API_KEY:
+        return jsonify({'status': 'offline', 'reason': 'missing_key'})
+
+    status_request = urllib.request.Request(
+        'https://api.anthropic.com/v1/models?limit=100',
+        headers={
+            'x-api-key': CLAUDE_API_KEY,
+            'anthropic-version': '2023-06-01',
+            'accept': 'application/json'
+        }
+    )
+    try:
+        with urllib.request.urlopen(status_request, timeout=4) as response:
+            models = json.loads(response.read().decode('utf-8')).get('data', [])
+        available_models = {item.get('id') for item in models if isinstance(item, dict)}
+        if CLAUDE_MODEL not in available_models:
+            return jsonify({'status': 'offline', 'reason': 'model_unavailable'})
+        return jsonify({'status': 'online', 'reason': 'ready'})
+    except urllib.error.HTTPError as error:
+        reason = 'invalid_key' if error.code in (401, 403) else 'api_unavailable'
+        return jsonify({'status': 'offline', 'reason': reason})
+    except (urllib.error.URLError, TimeoutError, OSError, ValueError, json.JSONDecodeError):
+        return jsonify({'status': 'offline', 'reason': 'network_unavailable'})
+
+
+>>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
 
 @app.route('/api/household-radar', methods=['GET'])
 def household_radar():

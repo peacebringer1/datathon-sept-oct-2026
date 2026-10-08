@@ -1,10 +1,20 @@
 <!DOCTYPE html>
 <html lang="ru"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<<<<<<< HEAD
 <title>Data Analyzer</title>
 <style>
 :root{--bg:#f1ede6;--card:#fff;--soft:#f8fafc;--text:#1e293b;--mute:#64748b;--line:#e2e8f0;--acc:#fdb386;--acc2:#f97316;--dark:#1c1c1c;--violet:#c9b1d9;--blue:#3b82f6;--sh:0 8px 24px rgba(15,23,42,.07)}
 :root[data-theme=dark]{--bg:#14161b;--card:#1f232b;--soft:#272c36;--text:#e8ecf3;--mute:#94a3b8;--line:#343a46;--dark:#f1f1f1;--sh:0 8px 24px rgba(0,0,0,.4)}
+=======
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<title>Data Analyzer</title>
+<style>
+:root{--bg:#f1ede6;--card:#fff;--soft:#faf7f4;--text:#222;--mute:#746d74;--line:#e8dfe6;--acc:#fbb085;--acc2:#df987d;--dark:#222;--violet:#c9aace;--blue:#a88db1;--sh:0 8px 24px rgba(34,34,34,.07)}
+:root[data-theme=dark]{--bg:#211f22;--card:#2d292e;--soft:#272329;--text:#f5eee9;--mute:#c6b7c8;--line:#49424b;--dark:#f5eee9;--acc:#fbb085;--violet:#c9aace;--blue:#c9aace;--sh:0 8px 24px rgba(0,0,0,.4)}
+>>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
 *{box-sizing:border-box}html,body{height:100%;margin:0}
 body{font-family:Raleway,"Segoe UI",system-ui,sans-serif;background:var(--bg);color:var(--text);display:flex;gap:clamp(10px,1.4vw,20px);padding:clamp(10px,1.4vw,20px);overflow:hidden}
 .side{width:clamp(210px,19vw,270px);min-height:0;flex:none;background:var(--card);border-radius:24px;box-shadow:var(--sh);display:flex;flex-direction:column;padding:clamp(12px,1.4vw,20px) 12px 12px}
@@ -21,7 +31,11 @@ body{font-family:Raleway,"Segoe UI",system-ui,sans-serif;background:var(--bg);co
 .chart-controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;align-items:end}
 .chart-controls .btn{min-height:40px}
 .chart-frame{width:100%;overflow:auto}
+<<<<<<< HEAD
 .dataset-chart{display:block;width:100%;min-width:520px;height:auto;max-height:520px}
+=======
+.dataset-chart{display:block;width:100%;min-width:0;height:auto;max-height:520px}
+>>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
 .chart-grid-line{stroke:var(--line);stroke-width:1}
 .chart-axis-label{fill:var(--mute);font-size:12px}
 .chart-bar{fill:var(--blue)}
@@ -284,7 +298,11 @@ async function vMerge(v){const base=window._mb&&sets.find(s=>s.id==window._mb)?w
   try{const r=await post("/merge",{ids:[b,...sel],base:b,relations:R,allow_many_to_many:$("#m_m").checked});const p=r.report;
    await refresh();tab=5;cur=r.info.id;renderList();strip();await view();
    $("#m_rep").innerHTML=`<div class="msg"><b>${t("res")}</b><br>${p.row_count_before} → <b>${p.row_count_after}</b> ${t("rows")}<br>${(p.relation_descriptions||[]).map(esc).join("<br>")}${(p.cardinality||[]).map(c=>`<br>${esc(c.dataset_name)}: ${c.type}`).join("")}${(p.notes||[]).map(n=>"<br>⚠ "+esc(n)).join("")}</div>`}catch(e){flash(e.message,1)}}}
+<<<<<<< HEAD
 addEventListener('message',e=>{const d=e.data;if(d&&d.type==='da-settings'){if(d.theme){theme=d.theme;applyTheme()}if(d.lang&&L[d.lang]){lang=d.lang;chrome();renderList();strip();view()}}});
+=======
+addEventListener('message',e=>{if(e.source!==parent)return;const d=e.data;if(d&&d.type==='da-settings'){if(d.theme){theme=d.theme;applyTheme()}if(d.lang&&L[d.lang]){lang=d.lang;chrome();renderList();strip();view()}}});
+>>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
 addEventListener('message',e=>{if(e.source!==parent||e.data?.type!=='dashboard-dataset-sync')return;const notice=$("#dashboardSyncNotice");if(!notice)return;
  if(e.data.state==="empty"){notice.hidden=true;return}
  notice.hidden=false;notice.classList.toggle("err",e.data.state==="error");

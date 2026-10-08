@@ -3,6 +3,7 @@
 export function initAISidebar() {
     const sidebar = document.getElementById('aiPopupSidebar');
     const appLayout = document.querySelector('.app-layout');
+<<<<<<< HEAD
     const toggleBtn = document.getElementById('aiToggleBtn');
     const closeBtn = sidebar?.querySelector('.close-chat-btn');
     const input = document.getElementById('chatInput');
@@ -18,12 +19,26 @@ export function initAISidebar() {
     };
 
     // Закрытие по кнопке "крестик"
+=======
+    const closeBtn = sidebar?.querySelector('.close-chat-btn');
+    const input = document.getElementById('chatInput');
+
+    if (!sidebar || !appLayout) return;
+
+    window.toggleAIChat = function() {
+        const isOpen = sidebar.classList.toggle('open');
+        appLayout.classList.toggle('ai-sidebar-open', isOpen);
+        if (isOpen) input?.focus();
+    };
+
+>>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
     if (closeBtn) {
         closeBtn.addEventListener('click', () => {
             sidebar.classList.remove('open');
             appLayout.classList.remove('ai-sidebar-open');
         });
     }
+<<<<<<< HEAD
 
     // Функция отправки сообщения
     const sendMessage = () => {
@@ -64,9 +79,15 @@ export function initAISidebar() {
             }
         });
     }
+=======
+>>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
 }
 
 // Автоматическая инициализация при загрузке модуля
 document.addEventListener('DOMContentLoaded', () => {
     initAISidebar();
+<<<<<<< HEAD
 });
+=======
+});
+>>>>>>> dc8732dbe208308ef095b862befeb070e1b443be

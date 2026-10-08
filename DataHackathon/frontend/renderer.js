@@ -1,4 +1,7 @@
+<<<<<<< HEAD
 import { initApp } from './src/components/appInit.js';
+=======
+>>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
 import {
   selectCategoryDashboard,
   switchSubSection,
@@ -20,7 +23,12 @@ import {
   initGlobalResizeListener
 } from './src/components/uiInteractions.js';
 import { openDetailedAnalytics, openAnalyticsFromCard, initDetailedViewClose } from './src/components/detailedView.js';
+<<<<<<< HEAD
 import { updateSummaryChart, updateMultiSummaryChart } from './src/components/chartsMap.js';
+=======
+import { startAppLoading } from './src/components/loadingIndicator.js';
+import './src/components/projectPages.js';
+>>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
 
 const apiPort = new URLSearchParams(window.location.search).get('apiPort') || '5000';
 const API_BASE_URL = `http://127.0.0.1:${apiPort}`;
@@ -28,6 +36,40 @@ const analyzerPort = new URLSearchParams(window.location.search).get('analyzerPo
 window.DATA_ANALYZER_URL = analyzerPort ? `http://127.0.0.1:${analyzerPort}` : '';
 window.API_BASE_URL = API_BASE_URL;
 
+<<<<<<< HEAD
+=======
+window.syncAnalyzerPreferences = function() {
+  document.getElementById('dataAnalyzerFrame')?.contentWindow?.postMessage({
+    type: 'da-settings',
+    lang: window.getAppLanguage?.() === 'en' ? 'en' : 'ru',
+    theme: document.body.classList.contains('dark-theme') ? 'dark' : 'light'
+  }, '*');
+};
+window.addEventListener('app-language-changed', () => window.syncAnalyzerPreferences());
+window.addEventListener('app-theme-changed', () => window.syncAnalyzerPreferences());
+
+const finishStartupLoading = startAppLoading('Запускаем приложение и подключаем данные…');
+async function waitForBackendStartup() {
+  const attempts = 60;
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/d008/options`);
+      if (response.ok) return;
+    } catch {
+      // Flask запускается параллельно с Electron; проверим ещё раз.
+    }
+    finishStartupLoading.update?.('Подключаем Flask и готовим разделы данных…');
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+  finishStartupLoading.update?.('Сервер пока не отвечает. Можно продолжить и повторить запуск данных позже.');
+  await new Promise((resolve) => setTimeout(resolve, 1300));
+}
+void waitForBackendStartup().finally(() => {
+  finishStartupLoading();
+  void refreshAIStatus();
+});
+
+>>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
 async function refreshClaudeApiKeyStatus() {
   const status = document.getElementById('claudeApiKeyStatus');
   if (!status) return;
@@ -46,6 +88,39 @@ async function refreshClaudeApiKeyStatus() {
   }
 }
 
+<<<<<<< HEAD
+=======
+async function refreshAIStatus() {
+  const badge = document.getElementById('aiStatusBadge');
+  if (!badge) return;
+  const translate = (value) => window.translateAppText?.(value) || value;
+  badge.dataset.state = 'checking';
+  badge.textContent = translate('Проверка…');
+  badge.title = translate('Проверяем доступ к ИИ');
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/ai-status`);
+    const result = await response.json();
+    if (!response.ok) throw new Error('status_failed');
+    const state = result.status === 'online' ? 'online' : 'offline';
+    const stateText = state === 'online' ? 'Доступен' : 'Оффлайн';
+    const reasons = {
+      missing_key: 'Не подключён API-ключ',
+      invalid_key: 'API-ключ не принят сервисом',
+      model_unavailable: 'Выбранная модель недоступна',
+      api_unavailable: 'Сервис ИИ временно недоступен',
+      network_unavailable: 'Нет соединения с сервисом ИИ'
+    };
+    badge.dataset.state = state;
+    badge.textContent = translate(stateText);
+    badge.title = translate(reasons[result.reason] || (state === 'online' ? 'Соединение с API активно' : 'ИИ сейчас недоступен'));
+  } catch {
+    badge.dataset.state = 'offline';
+    badge.textContent = translate('Оффлайн');
+    badge.title = translate('Не удалось проверить доступность ИИ');
+  }
+}
+
+>>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
 async function updateClaudeApiKey(method, apiKey) {
   const status = document.getElementById('claudeApiKeyStatus');
   const saveButton = document.getElementById('saveClaudeApiKeyBtn');
@@ -92,6 +167,10 @@ async function updateClaudeApiKey(method, apiKey) {
   } finally {
     if (saveButton) saveButton.disabled = false;
     if (clearButton) clearButton.disabled = false;
+<<<<<<< HEAD
+=======
+    void refreshAIStatus();
+>>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
   }
 }
 
@@ -114,6 +193,7 @@ window.resetCustomCard = resetCustomCard;
 window.openDetailedAnalytics = openDetailedAnalytics;
 window.openAnalyticsFromCard = (button) => openAnalyticsFromCard(button, API_BASE_URL);
 
+<<<<<<< HEAD
 const dashboardCallbacks = {
   onRegionFilterChange: () => onRegionFilterChange(API_BASE_URL),
   onMapFilterChange: () => onMapFilterChange(API_BASE_URL),
@@ -123,6 +203,9 @@ window.refreshDemographyCharts = async () => {
   await initApp(API_BASE_URL, dashboardCallbacks);
   await Promise.all([1, 2, 3, 4].map(card => onCardFilterChange(card, API_BASE_URL)));
 };
+=======
+window.refreshDemographyCharts = async () => {};
+>>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
 
 let analyzerDatasetSync = Promise.resolve(true);
 let analyzerDatasetSyncQueue = Promise.resolve(true);
@@ -211,6 +294,11 @@ document.addEventListener('DOMContentLoaded', () => {
   initSidebarSearch();
   initThemeToggle();
   initGlobalResizeListener();
+<<<<<<< HEAD
+=======
+  void refreshAIStatus();
+  window.setInterval(refreshAIStatus, 60000);
+>>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
 
   const settingsBtn = document.getElementById('settingsToggleBtn');
   const settingsMenu = document.getElementById('settingsDropdown');
@@ -272,6 +360,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+<<<<<<< HEAD
 // Запуск старта приложения
 initApp(API_BASE_URL, {
   ...dashboardCallbacks
@@ -286,6 +375,10 @@ if (summaryIndEl && summaryIndEl.value) {
   await updateMultiSummaryChart(API_BASE_URL);
 }
 
+=======
+initAIChat(API_BASE_URL);
+
+>>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
 // Функция управления каруселью аналитики
 let wishlistScrollPosition = 0;
 

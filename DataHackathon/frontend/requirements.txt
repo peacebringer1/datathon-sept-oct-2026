@@ -1,6 +1,10 @@
 blinker==1.9.0
 click==8.1.8
 Flask==3.1.3
+<<<<<<< HEAD
+=======
+fastapi
+>>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
 flask-cors==6.0.5
 importlib_metadata==8.7.1
 itsdangerous==2.2.0
@@ -9,6 +13,10 @@ MarkupSafe==3.0.3
 numpy==2.0.2
 packaging==26.3
 pandas==2.3.3
+<<<<<<< HEAD
+=======
+openpyxl
+>>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
 python-dateutil==2.9.0.post0
 pytz==2026.3.post1
 six==1.17.0
@@ -16,4 +24,8 @@ typing_extensions==4.16.0
 tzdata==2026.4
 waitress==3.0.2
 Werkzeug==3.1.8
+<<<<<<< HEAD
+=======
+uvicorn
+>>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
 zipp==3.23.1

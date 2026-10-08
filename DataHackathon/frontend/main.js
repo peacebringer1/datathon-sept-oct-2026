@@ -137,8 +137,16 @@ function startAnalyzerServer(port) {
 
 function createWindow(apiPort, analyzerPort) {
   mainWindow = new BrowserWindow({
+<<<<<<< HEAD
     width: 1400,
     height: 900,
+=======
+    show: false,
+    width: 1400,
+    height: 900,
+    minWidth: 360,
+    minHeight: 500,
+>>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
     title: 'Аналитика Демографии Казахстана',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -155,6 +163,11 @@ function createWindow(apiPort, analyzerPort) {
     }
   });
 
+<<<<<<< HEAD
+=======
+  mainWindow.once('ready-to-show', () => mainWindow?.show());
+
+>>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
 
 }
 
@@ -176,4 +189,8 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
   }
+<<<<<<< HEAD
 });
+=======
+});
+>>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
