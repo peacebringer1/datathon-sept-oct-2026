@@ -224,6 +224,7 @@
               </div>
             </div>
 
+<<<<<<< HEAD
             <div class="tabs">
               <button class="tab-btn active" onclick="switchTab('year')">По областям</button>
               <button class="tab-btn" onclick="switchTab('summary')">Итоговый</button>
@@ -232,6 +233,58 @@
                 <button type="button" class="program-switcher-button active" data-program="dashboard"
                   aria-pressed="true" onclick="switchMainSection('dashboard', this)">
                   Демография
+=======
+            <div id="customCardPrompt" class="center-add-prompt" onclick="openAddChartModal()">
+              <div class="add-circle-icon">+</div>
+              <span>Создать свой график</span>
+            </div>
+
+            <div id="chartTypeCustom" class="chart-box-h330" style="display: none;"></div>
+          </div>
+
+
+
+
+          
+
+          <div id="mapChartSection" class="chart-section-block map-section-spacing">
+            <div class="widget-controls">
+              <div class="control-group">
+                <label>Показатель карты:</label>
+                <select id="mapIndicatorSelect" onchange="onMapFilterChange()"></select>
+              </div>
+              <div class="control-group">
+                <label>Год карты:</label>
+                <select id="mapYearSelect" onchange="onMapFilterChange()"></select>
+              </div>
+            </div>
+            <div class="map-container-wrapper" id="mapWrapper">
+              <p class="map-interaction-hint">Красный — меньше, зелёный — больше, серый — нет данных. Приближайте карту колёсиком мыши и перемещайте её перетаскиванием.</p>
+              <div id="kazakhstanMapChart" class="chart-container map-h500"></div>
+            </div>
+          </div>
+
+          <div id="summaryChartWrapper" class="chart-section-block hidden summary-wrapper-spacing">
+            <div class="widget-controls">
+              <div class="control-group">
+                <label>Показатель:</label>
+                <select id="summaryIndicatorSelect" onchange="onSummaryFilterChange()"></select>
+              </div>
+            </div>
+
+            <div class="summary-charts-container">
+              <div class="chart-card summary-card-box">
+                <div id="summaryChart" class="summary-chart-inner"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="table-section table-section-spacing">
+            <div class="table-toolbar">
+              <div class="table-toolbar-left">
+                <button class="toggle-table-btn" onclick="toggleTableVisibility()">
+                  <span id="toggleTableIcon">▶</span> <span id="toggleTableText">Показать таблицу</span>
+>>>>>>> 0e1219a0aab1a083c724645ae4b95b70d88aa586
                 </button>
                 <button type="button" class="program-switcher-button" data-program="data-analyzer" aria-pressed="false"
                   onclick="switchMainSection('data-analyzer', this)">
@@ -511,6 +564,7 @@
 
           <div id="d002Dashboard" hidden>
             <div class="dataset-filter-panel">
+              <div class="dataset-year-tabs" role="tablist" aria-label="Период данных"><button type="button" role="tab" aria-selected="false" data-dataset="d002" data-year-mode="single">По годам</button><button type="button" role="tab" aria-selected="true" data-dataset="d002" data-year-mode="all">Итоги за все годы</button></div>
               <label>Год обследования
                 <select id="d002YearSelect" aria-label="Год обследования D002"></select>
               </label>
@@ -601,6 +655,7 @@
 
           <div id="d004Dashboard" hidden>
             <div class="dataset-filter-panel">
+              <div class="dataset-year-tabs" role="tablist" aria-label="Период данных"><button type="button" role="tab" aria-selected="false" data-dataset="d004" data-year-mode="single">По годам</button><button type="button" role="tab" aria-selected="true" data-dataset="d004" data-year-mode="all">Итоги за все годы</button></div>
               <label>Год
                 <select id="d004YearSelect" aria-label="Год обследования"></select>
               </label>
@@ -710,6 +765,7 @@
 
           <div id="d006Dashboard" hidden>
             <div class="dataset-filter-panel d006-filter-panel">
+              <div class="dataset-year-tabs" role="tablist" aria-label="Период данных"><button type="button" role="tab" aria-selected="false" data-dataset="d006" data-year-mode="single">По годам</button><button type="button" role="tab" aria-selected="true" data-dataset="d006" data-year-mode="all">Итоги за все годы</button></div>
               <label>Год обследования
                 <select id="d006YearSelect" aria-label="Год обследования D006"></select>
               </label>
@@ -806,6 +862,7 @@
 
           <div id="d008Dashboard" hidden>
             <div class="dataset-filter-panel d006-filter-panel">
+              <div class="dataset-year-tabs" role="tablist" aria-label="Период данных"><button type="button" role="tab" aria-selected="false" data-dataset="d008" data-year-mode="single">По годам</button><button type="button" role="tab" aria-selected="true" data-dataset="d008" data-year-mode="all">Итоги за все годы</button></div>
               <label>Год обследования
                 <select id="d008YearSelect" aria-label="Год обследования D008"></select>
               </label>

@@ -2,7 +2,7 @@ import { startAppLoading } from './loadingIndicator.js';
 
 const API_BASE_URL = window.API_BASE_URL || `http://127.0.0.1:${new URLSearchParams(window.location.search).get('apiPort') || '5000'}`;
 const chartInstances = new Map();
-const chartColors = ['#fbb085', '#c9aace', '#e7a489', '#a88db1', '#d4b6d9'];
+const chartColors = ['#d94343', '#f28c28', '#f2c94c', '#a8cf45', '#3e9b59', '#8b9298'];
 
 async function getJson(path) {
   let lastError;
@@ -56,7 +56,7 @@ function chartFor(id, items) {
       data: cleaned.map((item, index) => ({ value: Number(item.value), suffix: item.suffix || '', itemStyle: { color: chartColors[index % chartColors.length], borderRadius: [0, 8, 8, 0] } })),
       barWidth: 9,
       showBackground: true,
-      backgroundStyle: { color: 'rgba(201,170,206,.13)', borderRadius: 8 },
+      backgroundStyle: { color: 'rgba(184,214,160,.13)', borderRadius: 8 },
       itemStyle: { borderRadius: [0, 8, 8, 0] }
     }]
   });

@@ -2,14 +2,14 @@
 /* ПЕРЕМЕННЫЕ И БАЗОВЫЕ СТИЛИ                                                */
 /* ========================================================================== */
 :root {
-    --bg-color: #f1f5f9;
+    --bg-color: #f5f7f6;
     --card-bg: #ffffff;
-    --text-primary: #1e293b;
-    --text-secondary: #64748b;
-    --accent-color: #2563eb;
-    --accent-hover: #1d4ed8;
-    --border-color: #e2e8f0;
-    --bg-input: #f8fafc;
+    --text-primary: #202522;
+    --text-secondary: #68736c;
+    --accent-color: #4f9b7c;
+    --accent-hover: #40684c;
+    --border-color: #e3eae3;
+    --bg-input: #f7f9f7;
 }
 
 * {
@@ -212,7 +212,7 @@ aside.category-sidebar-hover.pinned .sidebar-collapsed-indicator {
 }
 
 .cat-header:hover {
-    background: rgba(37, 99, 235, 0.1);
+    background: rgba(79, 155, 124, 0.1);
     color: var(--accent-color);
 }
 
@@ -269,7 +269,7 @@ aside.category-sidebar-hover.pinned .sidebar-settings-footer {
     border: none;
     border-radius: 12px;
     cursor: pointer;
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    box-shadow: 0 4px 12px rgba(79, 155, 124, 0.3);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -338,7 +338,7 @@ aside.category-sidebar-hover.pinned .sidebar-settings-footer {
 }
 
 .excel-btn {
-    background: #10b981;
+    background: #4f9b7c;
     color: white;
     border: none;
 }
@@ -508,7 +508,7 @@ aside.category-sidebar-hover.pinned .sidebar-settings-footer {
 
 .custom-add-card:hover {
     border-color: var(--accent-color);
-    background: rgba(37, 99, 235, 0.02);
+    background: rgba(79, 155, 124, 0.02);
 }
 
 .center-add-prompt {
@@ -526,7 +526,7 @@ aside.category-sidebar-hover.pinned .sidebar-settings-footer {
     width: 48px;
     height: 48px;
     border-radius: 50%;
-    background: rgba(37, 99, 235, 0.1);
+    background: rgba(79, 155, 124, 0.1);
     color: var(--accent-color);
     display: flex;
     align-items: center;
@@ -867,7 +867,7 @@ th {
 
 .ai-status-badge {
     font-size: 0.7rem;
-    background-color: #22c55e;
+    background-color: #86b93f;
     color: #fff;
     padding: 2px 6px;
     border-radius: 10px;
@@ -1054,12 +1054,12 @@ th {
 /* ТЕМНАЯ ТЕМА (DARK THEME)                                                   */
 /* ========================================================================== */
 body.dark-theme {
-    --bg-color: #0f172a;
-    --card-bg: #1e293b;
-    --text-primary: #f8fafc;
-    --text-secondary: #94a3b8;
-    --border-color: #334155;
-    --bg-input: #0f172a;
+    --bg-color: #17231d;
+    --card-bg: #24332a;
+    --text-primary: #f7f9f7;
+    --text-secondary: #aebbb1;
+    --border-color: #3a4b40;
+    --bg-input: #1c2a21;
 }
 
 body.dark-theme th {
@@ -1068,7 +1068,7 @@ body.dark-theme th {
 
 body.dark-theme select option {
     background-color: #0f172a !important;
-    color: #f8fafc !important;
+    color: #f7f9f7 !important;
 }
 
 body.dark-theme .widget-controls {
@@ -1077,7 +1077,7 @@ body.dark-theme .widget-controls {
 }
 
 body.dark-theme .custom-add-card:hover {
-    background: rgba(37, 99, 235, 0.08) !important;
+    background: rgba(79, 155, 124, 0.08) !important;
     border-color: var(--accent-color) !important;
 }
 
