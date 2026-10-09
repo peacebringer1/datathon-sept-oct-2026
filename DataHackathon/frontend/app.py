@@ -380,6 +380,23 @@ D002_TERRITORY_NAMES = {
 }
 
 
+def rounded_shares(counts, precision=1):
+    """Round a distribution while keeping its displayed percentages at 100%."""
+    values = [max(0, int(value)) for value in counts]
+    total = sum(values)
+    if not total:
+        return [0 for _ in values]
+    scale = 10 ** precision
+    target = 100 * scale
+    exact = [value * target / total for value in values]
+    rounded = [math.floor(value) for value in exact]
+    remainder = target - sum(rounded)
+    order = sorted(range(len(values)), key=lambda index: (exact[index] - rounded[index], values[index]), reverse=True)
+    for index in order[:remainder]:
+        rounded[index] += 1
+    return [value / scale for value in rounded]
+
+
 @app.route('/api/d002/options', methods=['GET'])
 def d002_options():
     d002_dir = DATA_DIR / 'd002'
@@ -449,8 +466,8 @@ def d002_data():
             chart_note = 'Подписи вариантов взяты из анкеты D-002. Если для редкого поля в документации указан только код, он показан как «Код ответа».'
 
         valid_count = int(len(answer_values))
-        for item in distribution:
-            item['share'] = round(item['count'] / valid_count * 100, 1) if valid_count else 0
+        for item, share in zip(distribution, rounded_shares([item['count'] for item in distribution])):
+            item['share'] = share
         question_items.append({
             'id': question,
             'label': d002_question_label(year, form, question),
@@ -526,6 +543,7 @@ def d002_map_data():
     for code, group in values.groupby(territory_column, sort=True):
         answered = int(len(group))
         counts = group['_answer_group'].value_counts().to_dict()
+        shares = rounded_shares([counts.get(category['code'], 0) for category in categories])
         regions.append({
             'code': str(code),
             'territory': D002_TERRITORY_NAMES.get(str(code), f'Код территории {code}'),
@@ -534,9 +552,9 @@ def d002_map_data():
                 {
                     **category,
                     'count': int(counts.get(category['code'], 0)),
-                    'share': round(int(counts.get(category['code'], 0)) / answered * 100, 1) if answered else 0
+                    'share': share
                 }
-                for category in categories
+                for category, share in zip(categories, shares)
             ]
         })
     return jsonify({
@@ -616,11 +634,11 @@ def d006_data():
         if column not in frame.columns:
             return []
         counts = frame[column].astype(str).str.strip().value_counts()
-        denominator = int(counts.sum())
+        counts = counts[[code for code in counts.index if code in labels]]
+        shares = rounded_shares(counts.tolist())
         return [
-            {'code': code, 'label': labels.get(code, f'Код {code}'), 'count': int(count),
-             'share': round(int(count) / denominator * 100, 1) if denominator else 0}
-            for code, count in counts.items() if code and code in labels
+            {'code': code, 'label': labels[code], 'count': int(count), 'share': share}
+            for (code, count), share in zip(counts.items(), shares) if code
         ]
 
     home_types = distribution('TIP_J', D006_HOME_TYPES)
@@ -784,12 +802,11 @@ def d008_data():
         values = frame[column].astype(str).str.strip()
         values = values[values.ne('')]
         counts = values.value_counts()
-        denominator = int(counts.sum())
         ordered = sorted(counts.items(), key=lambda item: (int(item[0]) if item[0].isdigit() else 999, item[0]))
         return [
             {'code': code, 'label': labels.get(code, f'Не классифицировано (код {code})'), 'count': int(count),
-             'share': round(int(count) / denominator * 100, 1) if denominator else 0}
-            for code, count in ordered
+             'share': share}
+            for (code, count), share in zip(ordered, rounded_shares([count for _, count in ordered]))
         ]
 
     settlement = distribution('K', {'1': 'Город', '2': 'Село'})
@@ -804,13 +821,13 @@ def d008_data():
     marital_status = distribution('SEM_POL', D008_MARITAL_STATUS)
     activity = distribution('STATUS', D008_ACTIVITY)
 
-    age_structure = []
-    for code, label, lower, upper in age_groups:
-        count = int(ages.between(lower, upper).sum()) if len(ages) else 0
-        age_structure.append({
-            'code': code, 'label': label, 'count': count,
-            'share': round(count / len(ages) * 100, 1) if len(ages) else 0
-        })
+    age_counts = [int(ages.between(lower, upper).sum()) if len(ages) else 0
+                  for _, _, lower, upper in age_groups]
+    age_shares = rounded_shares(age_counts)
+    age_structure = [
+        {'code': code, 'label': label, 'count': count, 'share': share}
+        for (code, label, _, _), count, share in zip(age_groups, age_counts, age_shares)
+    ]
 
     if 'NOMER' in full_frame.columns:
         household_ids = frame['NOMER'].astype(str).str.strip()
@@ -822,8 +839,8 @@ def d008_data():
     size_counts = household_sizes.value_counts().sort_index()
     household_size_distribution = [
         {'code': str(int(size)), 'label': f'{int(size)} ' + ('человек' if int(size) % 10 == 1 and int(size) % 100 != 11 else 'человека' if int(size) % 10 in {2, 3, 4} and int(size) % 100 not in {12, 13, 14} else 'человек'),
-         'count': int(count), 'share': round(int(count) / len(household_sizes) * 100, 1) if len(household_sizes) else 0}
-        for size, count in size_counts.items()
+         'count': int(count), 'share': share}
+        for (size, count), share in zip(size_counts.items(), rounded_shares(size_counts.tolist()))
     ]
     territories = int(frame['TE'].replace('', pd.NA).nunique()) if 'TE' in frame.columns else 0
     average_household_size = round(float(household_sizes.mean()), 1) if len(household_sizes) else None
@@ -1000,7 +1017,7 @@ def d004_data_from_sqlite(specs, year, quarter, module, page, page_size):
     summary.sort(key=lambda item: item['records'], reverse=True)
     return {
         'dataset': 'd004',
-        'year': 'Все годы' if year == 'all' else year,
+        'year': year,
         'quarter': 'Все кварталы' if quarter == 'all' else quarter,
         'module': int(module),
         'module_label': D004_MODULES[int(module)],
@@ -1042,7 +1059,7 @@ def d004_data():
     year = request.args.get('year', '2024')
     quarter = request.args.get('quarter', '4kv')
     module = request.args.get('module', '1')
-    if year != 'all' and year not in {'2021', '2022', '2023', '2024'}:
+    if year not in {'2021', '2022', '2023', '2024'}:
         return jsonify({'error': 'Выбранный год не поддерживается.'}), 400
     if quarter != 'all' and quarter not in {'1kv', '2kv', '3kv', '4kv'}:
         return jsonify({'error': 'Выбранный квартал не поддерживается.'}), 400
@@ -1053,7 +1070,7 @@ def d004_data():
     db_catalog = get_d004_db_catalog()
     years = sorted((path.name for path in d004_dir.iterdir() if path.is_dir()), reverse=True) if d004_dir.is_dir() else []
     years = sorted(set(years) | {key[0] for key in db_catalog}, reverse=True)
-    selected_years = years if year == 'all' else [year]
+    selected_years = [year]
     selected_quarters = ['1kv', '2kv', '3kv', '4kv'] if quarter == 'all' else [quarter]
     paths = [path for selected_year in selected_years for selected_quarter in selected_quarters
              if (path := get_d004_path(selected_year, selected_quarter, module)) is not None]
@@ -1159,7 +1176,7 @@ def d004_data():
 
     return jsonify({
         'dataset': 'd004',
-        'year': 'Все годы' if year == 'all' else year,
+        'year': year,
         'quarter': 'Все кварталы' if quarter == 'all' else quarter,
         'module': int(module),
         'module_label': D004_MODULES[int(module)],
@@ -1445,6 +1462,24 @@ def query_demographics(arguments):
 
     start_year = arguments.get('start_year')
     end_year = arguments.get('end_year')
+    if group_by not in {'year', 'province_year'} and (start_year is not None or end_year is not None):
+        try:
+            start_bound = int(start_year) if start_year is not None else None
+            end_bound = int(end_year) if end_year is not None else None
+        except (TypeError, ValueError):
+            return {'error': 'Год должен быть целым числом.'}
+        if start_bound is not None and end_bound is not None and start_bound != end_bound:
+            return {'error': 'Нельзя объединять разные годы в одну сумму. Для динамики используйте группировку year или province_year.'}
+        selected_year = start_bound if start_bound is not None else end_bound
+        start_year = end_year = selected_year
+    if start_year is None and end_year is None and group_by not in {'year', 'province_year'}:
+        conn = get_db_connection()
+        try:
+            latest_year = conn.execute('SELECT MAX(year) FROM demographics WHERE year > 0').fetchone()[0]
+        finally:
+            conn.close()
+        if latest_year is not None:
+            start_year = end_year = int(latest_year)
     if start_year is not None:
         start_year = int(start_year)
         if start_year < 1900 or start_year > 2100:
@@ -1819,6 +1854,52 @@ def build_dataset_chart(arguments):
             form = arguments.get('form', 'subject')
             if form not in D002_FORMS:
                 return {'error': 'Для D002 доступны разделы subject и ocenka.'}
+            chart_type = 'line'
+            question = arguments.get('question')
+            requested_years = arguments.get('years')
+            if not isinstance(requested_years, list) or not requested_years:
+                if year == 'all':
+                    options = client.get('/api/d002/options').get_json(silent=True) or {}
+                    requested_years = options.get('years') or []
+                else:
+                    requested_years = [year]
+            requested_years = sorted({str(item) for item in requested_years if str(item) in {'2021', '2022', '2023', '2024'}})
+            if len(requested_years) > 1:
+                if not isinstance(question, str) or not question.strip():
+                    return {'error': 'Для динамики D002 выберите текущий вопрос или укажите его код.'}
+                yearly_questions = []
+                for selected_year in requested_years:
+                    year_response = client.get('/api/d002/data', query_string={'year': selected_year, 'form': form})
+                    year_data = year_response.get_json(silent=True) or {}
+                    match = next((item for item in year_data.get('questions', [])
+                                  if question.casefold() == str(item.get('id', '')).casefold()
+                                  or question.casefold() in str(item.get('label', '')).casefold()), None)
+                    yearly_questions.append((selected_year, match))
+                available = [(selected_year, item) for selected_year, item in yearly_questions if item]
+                if not available:
+                    return {'error': f'Вопрос D002 «{question}» не найден в выбранных годах.'}
+                categories_by_code = {}
+                for _, item in available:
+                    for answer in item.get('distribution', []):
+                        code = str(answer.get('code', answer.get('label', '')))
+                        categories_by_code[code] = str(answer.get('label', code))
+                yearly_data = dict(yearly_questions)
+                chart_series = [{
+                    'name': label,
+                    'type': 'line',
+                    'data': [next((answer.get(value_key) for answer in (yearly_data.get(selected_year) or {}).get('distribution', [])
+                                   if str(answer.get('code', answer.get('label', ''))) == code), None)
+                             for selected_year in requested_years]
+                } for code, label in categories_by_code.items()]
+                return {
+                    'dataset': 'd002', 'title': available[-1][1].get('label', 'Динамика ответов'),
+                    'subtitle': f"D002 · {form} · {requested_years[0]}–{requested_years[-1]} · {'доля, %' if value_key == 'share' else 'число ответов'}",
+                    'chart_type': 'line', 'labels': requested_years, 'series': chart_series,
+                    'value_label': '%' if value_key == 'share' else ''
+                }
+            if not requested_years:
+                return {'error': 'Для D002 не найдено доступных лет.'}
+            year = requested_years[0]
             response = client.get('/api/d002/data', query_string={'year': year, 'form': form})
         elif dataset == 'd004':
             quarter = arguments.get('quarter', 'all')
@@ -2152,19 +2233,31 @@ def call_claude(contents, dataset_overview, dashboard_context, max_output_tokens
                 elif name == 'query_d008' and isinstance(arguments, dict):
                     d008_arguments = dict(arguments)
                     if dashboard_context.get('activeDataset') == 'd008':
-                        selected = dashboard_context.get('datasetFilters') or {}
+                        dataset_filters = dashboard_context.get('datasetFilters') or {}
+                        selected = (dataset_filters.get('chartFilters') or {}).get(d008_arguments.get('metric')) or {}
                         supplied = d008_arguments.get('filters') if isinstance(d008_arguments.get('filters'), dict) else {}
                         d008_arguments['filters'] = {**{key: value for key, value in selected.items() if value}, **supplied}
-                        d008_arguments.setdefault('years', selected.get('years'))
+                        if not d008_arguments.get('years') and not d008_arguments.get('year'):
+                            d008_arguments['years'] = dataset_filters.get('years')
                         d008_arguments.setdefault('value', selected.get('value_mode', 'count'))
                     tool_result = query_d008(d008_arguments)
                 elif name == 'build_dataset_chart' and isinstance(arguments, dict):
                     chart_arguments = dict(arguments)
-                    if chart_arguments.get('dataset') == 'd008' and dashboard_context.get('activeDataset') == 'd008':
+                    if chart_arguments.get('dataset') == 'd002' and dashboard_context.get('activeDataset') == 'd002':
                         selected = dashboard_context.get('datasetFilters') or {}
+                        if not chart_arguments.get('year'):
+                            chart_arguments['year'] = selected.get('year')
+                            chart_arguments.setdefault('years', selected.get('years'))
+                        chart_arguments.setdefault('form', selected.get('form'))
+                        chart_arguments.setdefault('question', selected.get('question'))
+                        chart_arguments.setdefault('value', selected.get('value_mode', 'share'))
+                    if chart_arguments.get('dataset') == 'd008' and dashboard_context.get('activeDataset') == 'd008':
+                        dataset_filters = dashboard_context.get('datasetFilters') or {}
+                        selected = (dataset_filters.get('chartFilters') or {}).get(chart_arguments.get('metric')) or {}
                         supplied = chart_arguments.get('filters') if isinstance(chart_arguments.get('filters'), dict) else {}
                         chart_arguments['filters'] = {**{key: value for key, value in selected.items() if value}, **supplied}
-                        chart_arguments.setdefault('years', selected.get('years'))
+                        if not chart_arguments.get('years') and not chart_arguments.get('year'):
+                            chart_arguments['years'] = dataset_filters.get('years')
                         chart_arguments.setdefault('value', selected.get('value_mode', 'count'))
                         chart_arguments['chart_type'] = 'line'
                     tool_result = build_dataset_chart(chart_arguments)
@@ -2191,8 +2284,6 @@ def init_filters():
     if active_rows is not None:
         indicators = sorted({row['indicator'] for row in active_rows}, key=str.casefold)
         years = sorted({row['year'] for row in active_rows if row['year'] > 0}, reverse=True)
-        if not years:
-            years = [0]
         return jsonify({
             'indicators': indicators,
             'years': years,
@@ -2221,7 +2312,7 @@ def chart_year():
             return jsonify({'labels': [], 'values': []})
         totals = {}
         for row in active_rows:
-            if row['indicator'] == indicator and (selected_year == 0 or row['year'] == selected_year):
+            if row['indicator'] == indicator and row['year'] == selected_year:
                 totals[row['province']] = totals.get(row['province'], 0) + row['value']
         labels = sorted(totals, key=str.casefold)
         return jsonify({'labels': labels, 'values': [totals[label] for label in labels]})
@@ -2251,12 +2342,14 @@ def chart_summary():
     if active_rows is not None:
         totals = {}
         has_real_years = any(row['year'] > 0 for row in active_rows)
+        if not has_real_years:
+            return jsonify({'labels': [], 'values': []})
         for row in active_rows:
-            if row['indicator'] == indicator and (row['year'] > 0 or not has_real_years):
+            if row['indicator'] == indicator and row['year'] > 0:
                 totals[row['year']] = totals.get(row['year'], 0) + row['value']
         years = sorted(totals)
         return jsonify({
-            'labels': [f"{year} год" if year > 0 else "Все годы" for year in years],
+            'labels': [f"{year} год" for year in years],
             'values': [totals[year] for year in years]
         })
     

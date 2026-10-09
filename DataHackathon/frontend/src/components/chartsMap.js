@@ -11,8 +11,8 @@ export let summaryChartInstance = null;
 export let multiSummaryChartInstance = null; // Инстанс мульти-графика
 export let kzMapInstance = null;
 let cachedKZJson = null;
-const DATA_COLORS = ['#d94343', '#f28c28', '#f2c94c', '#a8cf45', '#3e9b59', '#8b9298'];
-const MAP_SCALE = ['#d94343', '#f28c28', '#f2c94c', '#a8cf45', '#3e9b59'];
+let DATA_COLORS = ['#d94343', '#f28c28', '#f2c94c', '#a8cf45', '#3e9b59', '#8b9298'];
+let MAP_SCALE = ['#d94343', '#f28c28', '#f2c94c', '#a8cf45', '#3e9b59'];
 
 const commonToolbox = {
   feature: {
@@ -435,6 +435,7 @@ function getThemeColors() {
 
 export function updateChartThemeColors() {
   const textColor = getThemeColors().textColor;
+  const chartPalette = window.appChartPalette || DATA_COLORS;
   const chartInstances = [
     yearChartInstance,
     lineChartInstance,
@@ -453,7 +454,7 @@ export function updateChartThemeColors() {
     const currentOption = chart.getOption();
     const dark = isDarkMode();
     const option = {
-      color: DATA_COLORS,
+      color: chartPalette,
       title: { textStyle: { color: textColor } }
     };
 
@@ -466,13 +467,16 @@ export function updateChartThemeColors() {
     if (currentOption.yAxis?.length) {
       option.yAxis = currentOption.yAxis.map(() => ({ axisLabel: { color: textColor } }));
     }
+    if (currentOption.visualMap?.length) {
+      option.visualMap = currentOption.visualMap.map(() => ({ inRange: { color: MAP_SCALE } }));
+    }
     if (dark && currentOption.series?.length) {
       option.series = currentOption.series.map((series) => {
         const nextSeries = { type: series.type };
-        const color = series.type === 'line' ? DATA_COLORS[4] : DATA_COLORS[3];
+        const color = series.type === 'line' ? chartPalette[4] : chartPalette[3];
         if (series.itemStyle) nextSeries.itemStyle = { color };
         if (series.lineStyle) nextSeries.lineStyle = { color };
-        if (series.areaStyle) nextSeries.areaStyle = { color: 'rgba(62,155,89,.18)' };
+        if (series.areaStyle) nextSeries.areaStyle = { color: chartPalette[4], opacity: 0.18 };
         return nextSeries;
       });
     }
@@ -480,6 +484,16 @@ export function updateChartThemeColors() {
     chart.setOption(option);
   });
 }
+
+window.addEventListener('app-style-preset-changed', (event) => {
+  const mapPalettes = {
+    classic: ['#a88db1', '#c9aace', '#ead7d0', '#f5c6a5', '#fbb085'],
+    green: ['#d94343', '#f28c28', '#f2c94c', '#a8cf45', '#3e9b59']
+  };
+  DATA_COLORS = window.appChartPalette || DATA_COLORS;
+  MAP_SCALE = mapPalettes[event.detail?.preset] || mapPalettes.green;
+  updateChartThemeColors();
+});
 
 // 8. Сводный мульти-график: Улучшенный линейный график с заливкой (ECharts)
 export async function updateMultiSummaryChart(apiBaseUrl) {

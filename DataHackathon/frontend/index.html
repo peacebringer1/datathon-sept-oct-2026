@@ -110,6 +110,13 @@
           </div>
           <button id="langToggleBtn" class="lang-toggle-btn" title="Сменить язык">RU</button>
           <button id="themeToggleBtn" class="theme-toggle-btn" title="Сменить тему">🌙</button>
+          <div class="style-preset-container">
+            <button id="stylePresetToggleBtn" class="style-preset-toggle-btn" type="button" title="Цветовая схема" aria-label="Выбрать цветовую схему" aria-expanded="false">🎨</button>
+            <div id="stylePresetMenu" class="style-preset-menu" hidden role="group" aria-label="Цветовая схема">
+              <button type="button" data-style-preset="classic">Предыдущий стиль · оранжевый и сиреневый</button>
+              <button type="button" data-style-preset="green">Новый стиль · зелёный</button>
+            </div>
+          </div>
         </div>
       </div>
     </aside>
@@ -151,28 +158,24 @@
               <button class="home-category-card home-card-population" data-search-dataset="d008" type="button" onclick="switchSubSection('d008', document.getElementById('navD008'))" aria-label="Открыть данные о демографии">
                 <span class="home-card-top"><span class="home-card-icon">01</span><span class="home-card-arrow" aria-hidden="true">↗</span></span>
                 <span class="home-card-title">Демография</span><span class="home-card-description">Возраст, состав населения и домохозяйства</span>
-                <span class="home-mini-chart" id="homeChartD008" aria-label="Мини-график демографических данных"></span>
                 <span class="home-card-foot"><span>НАСЕЛЕНИЕ</span><span id="homeStatD008">Загрузка…</span></span>
               </button>
 
               <button class="home-category-card home-card-living" data-search-dataset="d004" type="button" onclick="switchSubSection('d004', document.getElementById('navD004'))" aria-label="Открыть данные об уровне жизни">
                 <span class="home-card-top"><span class="home-card-icon">02</span><span class="home-card-arrow" aria-hidden="true">↗</span></span>
                 <span class="home-card-title">Доходы и расходы</span><span class="home-card-description">Как меняются бюджеты домашних хозяйств</span>
-                <span class="home-mini-chart" id="homeChartD004" aria-label="Мини-график доходов и расходов"></span>
                 <span class="home-card-foot"><span>УРОВЕНЬ ЖИЗНИ</span><span id="homeStatD004">Загрузка…</span></span>
               </button>
 
               <button class="home-category-card home-card-housing" data-search-dataset="d006" type="button" onclick="switchSubSection('d006', document.getElementById('navD006'))" aria-label="Открыть данные о жилищных условиях">
                 <span class="home-card-top"><span class="home-card-icon">03</span><span class="home-card-arrow" aria-hidden="true">↗</span></span>
                 <span class="home-card-title">Жилищные условия</span><span class="home-card-description">Жильё, удобства и условия проживания</span>
-                <span class="home-mini-chart" id="homeChartD006" aria-label="Мини-график жилищных условий"></span>
                 <span class="home-card-foot"><span>ДОМОХОЗЯЙСТВА</span><span id="homeStatD006">Загрузка…</span></span>
               </button>
 
               <button class="home-category-card home-card-social" data-search-dataset="d002" type="button" onclick="switchSubSection('d002', document.getElementById('navD002'))" aria-label="Открыть социальные оценки">
                 <span class="home-card-top"><span class="home-card-icon">04</span><span class="home-card-arrow" aria-hidden="true">↗</span></span>
                 <span class="home-card-title">Социальные оценки</span><span class="home-card-description">Оценки людьми разных сторон своей жизни</span>
-                <span class="home-mini-chart" id="homeChartD002" aria-label="Мини-график социальных оценок"></span>
                 <span class="home-card-foot"><span>МНЕНИЕ ЖИТЕЛЕЙ</span><span id="homeStatD002">Загрузка…</span></span>
               </button>
             </div>
@@ -484,7 +487,6 @@
 
           <div id="d002Dashboard" hidden>
             <div class="dataset-filter-panel">
-              <div class="dataset-year-tabs" role="tablist" aria-label="Период данных"><button type="button" role="tab" aria-selected="false" data-dataset="d002" data-year-mode="single">По годам</button><button type="button" role="tab" aria-selected="true" data-dataset="d002" data-year-mode="all">Итоги за все годы</button></div>
               <label>Год обследования
                 <select id="d002YearSelect" aria-label="Год обследования D002"></select>
               </label>
@@ -499,7 +501,7 @@
             <p id="d002Status" class="dataset-status" role="status" aria-live="polite">Загрузка параметров D002…</p>
 
             <div class="dataset-stat-grid">
-              <article class="dataset-stat-card"><span>Участников обследования</span><strong id="d002RespondentsStat">—</strong></article>
+              <article class="dataset-stat-card"><span id="d002RespondentsLabel">Участников обследования</span><strong id="d002RespondentsStat">—</strong></article>
               <article class="dataset-stat-card"><span>Вопросов в разделе</span><strong id="d002QuestionCountStat">—</strong></article>
               <article class="dataset-stat-card"><span>Территорий</span><strong id="d002TerritoriesStat">—</strong></article>
             </div>
@@ -514,7 +516,8 @@
                 <p class="d002-gallery-eyebrow">ВОПРОС АНКЕТЫ</p>
                 <h2 id="d002CurrentQuestionTitle">Загрузка вопроса…</h2>
                 <span id="d002CurrentQuestionCode" class="d002-question-code"></span>
-                <p id="d002ChartCaption" class="dataset-panel-caption"></p>
+              <p id="d002ChartCaption" class="dataset-panel-caption"></p>
+                <label class="d002-chart-value-mode">Показывать<select id="d002ValueMode"><option value="share">Долю, %</option><option value="count">Число ответов</option></select></label>
               </div>
               <div id="d002NoResults" class="d002-empty-state" hidden>По этому запросу вопросы не найдены. Попробуйте изменить поиск.</div>
               <div id="d002QuestionChart" class="d002-single-question-chart" role="img" aria-label="Распределение ответов на вопрос"></div>
@@ -546,7 +549,7 @@
                 <h3>Что это за обследование</h3>
                 <p id="d002FormDescription"></p>
                 <p>Форма D-002 «Качество жизни населения» проводится раз в год. В ней участвует один член домохозяйства в возрасте от 15 лет.</p>
-                <p>График показывает распределение ответов на выбранный вопрос. Переключайте вопросы стрелками, а наведением на сектор смотрите число и долю ответов.</p>
+              <p>Столбцы сравнивают число ответов по вариантам и годам. Выберите долю или число ответов; точные значения отображаются при наведении.</p>
                 <p><strong>Обратите внимание:</strong> CSV и таблицы D002 в базе — синтетические учебные данные, созданные по структуре настоящей анкеты. Они не являются официальными результатами обследования и не описывают реальных людей.</p>
             </article>
 
@@ -554,7 +557,6 @@
 
           <div id="d004Dashboard" hidden>
             <div class="dataset-filter-panel">
-              <div class="dataset-year-tabs" role="tablist" aria-label="Период данных"><button type="button" role="tab" aria-selected="false" data-dataset="d004" data-year-mode="single">По годам</button><button type="button" role="tab" aria-selected="true" data-dataset="d004" data-year-mode="all">Итоги за все годы</button></div>
               <label>Год
                 <select id="d004YearSelect" aria-label="Год обследования"></select>
               </label>
@@ -574,6 +576,12 @@
               <article class="dataset-stat-card"><span>Территорий с данными</span><strong id="d004TerritoriesStat">—</strong></article>
             </div>
 
+            <article class="dataset-panel d004-questionnaires-panel">
+              <h2>Все разделы анкеты</h2>
+              <p class="dataset-panel-caption">Каждый график сравнивает число записей выбранного раздела по территориям за установленный год и период. Карточки загружаются по мере прокрутки.</p>
+              <div id="d004QuestionnaireCards" class="d004-questionnaire-grid"></div>
+            </article>
+
             <article class="dataset-panel">
               <h2>Количество записей по коду территории</h2>
               <p id="d004ChartCaption" class="dataset-panel-caption">График строится по данным выбранного файла.</p>
@@ -581,7 +589,7 @@
               <div class="dataset-explainer" aria-live="polite">
                 <h3>Как читать эти данные</h3>
                 <p>Здесь собраны данные о бюджете домохозяйств по кварталам: выбранный раздел анкеты, год и квартал указаны выше.</p>
-                <p id="d004DescriptionMetric">График сравнивает выбранный показатель между территориями.</p>
+                <p id="d004DescriptionMetric">График сравнивает выбранный показатель между территориями в выбранном году и квартале.</p>
                 <p>Одна строка — одна запись в выбранном разделе. В одном домохозяйстве может быть несколько записей, поэтому количество строк не равно количеству семей или людей.</p>
                 <p><strong>Важно:</strong> это учебный синтетический набор, созданный по структуре обследования. Он помогает знакомиться с данными и работой приложения, но цифры не являются официальной статистикой и не описывают реальные ответы конкретных семей.</p>
                 <p>В некоторых разделах указана стоимость записи. Сумма стоимости складывает значения всех строк и не показывает средний расход семьи. Значения-коды (например, категории товаров и услуг) расшифровываются в справочниках D004 за соответствующий год.</p>
@@ -642,7 +650,6 @@
 
           <div id="d006Dashboard" hidden>
             <div class="dataset-filter-panel d006-filter-panel">
-              <div class="dataset-year-tabs" role="tablist" aria-label="Период данных"><button type="button" role="tab" aria-selected="false" data-dataset="d006" data-year-mode="single">По годам</button><button type="button" role="tab" aria-selected="true" data-dataset="d006" data-year-mode="all">Итоги за все годы</button></div>
               <label>Год обследования
                 <select id="d006YearSelect" aria-label="Год обследования D006"></select>
               </label>
@@ -661,7 +668,7 @@
               <p class="d006-eyebrow">D-006 · Жилищные условия</p>
               <h2>Как устроен жилищный быт домохозяйств</h2>
               <p>Ежегодный опрос домохозяйств о жилье, его площади и комнатах, коммунальных удобствах, доступе к земле и товарах длительного пользования. Данные описывают условия проживания и имущество семьи.</p>
-              <p class="d006-intro-note">Круговые диаграммы показывают долю домохозяйств в каждой категории. В блоке удобств отображается доля ответивших «да», а в списке товаров — суммарное количество указанных предметов.</p>
+              <p class="d006-intro-note">Выберите один год. Категории показываются отдельно в рамках выбранного года и не суммируются между годами. В блоке удобств указана доля ответивших «да».</p>
             </article>
 
             <div class="d006-chart-grid d008-trend-grid">
@@ -695,23 +702,14 @@
 
           <div id="d008Dashboard" hidden>
             <div class="d008-filter-panel dataset-panel">
-              <div class="d008-filter-heading"><div><p class="d006-eyebrow">ДИНАМИКА</p><h2>Сравнение 2022, 2023 и 2024 годов</h2><p>Годы показаны отдельно. Значения за разные годы не складываются.</p></div><button id="d008ResetFilters" type="button">Сбросить фильтры</button></div>
+              <div class="d008-filter-heading"><div><p class="d006-eyebrow">ДИНАМИКА</p><h2>Сравнение по годам</h2><p>Выберите годы. Значения каждого года показаны отдельно.</p></div><button id="d008ResetFilters" type="button">Сбросить фильтры</button></div>
               <fieldset class="d008-year-filter"><legend>Годы на графиках</legend>
+                <label><input type="checkbox" name="d008Year" value="2021" checked> 2021</label>
                 <label><input type="checkbox" name="d008Year" value="2022" checked> 2022</label>
                 <label><input type="checkbox" name="d008Year" value="2023" checked> 2023</label>
                 <label><input type="checkbox" name="d008Year" value="2024" checked> 2024</label>
               </fieldset>
-              <div class="d008-filter-grid">
-                <label>Возраст<select id="d008FilterAge"><option value="">Все возрасты</option><option value="0-14">0–14 лет</option><option value="15-24">15–24 года</option><option value="25-39">25–39 лет</option><option value="40-59">40–59 лет</option><option value="60+">60 лет и старше</option></select></label>
-                <label>Пол<select id="d008FilterGender"><option value="">Любой</option><option value="1">Мужчины</option><option value="2">Женщины</option></select></label>
-                <label>Город или село<select id="d008FilterSettlement"><option value="">Все территории</option><option value="1">Город</option><option value="2">Село</option></select></label>
-                <label>Родство в семье<select id="d008FilterRelationship"><option value="">Любое</option><option value="1">Глава домохозяйства</option><option value="2">Супруг или супруга</option><option value="3">Сын или дочь</option><option value="4">Отец или мать</option><option value="5">Брат или сестра</option><option value="6">Дедушка или бабушка</option><option value="7">Внук или внучка</option><option value="8">Другая степень родства</option><option value="9">Не родственник</option></select></label>
-                <label>Образование<select id="d008FilterEducation"><option value="">Любой уровень</option><option value="1">Дошкольное</option><option value="2">Начальное</option><option value="3">Основное среднее</option><option value="4">Среднее или профессиональное</option><option value="5">Высшее</option><option value="6">Послевузовское</option><option value="7">Нет достигнутого уровня</option></select></label>
-                <label>Семейное положение<select id="d008FilterMarital"><option value="">Любое</option><option value="1">Не состоял(а) в браке</option><option value="2">Состоит в браке</option><option value="3">Вдовец или вдова</option><option value="4">Разведён(а)</option></select></label>
-                <label>Занятость<select id="d008FilterActivity"><option value="">Любой статус</option><option value="1">Работа по найму</option><option value="2">Предпринимательство</option><option value="3">Ищет работу</option><option value="4">Пенсионер</option><option value="5">Учащийся или студент</option><option value="6">Домашнее хозяйство или уход</option><option value="7">Нетрудоспособен</option><option value="8">Не работает по другим причинам</option></select></label>
-                <label>Показатель на графиках<select id="d008ValueMode"><option value="count">Число людей / домохозяйств</option><option value="share">Доля, % от ответивших</option></select></label>
-              </div>
-              <p class="d008-filter-note">Фильтры применяются ко всем графикам. Пустые ответы не включаются в доли; неклассифицированные коды показаны отдельно.</p>
+              <p class="d008-filter-note">Откройте «Фильтры графика» в нужной карточке. Настройки графиков независимы друг от друга.</p>
             </div>
             <p id="d008Status" class="dataset-status" role="status" aria-live="polite">Загрузка параметров D008…</p>
 
@@ -727,41 +725,41 @@
             <article class="dataset-panel d006-intro-panel">
               <p class="d006-eyebrow">D-008 · Состав домохозяйства</p>
               <h2>Кто входит в домохозяйства</h2>
-              <p>Линии показывают изменение социально-демографического состава выборки в 2022, 2023 и 2024 годах. Каждый год рассчитывается отдельно — общие суммы между годами не складываются.</p>
+              <p>Столбцы сравнивают социально-демографический состав выборки по выбранным годам. Каждый год рассчитывается отдельно — общие суммы между годами не складываются.</p>
               <p class="d006-intro-note">Каждая строка набора соответствует человеку. Показатели описывают участников обследования, а не всё население страны. Файлы в проекте — синтетические учебные данные, а не официальные результаты.</p>
             </article>
 
             <div class="d006-chart-grid">
-              <article class="dataset-panel d006-chart-panel">
+              <article class="dataset-panel d006-chart-panel" data-d008-chart="settlement">
                 <div class="d006-chart-heading"><div><p class="d006-eyebrow">Динамика по годам</p><h2>Город и село</h2></div><span id="d008UnitSettlement" class="d006-chart-unit">число людей</span></div>
                 <div id="d008SettlementChart" class="dataset-chart d006-chart" role="img" aria-label="Распределение участников обследования по городу и селу"></div>
               </article>
-              <article class="dataset-panel d006-chart-panel">
+              <article class="dataset-panel d006-chart-panel" data-d008-chart="gender">
                 <div class="d006-chart-heading"><div><p class="d006-eyebrow">Динамика по годам</p><h2>Пол</h2></div><span id="d008UnitGender" class="d006-chart-unit">число людей</span></div>
                 <div id="d008GenderChart" class="dataset-chart d006-chart" role="img" aria-label="Распределение участников обследования по полу"></div>
               </article>
-              <article class="dataset-panel d006-chart-panel">
+              <article class="dataset-panel d006-chart-panel" data-d008-chart="relationships">
                 <div class="d006-chart-heading"><div><p class="d006-eyebrow">Динамика по годам</p><h2>Кем участники приходятся главе</h2></div><span id="d008UnitRelationship" class="d006-chart-unit">число людей</span></div>
                 <div id="d008RelationshipChart" class="dataset-chart d006-chart" role="img" aria-label="Распределение участников по родству с главой домохозяйства"></div>
               </article>
-              <article class="dataset-panel d006-chart-panel">
+              <article class="dataset-panel d006-chart-panel" data-d008-chart="education">
                 <div class="d006-chart-heading"><div><p class="d006-eyebrow">Динамика по годам</p><h2>Образование участников</h2></div><span id="d008UnitEducation" class="d006-chart-unit">число ответов</span></div>
                 <div id="d008EducationChart" class="dataset-chart d006-chart" role="img" aria-label="Распределение участников по уровню образования"></div>
               </article>
-              <article class="dataset-panel d006-chart-panel">
+              <article class="dataset-panel d006-chart-panel" data-d008-chart="marital_status">
                 <div class="d006-chart-heading"><div><p class="d006-eyebrow">Динамика по годам</p><h2>Семейное положение участников</h2></div><span id="d008UnitMarital" class="d006-chart-unit">число ответов</span></div>
                 <div id="d008MaritalChart" class="dataset-chart d006-chart" role="img" aria-label="Распределение участников по семейному положению"></div>
               </article>
-              <article class="dataset-panel d006-chart-panel">
+              <article class="dataset-panel d006-chart-panel" data-d008-chart="activity">
                 <div class="d006-chart-heading"><div><p class="d006-eyebrow">Динамика по годам</p><h2>Статус занятости</h2></div><span id="d008UnitActivity" class="d006-chart-unit">число ответов</span></div>
                 <div id="d008ActivityChart" class="dataset-chart d006-chart-tall" role="img" aria-label="Распределение участников старше 15 лет по основной деятельности"></div>
               </article>
-              <article class="dataset-panel d006-chart-panel">
+              <article class="dataset-panel d006-chart-panel" data-d008-chart="age_structure">
                 <div class="d006-chart-heading"><div><p class="d006-eyebrow">Динамика по годам</p><h2>Возрастные группы</h2></div><span id="d008UnitAge" class="d006-chart-unit">число людей</span></div>
                 <p id="d008AgeNoData" class="dataset-panel-caption" hidden>Для выбранных годов нет данных о дате рождения.</p>
                 <div id="d008AgeChart" class="dataset-chart d006-chart" role="img" aria-label="Распределение участников по возрастным группам"></div>
               </article>
-              <article class="dataset-panel d006-chart-panel d006-chart-panel-wide">
+              <article class="dataset-panel d006-chart-panel d006-chart-panel-wide" data-d008-chart="household_sizes">
                 <div class="d006-chart-heading"><div><p class="d006-eyebrow">Динамика по годам</p><h2>Сколько человек живёт вместе</h2></div><span id="d008UnitHouseholds" class="d006-chart-unit">число домохозяйств</span></div>
                 <div id="d008HouseholdSizeChart" class="dataset-chart d006-chart-tall" role="img" aria-label="Распределение домохозяйств по числу членов семьи"></div>
               </article>
@@ -974,17 +972,30 @@
   </button>
 
   <div class="ai-popup-sidebar" id="aiPopupSidebar">
+    <aside class="ai-chat-history">
+      <div class="ai-history-brand"><span aria-hidden="true">AI</span><strong>AI Stat</strong></div>
+      <button id="aiNewChatButton" class="ai-new-chat" type="button">Новый чат <span aria-hidden="true">＋</span></button>
+      <label class="ai-history-search"><span class="sr-only">Поиск по истории запросов</span><input id="aiHistorySearch" type="search" placeholder="Поиск по истории запросов"></label>
+      <h4>Ранее отправленные запросы</h4>
+      <div id="aiHistoryList" class="ai-history-list"><p class="ai-history-empty">Пока нет запросов</p></div>
+      <button id="aiClearHistoryButton" class="ai-clear-history" type="button">Очистить историю <span aria-hidden="true">⌫</span></button>
+    </aside>
     <div class="ai-card">
       <div class="ai-card-header">
-        <h3>Аналитический AI</h3>
+        <div><p class="ai-header-eyebrow">ПОМОЩНИК ПО ДАННЫМ</p><h3>AI Stat · Аналитика Казахстана</h3></div>
         <div class="ai-header-controls">
           <span id="aiStatusBadge" class="ai-status-badge" data-state="checking" title="Проверяем доступ к ИИ">Проверка…</span>
+          <button class="expand-chat-btn" type="button" aria-label="Развернуть ИИ-панель на весь экран" aria-pressed="false" title="Развернуть на весь экран">⛶</button>
           <button class="close-chat-btn" onclick="toggleAIChat()">✕</button>
         </div>
       </div>
+      <div class="ai-chat-body">
+        <section class="ai-chat-welcome"><span class="ai-welcome-mark" aria-hidden="true">✦</span><p class="ai-header-eyebrow">AI-ПОМOЩНИК ПО СТАТИСТИКЕ</p><h2>Исследуйте данные Казахстана</h2><p>Задайте вопрос о показателе или попросите построить график. Ответ будет основан на выбранном наборе данных.</p></section>
       <div class="chat-messages" id="chatMessages">
-        <div class="chat-bubble ai">Здравствуйте! Я ваш ИИ-помощник по анализу данных Казахстана. Задайте мне вопрос по
-          графикам или показателям.</div>
+        <div class="chat-bubble ai">Здравствуйте! Я помогу разобраться в показателях и сравнить данные по годам.</div>
+      </div>
+      <div id="aiChartSuggestions" class="ai-chat-quick-actions" aria-label="Быстрые запросы"></div>
+      <button id="aiFaqButton" class="ai-faq-card" type="button"><span class="ai-faq-mark" aria-hidden="true">?</span><span><strong>Как задавать вопросы</strong><small>Примеры запросов к наборам данных</small></span><span aria-hidden="true">›</span></button>
       </div>
       <div class="chat-input-area">
         <textarea id="chatInput" rows="1" placeholder="Спросите о данных..."

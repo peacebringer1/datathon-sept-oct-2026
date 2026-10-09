@@ -1,6 +1,13 @@
 const API_BASE_URL = window.API_BASE_URL || `http://127.0.0.1:${new URLSearchParams(window.location.search).get('apiPort') || '5000'}`;
 const chartInstances = new Map();
-const chartColors = ['#d94343', '#f28c28', '#f2c94c', '#a8cf45', '#3e9b59', '#8b9298'];
+let chartColors = ['#d94343', '#f28c28', '#f2c94c', '#a8cf45', '#3e9b59', '#8b9298'];
+window.addEventListener('app-style-preset-changed', (event) => {
+  const palettes = {
+    classic: ['#fbb085', '#c9aace', '#a88db1', '#df987d', '#e5c2ac', '#8b9298'],
+    green: ['#d94343', '#f28c28', '#f2c94c', '#a8cf45', '#3e9b59', '#8b9298']
+  };
+  chartColors = palettes[event.detail?.preset] || palettes.green;
+});
 
 async function getJson(path) {
   let lastError;
@@ -166,10 +173,10 @@ async function loadD002() {
 }
 
 async function loadD004() {
-  const data = await loadLatestData('/api/d004/data?year=2024&quarter=4kv&module=1&page=1&page_size=10', '/api/d004/options', (options) => {
+  const data = await loadLatestData('/api/d004/data?year=2024&quarter=all&module=1&page=1&page_size=10', '/api/d004/options', (options) => {
     const year = options.years?.includes('2024') ? '2024' : options.years?.[0];
-    const module = options.modules?.[0]?.id || 1;
-    return year ? `/api/d004/data?year=${encodeURIComponent(year)}&quarter=4kv&module=${encodeURIComponent(module)}&page=1&page_size=10` : '';
+    const module = options.modules?.some((item) => String(item.id) === '1') ? 1 : options.modules?.[0]?.id;
+    return year && module != null ? `/api/d004/data?year=${encodeURIComponent(year)}&quarter=all&module=${encodeURIComponent(module)}&page=1&page_size=10` : '';
   });
   const year = String(data.year || '2024');
   chartFor('homeChartD004', (data.territory_summary || [])
@@ -200,10 +207,10 @@ async function loadPreview(loader, chartId, statId) {
 document.addEventListener('DOMContentLoaded', () => {
   const previews = [
     [loadD008, 'homeChartD008', 'homeStatD008'],
-    [loadD004, 'homeChartD004', 'homeStatD004'],
     [loadD006, 'homeChartD006', 'homeStatD006'],
     [loadD002, 'homeChartD002', 'homeStatD002']
   ];
+  setStat('homeStatD004', 'Открыть набор ↗');
   previews.forEach(([loader, chartId, statId]) => {
     loadPreview(loader, chartId, statId);
   });

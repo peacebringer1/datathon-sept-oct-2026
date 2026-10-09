@@ -9,7 +9,8 @@ export async function initApp(apiBaseUrl, callbacks) {
     const { indicators, years } = await res.json();
 
     const optionsHTML = indicators.map(ind => `<option value="${ind}">${ind}</option>`).join('');
-    const yearsHTML = years.map(y => `<option value="${y}">${Number(y) > 0 ? `${y} год` : 'Все годы'}</option>`).join('');
+    const datedYears = years.filter((year) => Number(year) > 0);
+    const yearsHTML = datedYears.map(y => `<option value="${y}">${y} год</option>`).join('');
 
     const regionIndEl = document.getElementById('regionIndicatorSelect');
     const regionYearEl = document.getElementById('regionYearSelect');
@@ -23,7 +24,7 @@ export async function initApp(apiBaseUrl, callbacks) {
     if (mapYearEl) mapYearEl.innerHTML = yearsHTML;
     if (summaryIndEl) summaryIndEl.innerHTML = optionsHTML;
 
-    populateAllSelectors(indicators, years);
+    populateAllSelectors(indicators, datedYears);
 
     if (callbacks.onRegionFilterChange) await callbacks.onRegionFilterChange();
     if (callbacks.onMapFilterChange) await callbacks.onMapFilterChange();
@@ -49,7 +50,7 @@ export async function initApp(apiBaseUrl, callbacks) {
 
 export function populateAllSelectors(indicatorsList, yearsList) {
   const optionsHTML = indicatorsList.map(ind => `<option value="${ind}">${ind}</option>`).join('');
-  const yearsHTML = yearsList.map(y => `<option value="${y}">${Number(y) > 0 ? `${y} год` : 'Все годы'}</option>`).join('');
+  const yearsHTML = yearsList.filter((year) => Number(year) > 0).map(y => `<option value="${y}">${y} год</option>`).join('');
 
   const regionIndEl = document.getElementById('regionIndicatorSelect');
   const regionYearEl = document.getElementById('regionYearSelect');
