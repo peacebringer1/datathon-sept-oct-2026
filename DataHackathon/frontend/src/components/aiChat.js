@@ -163,7 +163,7 @@ function appendChartMessage(chartData) {
     .replaceAll("'", '&#39;');
   const option = {
     animationDuration: 500,
-    color: ['#f2a77d', '#b99ac6', '#8ab6a4', '#e2c16e', '#7797bb'],
+    color: ['#17b981', '#50b9d2', '#46cbb0', '#7fdef5', '#7ef5ad'],
     tooltip: {
       trigger: chartData.chart_type === 'pie' ? 'item' : 'axis',
       formatter: chartData.chart_type === 'pie'
