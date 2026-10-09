@@ -486,25 +486,16 @@
           </header>
 
           <div id="d002Dashboard" hidden>
-            <div class="dataset-filter-panel">
+            <div class="dataset-filter-panel d002-filter-panel">
               <label>Год обследования
                 <select id="d002YearSelect" aria-label="Год обследования D002"></select>
               </label>
               <label>Раздел анкеты
                 <select id="d002FormSelect" aria-label="Раздел анкеты D002"></select>
               </label>
-              <label>Найти вопрос
-                <input id="d002QuestionSearch" type="search" placeholder="Например: здоровье" aria-label="Поиск по вопросам D002">
-              </label>
             </div>
 
             <p id="d002Status" class="dataset-status" role="status" aria-live="polite">Загрузка параметров D002…</p>
-
-            <div class="dataset-stat-grid">
-              <article class="dataset-stat-card"><span id="d002RespondentsLabel">Участников обследования</span><strong id="d002RespondentsStat">—</strong></article>
-              <article class="dataset-stat-card"><span>Вопросов в разделе</span><strong id="d002QuestionCountStat">—</strong></article>
-              <article class="dataset-stat-card"><span>Территорий</span><strong id="d002TerritoriesStat">—</strong></article>
-            </div>
 
             <article class="dataset-panel d002-question-viewer">
               <div class="d002-question-navigation">
@@ -513,20 +504,18 @@
                 <button id="d002NextQuestion" class="d002-question-arrow" type="button" aria-label="Следующий вопрос">→</button>
               </div>
               <div class="d002-current-question-heading">
-                <p class="d002-gallery-eyebrow">ВОПРОС АНКЕТЫ</p>
                 <h2 id="d002CurrentQuestionTitle">Загрузка вопроса…</h2>
                 <span id="d002CurrentQuestionCode" class="d002-question-code"></span>
-              <p id="d002ChartCaption" class="dataset-panel-caption"></p>
-                <label class="d002-chart-value-mode">Показывать<select id="d002ValueMode"><option value="share">Долю, %</option><option value="count">Число ответов</option></select></label>
+                <p id="d002ChartCaption" class="dataset-panel-caption"></p>
               </div>
-              <div id="d002NoResults" class="d002-empty-state" hidden>По этому запросу вопросы не найдены. Попробуйте изменить поиск.</div>
+              <div id="d002NoAnswers" class="d002-empty-state" hidden>В этом вопросе за выбранный период нет заполненных ответов. Число пустых ответов показано ниже.</div>
               <div id="d002QuestionChart" class="d002-single-question-chart" role="img" aria-label="Распределение ответов на вопрос"></div>
               <section id="d002QuestionInfo" class="d002-question-info" aria-live="polite">
                 <div class="d002-question-info-heading"><span class="project-eyebrow">ПОЯСНЕНИЕ К ВОПРОСУ</span><h3 id="d002QuestionInfoTitle"></h3></div>
                 <div class="d002-question-info-stats">
                   <article><span>Ответили</span><strong id="d002AnsweredCount">—</strong></article>
                   <article><span>Без ответа</span><strong id="d002MissingCount">—</strong></article>
-                  <article><span>Доля ответивших</span><strong id="d002AnswerRate">—</strong></article>
+                  <article><span>Всего анкет</span><strong id="d002TotalCount">—</strong></article>
                 </div>
                 <p id="d002QuestionNote" class="d002-question-note"></p>
               </section>
@@ -534,13 +523,17 @@
 
             <article id="d002MapPanel" class="dataset-panel d002-map-panel" hidden>
               <div class="d002-map-heading">
-                <div><p class="d002-gallery-eyebrow">ГЕОГРАФИЯ ОТВЕТОВ</p><h2>Как отвечали в разных регионах</h2><p id="d002MapCaption" class="dataset-panel-caption">Каждый круг показывает соотношение ответов в области. Наведите курсор на сектор, чтобы увидеть число и долю.</p></div>
+                <div><p class="d002-gallery-eyebrow">ГЕОГРАФИЯ ОТВЕТОВ</p><h2>Как отвечали в разных регионах</h2><p id="d002MapCaption" class="dataset-panel-caption">Каждый круг показывает ответы в области. Наведите курсор на сектор, чтобы увидеть точное число.</p></div>
+                <div class="d002-map-filters" aria-label="Фильтры карты">
+                  <label>Область<select id="d002MapTerritoryFilter"><option value="">Все области</option></select></label>
+                  <label>Ответ<select id="d002MapAnswerFilter"><option value="">Все варианты</option></select></label>
+                </div>
               </div>
               <p id="d002MapStatus" class="dataset-status" role="status" aria-live="polite"></p>
               <div id="d002MapChart" class="d002-map-chart" role="img" aria-label="Карта с круговыми диаграммами ответов по регионам Казахстана"></div>
               <section class="d004-region-details d002-region-details" aria-live="polite">
                 <h3 id="d002RegionTitle">Выберите область на карте</h3>
-                <p id="d002RegionDescription">Размеры секторов показывают распределение ответов участников выбранной области.</p>
+                <p id="d002RegionDescription">Размеры секторов показывают распределение ответов участников выбранной области. В подписях указаны точные числа.</p>
                 <div id="d002RegionStats" class="d002-region-stats" hidden></div>
               </section>
             </article>
@@ -549,7 +542,7 @@
                 <h3>Что это за обследование</h3>
                 <p id="d002FormDescription"></p>
                 <p>Форма D-002 «Качество жизни населения» проводится раз в год. В ней участвует один член домохозяйства в возрасте от 15 лет.</p>
-              <p>Столбцы сравнивают число ответов по вариантам и годам. Выберите долю или число ответов; точные значения отображаются при наведении.</p>
+              <p>Круг показывает точное число ответов на выбранный вопрос. В режиме «Динамика» рядом расположены круги за каждый доступный год. Цвета удовлетворённости: зелёный — высокая, жёлтый — частичная, красный — низкая.</p>
                 <p><strong>Обратите внимание:</strong> CSV и таблицы D002 в базе — синтетические учебные данные, созданные по структуре настоящей анкеты. Они не являются официальными результатами обследования и не описывают реальных людей.</p>
             </article>
 
@@ -576,14 +569,8 @@
               <article class="dataset-stat-card"><span>Территорий с данными</span><strong id="d004TerritoriesStat">—</strong></article>
             </div>
 
-            <article class="dataset-panel d004-questionnaires-panel">
-              <h2>Все разделы анкеты</h2>
-              <p class="dataset-panel-caption">Каждый график сравнивает число записей выбранного раздела по территориям за установленный год и период. Карточки загружаются по мере прокрутки.</p>
-              <div id="d004QuestionnaireCards" class="d004-questionnaire-grid"></div>
-            </article>
-
             <article class="dataset-panel">
-              <h2>Количество записей по коду территории</h2>
+              <h2>Расходы по областям</h2>
               <p id="d004ChartCaption" class="dataset-panel-caption">График строится по данным выбранного файла.</p>
               <div id="d004TerritoryChart" class="dataset-chart" role="img" aria-label="Столбчатая диаграмма записей по территориям"></div>
               <div class="dataset-explainer" aria-live="polite">
@@ -594,6 +581,12 @@
                 <p><strong>Важно:</strong> это учебный синтетический набор, созданный по структуре обследования. Он помогает знакомиться с данными и работой приложения, но цифры не являются официальной статистикой и не описывают реальные ответы конкретных семей.</p>
                 <p>В некоторых разделах указана стоимость записи. Сумма стоимости складывает значения всех строк и не показывает средний расход семьи. Значения-коды (например, категории товаров и услуг) расшифровываются в справочниках D004 за соответствующий год.</p>
               </div>
+            </article>
+
+            <article class="dataset-panel d004-questionnaires-panel">
+              <h2>Все разделы анкеты</h2>
+              <p class="dataset-panel-caption">Каждый график сравнивает число записей выбранного раздела по территориям за установленный год и период. Карточки загружаются по мере прокрутки.</p>
+              <div id="d004QuestionnaireCards" class="d004-questionnaire-grid"></div>
             </article>
 
             <article class="dataset-panel">
@@ -668,31 +661,40 @@
               <p class="d006-eyebrow">D-006 · Жилищные условия</p>
               <h2>Как устроен жилищный быт домохозяйств</h2>
               <p>Ежегодный опрос домохозяйств о жилье, его площади и комнатах, коммунальных удобствах, доступе к земле и товарах длительного пользования. Данные описывают условия проживания и имущество семьи.</p>
-              <p class="d006-intro-note">Выберите один год. Категории показываются отдельно в рамках выбранного года и не суммируются между годами. В блоке удобств указана доля ответивших «да».</p>
+              <p class="d006-intro-note">Выберите один год. На графиках показаны точные количества в рамках выбранного года. Цвет удобств дополнительно показывает долю ответивших «да».</p>
+            </article>
+
+            <article class="dataset-panel d006-chart-guide">
+              <h2>Как читать графики</h2>
+              <p>Горизонтальные столбцы показывают точное число домохозяйств. «Город и село» и «Доступ к сельхозземле» показаны круговыми диаграммами: каждый сектор — точное число домохозяйств в категории. Фильтр территории применяется только к своему графику. Цвет столбца удобств показывает долю ответов «да», а подпись и подсказка — точное количество.</p>
+              <p class="d006-color-guide-title">Цвет удобств показывает долю ответов «да»:</p>
+              <div class="d006-color-scale" aria-label="Цветовая шкала доли: красный — от 0 до 20 процентов, оранжевый — от 20 до 40, жёлтый — от 40 до 60, салатовый — от 60 до 80, зелёный — от 80 до 100">
+                <span style="--scale-color:#d74747">0–20%</span><span style="--scale-color:#f39437">20–40%</span><span style="--scale-color:#f0cf4a">40–60%</span><span style="--scale-color:#a8c94a">60–80%</span><span style="--scale-color:#168849">80–100%</span>
+              </div>
             </article>
 
             <div class="d006-chart-grid d008-trend-grid">
-              <article class="dataset-panel d006-chart-panel">
-                <div class="d006-chart-heading"><div><p class="d006-eyebrow">Основное жильё</p><h2>Тип жилья</h2></div><span class="d006-chart-unit">доля домохозяйств</span></div>
+              <article class="dataset-panel d006-chart-panel" data-d006-chart="home_types">
+                <div class="d006-chart-heading"><div><p class="d006-eyebrow">Основное жильё</p><h2>Тип жилья</h2></div><span class="d006-chart-unit">точное число домохозяйств</span></div>
                 <div id="d006HomeTypeChart" class="dataset-chart d006-chart" role="img" aria-label="Распределение домохозяйств по типу основного жилья"></div>
               </article>
-              <article class="dataset-panel d006-chart-panel">
-                <div class="d006-chart-heading"><div><p class="d006-eyebrow">Право проживания</p><h2>Кому принадлежит жильё</h2></div><span class="d006-chart-unit">доля домохозяйств</span></div>
+              <article class="dataset-panel d006-chart-panel" data-d006-chart="ownership">
+                <div class="d006-chart-heading"><div><p class="d006-eyebrow">Право проживания</p><h2>Кому принадлежит жильё</h2></div><span class="d006-chart-unit">точное число домохозяйств</span></div>
                 <div id="d006OwnershipChart" class="dataset-chart d006-chart" role="img" aria-label="Распределение по форме владения или аренды жилья"></div>
               </article>
-              <article class="dataset-panel d006-chart-panel">
-                <div class="d006-chart-heading"><div><p class="d006-eyebrow">Место проживания</p><h2>Город и село</h2></div><span class="d006-chart-unit">доля домохозяйств</span></div>
+              <article class="dataset-panel d006-chart-panel" data-d006-chart="city_rural">
+                <div class="d006-chart-heading"><div><p class="d006-eyebrow">Место проживания</p><h2>Город и село</h2></div><span class="d006-chart-unit">точное число домохозяйств</span></div>
                 <div id="d006SettlementChart" class="dataset-chart d006-chart" role="img" aria-label="Распределение домохозяйств по типу населённого пункта"></div>
               </article>
-              <article class="dataset-panel d006-chart-panel">
-                <div class="d006-chart-heading"><div><p class="d006-eyebrow">Земельные участки</p><h2>Доступ к сельхозземле</h2></div><span class="d006-chart-unit">доля домохозяйств</span></div>
+              <article class="dataset-panel d006-chart-panel" data-d006-chart="land_access">
+                <div class="d006-chart-heading"><div><p class="d006-eyebrow">Земельные участки</p><h2>Доступ к сельхозземле</h2></div><span class="d006-chart-unit">точное число домохозяйств</span></div>
                 <div id="d006LandChart" class="dataset-chart d006-chart" role="img" aria-label="Доступ домохозяйств к сельскохозяйственной земле"></div>
               </article>
-              <article class="dataset-panel d006-chart-panel d006-chart-panel-wide">
-                <div class="d006-chart-heading"><div><p class="d006-eyebrow">Удобства в жилье</p><h2>Что есть в доме</h2></div><span class="d006-chart-unit">ответ «да», %</span></div>
-                <div id="d006AmenitiesChart" class="dataset-chart d006-chart-tall" role="img" aria-label="Доля жилья с различными удобствами"></div>
+              <article class="dataset-panel d006-chart-panel d006-chart-panel-wide" data-d006-chart="amenities">
+                <div class="d006-chart-heading"><div><p class="d006-eyebrow">Удобства в жилье</p><h2>Что есть в доме</h2></div><span class="d006-chart-unit">точное число ответов «да»</span></div>
+                <div id="d006AmenitiesChart" class="dataset-chart d006-chart-tall" role="img" aria-label="Точное число ответов «да» по удобствам; цвет столбца показывает долю таких ответов"></div>
               </article>
-              <article class="dataset-panel d006-chart-panel d006-chart-panel-wide">
+              <article class="dataset-panel d006-chart-panel d006-chart-panel-wide" data-d006-chart="durable_goods">
                 <div class="d006-chart-heading"><div><p class="d006-eyebrow">Имущество домохозяйства</p><h2>Товары длительного пользования</h2></div><span class="d006-chart-unit">общее количество предметов</span></div>
                 <div id="d006GoodsChart" class="dataset-chart d006-chart-tall" role="img" aria-label="Суммарное количество товаров длительного пользования в домохозяйствах"></div>
               </article>
@@ -760,7 +762,7 @@
                 <div id="d008AgeChart" class="dataset-chart d006-chart" role="img" aria-label="Распределение участников по возрастным группам"></div>
               </article>
               <article class="dataset-panel d006-chart-panel d006-chart-panel-wide" data-d008-chart="household_sizes">
-                <div class="d006-chart-heading"><div><p class="d006-eyebrow">Динамика по годам</p><h2>Сколько человек живёт вместе</h2></div><span id="d008UnitHouseholds" class="d006-chart-unit">число домохозяйств</span></div>
+                <div class="d006-chart-heading"><div><p class="d006-eyebrow">Динамика по годам</p><h2>Размер домохозяйства по годам</h2></div><span id="d008UnitHouseholds" class="d006-chart-unit">число домохозяйств</span></div>
                 <div id="d008HouseholdSizeChart" class="dataset-chart d006-chart-tall" role="img" aria-label="Распределение домохозяйств по числу членов семьи"></div>
               </article>
             </div>

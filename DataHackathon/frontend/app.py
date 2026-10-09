@@ -317,11 +317,34 @@ def normalize_d002_question(column):
 
 
 def d002_question_label(year, form, column):
-    override = D002_QUESTION_OVERRIDES.get(form, {}).get(normalize_d002_question(column))
+    normalized = normalize_d002_question(column)
+    compact = normalized.replace('_', '')
+    overrides = D002_QUESTION_OVERRIDES.get(form, {})
+    override = overrides.get(normalized) or next(
+        (label for key, label in overrides.items() if normalize_d002_question(key).replace('_', '') == compact),
+        None
+    )
     if override:
         return override
     labels = D002_QUESTION_LABELS.get(str(year), {}).get(form, {})
-    return labels.get(normalize_d002_question(column), f'Вопрос анкеты {column}')
+    label = labels.get(normalized) or labels.get(compact)
+    inherited = False
+    if not label and '_' in normalized:
+        parent = normalized.rsplit('_', 1)[0]
+        label = labels.get(parent) or labels.get(parent.replace('_', ''))
+        inherited = bool(label)
+    if not label:
+        label = f'Вопрос {column} анкеты · формулировка не указана в справочнике'
+    legacy_label = re.match(r'^(\d+)\s+часть\s+вопрос(?:а)?\s+(\d+(?:\.\d+)*)\s*[.:]?\s*(.*)$', label, flags=re.IGNORECASE)
+    if legacy_label:
+        part, number, description = legacy_label.groups()
+        if description.strip():
+            label = description.strip()[0].upper() + description.strip()[1:]
+        else:
+            label = f'Раздел {part} · вопрос {number}'
+    if inherited:
+        label = f'{label} · вариант {normalized.rsplit("_", 1)[-1]}'
+    return label
 
 
 def d002_answer_label(form, question, value):
@@ -628,6 +651,15 @@ def d006_data():
     if frame is None:
         return jsonify({'error': f'Данные D006 за {year} не найдены ни в data/sinte, ни в database.sqlite.'}), 404
     frame.columns = [str(column).strip().upper() for column in frame.columns]
+    territory_options = []
+    if 'TE' in frame.columns:
+        codes = sorted(frame['TE'].astype(str).str.strip().replace('', pd.NA).dropna().unique())
+        territory_options = [{'code': code, 'label': D002_TERRITORY_NAMES.get(code, f'Код территории {code}')} for code in codes]
+    selected_territory = request.args.get('territory', '').strip()
+    if selected_territory:
+        if 'TE' not in frame.columns or selected_territory not in set(frame['TE'].astype(str).str.strip()):
+            return jsonify({'error': 'Выбранная территория отсутствует в данных D006 за этот год.'}), 400
+        frame = frame[frame['TE'].astype(str).str.strip().eq(selected_territory)].copy()
     respondents = len(frame)
 
     def distribution(column, labels):
@@ -645,7 +677,8 @@ def d006_data():
     if request.args.get('preview') == '1':
         return jsonify({
             'dataset': 'd006', 'year': year, 'source': source,
-            'respondents': respondents, 'home_types': home_types
+            'respondents': respondents, 'home_types': home_types,
+            'territory_options': territory_options
         })
     city_rural = distribution('K', {'1': 'Город', '2': 'Село'})
     ownership = distribution('VLAD1', D006_OWNERSHIP)
@@ -684,6 +717,7 @@ def d006_data():
         'territories': territories, 'city_rural': city_rural, 'home_types': home_types,
         'ownership': ownership, 'land_access': land_access, 'amenities': amenities,
         'durable_goods': goods[:15], 'average_total_area': mean_value('OB_PL'),
+        'territory_options': territory_options,
         'average_living_area': mean_value('J_PL'), 'average_rooms': mean_value('KOL_K')
     })
 
