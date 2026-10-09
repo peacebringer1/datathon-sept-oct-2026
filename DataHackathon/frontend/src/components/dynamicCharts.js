@@ -1,9 +1,10 @@
 const availableChartTypes = [
-  { type: 'bar', name: 'Столбиковая (Bar)' },
-  { type: 'line', name: 'Линейная (Line)' },
-  { type: 'scatter', name: 'Точечная (Scatter)' },
-  { type: 'pie', name: 'Круговая (Pie)' }
+  { type: 'bar', name: 'Столбчатая' },
+  { type: 'line', name: 'Линейная' },
+  { type: 'scatter', name: 'Точечная' },
+  { type: 'pie', name: 'Круговая' }
 ];
+const chartColors = ['#d94343', '#f28c28', '#f2c94c', '#a8cf45', '#3e9b59', '#8b9298'];
 
 let selectedDynamicType = 'bar';
 
@@ -16,7 +17,8 @@ export function renderBarAnimationChart(regions, values) {
   const data2 = data1.map(v => Math.round(v * 0.85));
 
   const barOption = {
-    title: { text: 'Bar Animation Delay', textStyle: { fontSize: 13 } },
+    color: chartColors,
+    title: { text: 'Сравнение показателей', textStyle: { fontSize: 13 } },
     legend: { data: ['Текущий', 'Прошлый'] },
     toolbox: {
       feature: {
@@ -28,7 +30,7 @@ export function renderBarAnimationChart(regions, values) {
     xAxis: { 
       data: regions, 
       splitLine: { show: false },
-      axisLabel: { interval: 0, rotate: 25, fontSize: 9 } 
+      axisLabel: { interval: 0, rotate: 25, fontSize: 13 }
     },
     yAxis: {},
     series: [
@@ -105,12 +107,13 @@ function buildChart(regions, values, type, domElement) {
 
   const commonToolbox = {
     feature: {
-      dataView: { readOnly: true, title: 'Data view' },
-      saveAsImage: { pixelRatio: 2, title: 'Save as Image' }
+      dataView: { readOnly: true, title: 'Таблица данных' },
+      saveAsImage: { pixelRatio: 2, title: 'Сохранить изображение' }
     }
   };
 
   let option = {
+    color: chartColors,
     title: { text: `Тип: ${type.toUpperCase()}`, textStyle: { fontSize: 13 } },
     toolbox: commonToolbox,
     tooltip: { trigger: type === 'pie' ? 'item' : 'axis' },
@@ -123,13 +126,13 @@ function buildChart(regions, values, type, domElement) {
       data: regions.map((reg, idx) => ({ name: reg, value: values[idx] }))
     }];
   } else {
-    option.xAxis = { type: 'category', data: regions, axisLabel: { interval: 0, rotate: 25, fontSize: 9 } };
+    option.xAxis = { type: 'category', data: regions, axisLabel: { interval: 0, rotate: 25, fontSize: 13 } };
     option.yAxis = { type: 'value' };
     option.series = [{
       data: values,
       type: type,
       smooth: type === 'line',
-      itemStyle: { color: '#2563eb' }
+      itemStyle: { color: '#3e9b59' }
     }];
   }
 

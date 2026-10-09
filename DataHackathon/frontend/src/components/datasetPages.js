@@ -31,6 +31,80 @@ const PAGE_CONFIG = {
   }
 };
 
+const DATA_COLORS = ['#d94343', '#f28c28', '#f2c94c', '#a8cf45', '#3e9b59', '#8b9298'];
+const MAP_SCALE = ['#d94343', '#f28c28', '#f2c94c', '#a8cf45', '#3e9b59'];
+
+async function fetchDatasetYearData(path, years, params = {}) {
+  const results = [];
+  for (const year of years) {
+    const query = new URLSearchParams({ ...params, year });
+    const response = await fetch(`${activeApiUrl}${path}?${query}`);
+    const result = await response.json().catch(() => ({}));
+    if (response.ok) results.push(result);
+  }
+  if (!results.length) throw new Error('За выбранные годы данные не найдены.');
+  return results;
+}
+
+function mergeCounts(itemsByYear, key = 'code') {
+  const merged = new Map();
+  itemsByYear.flat().forEach((item) => {
+    const id = item[key] ?? item.label;
+    const current = merged.get(id) || { ...item, count: 0 };
+    current.count += Number(item.count || 0);
+    merged.set(id, current);
+  });
+  const items = [...merged.values()];
+  const total = items.reduce((sum, item) => sum + item.count, 0);
+  return items.map((item) => ({ ...item, share: total ? Math.round(item.count / total * 1000) / 10 : 0 }));
+}
+
+function combineD006(results) {
+  const total = results.reduce((sum, item) => sum + Number(item.respondents || 0), 0);
+  const weighted = (field) => {
+    const valid = results.filter((item) => item[field] != null);
+    const denominator = valid.reduce((sum, item) => sum + Number(item.respondents || 0), 0);
+    return denominator ? Math.round(valid.reduce((sum, item) => sum + Number(item[field]) * Number(item.respondents || 0), 0) / denominator * 10) / 10 : null;
+  };
+  return {
+    ...results[0], year: 'Все годы', respondents: total,
+    territories: Math.max(...results.map((item) => Number(item.territories || 0))),
+    average_total_area: weighted('average_total_area'), average_living_area: weighted('average_living_area'), average_rooms: weighted('average_rooms'),
+    home_types: mergeCounts(results.map((item) => item.home_types)), ownership: mergeCounts(results.map((item) => item.ownership)),
+    city_rural: mergeCounts(results.map((item) => item.city_rural)), land_access: mergeCounts(results.map((item) => item.land_access)),
+    amenities: results[0].amenities.map((item) => {
+      const count = results.reduce((sum, result) => sum + Number(result.amenities.find((entry) => entry.code === item.code)?.count || 0), 0);
+      const answered = results.reduce((sum, result) => {
+        const yearly = result.amenities.find((entry) => entry.code === item.code);
+        return sum + (yearly?.share > 0 ? yearly.count / (yearly.share / 100) : Number(result.respondents || 0));
+      }, 0);
+      return { ...item, count, share: answered ? Math.round(count / answered * 1000) / 10 : 0 };
+    }),
+    durable_goods: mergeCounts(results.map((item) => item.durable_goods), 'code').sort((a, b) => b.count - a.count).slice(0, 15)
+  };
+}
+
+function combineD008(results) {
+  const people = results.reduce((sum, item) => sum + Number(item.people || 0), 0);
+  const households = results.reduce((sum, item) => sum + Number(item.households || 0), 0);
+  const weighted = (field, weightField = 'people') => {
+    const valid = results.filter((item) => item[field] != null);
+    const denominator = valid.reduce((sum, item) => sum + Number(item[weightField] || 0), 0);
+    return denominator ? Math.round(valid.reduce((sum, item) => sum + Number(item[field]) * Number(item[weightField] || 0), 0) / denominator * 10) / 10 : null;
+  };
+  return {
+    ...results[0], year: 'Все годы', people, households,
+    territories: Math.max(...results.map((item) => Number(item.territories || 0))),
+    average_household_size: weighted('average_household_size', 'households'), average_age: weighted('average_age'),
+    under_15_share: weighted('under_15_share'), age_available: results.some((item) => item.age_available),
+    settlement: mergeCounts(results.map((item) => item.settlement)), gender: mergeCounts(results.map((item) => item.gender)),
+    relationships: mergeCounts(results.map((item) => item.relationships)), education: mergeCounts(results.map((item) => item.education)),
+    marital_status: mergeCounts(results.map((item) => item.marital_status)), activity: mergeCounts(results.map((item) => item.activity)),
+    age_structure: mergeCounts(results.map((item) => item.age_structure), 'label'),
+    household_sizes: mergeCounts(results.map((item) => item.household_sizes), 'label')
+  };
+}
+
 let activeApiUrl = '';
 let currentPage = 1;
 let totalRows = 0;
@@ -60,6 +134,7 @@ function setText(id, value) {
 }
 
 function appendOptions(select, items, valueOf, labelOf) {
+  const previousValue = select.value;
   select.replaceChildren();
   items.forEach((item) => {
     const option = document.createElement('option');
@@ -67,6 +142,29 @@ function appendOptions(select, items, valueOf, labelOf) {
     option.textContent = labelOf(item);
     select.append(option);
   });
+  if ([...select.options].some((option) => option.value === previousValue)) select.value = previousValue;
+}
+
+function bindDatasetYearTabs(dataset, yearSelect, latestYear, quarterSelect = null) {
+  const buttons = [...document.querySelectorAll(`[data-dataset="${dataset}"][data-year-mode]`)];
+  const yearLabel = yearSelect.closest('label');
+  const activate = (mode, load = true) => {
+    buttons.forEach((button) => {
+      const selected = button.dataset.yearMode === mode;
+      button.setAttribute('aria-selected', String(selected));
+      button.classList.toggle('active', selected);
+    });
+    if (yearLabel) yearLabel.hidden = mode === 'all';
+    yearSelect.value = mode === 'all' ? 'all' : latestYear;
+    if (quarterSelect) quarterSelect.value = mode === 'all' ? 'all' : '4kv';
+    if (load) yearSelect.dispatchEvent(new Event('change', { bubbles: true }));
+  };
+  buttons.forEach((button) => button.addEventListener('click', () => activate(button.dataset.yearMode)));
+  activate(yearSelect.value === 'all' ? 'all' : 'single', false);
+}
+
+function preferredDatasetYear(years) {
+  return ['2024', '2023', '2022', '2021'].find((year) => years.includes(year)) || years[0];
 }
 
 function disposeD002Charts() {
@@ -84,14 +182,14 @@ function renderD002QuestionChart(element, question) {
   const textColor = styles.getPropertyValue('--text-primary').trim() || '#222222';
   const surfaceColor = styles.backgroundColor || '#ffffff';
   chart.setOption({
-    color: ['#fbb085', '#c9aace', '#222222', '#e9d4c2', '#a987b0', '#756b6b', '#f4c7aa', '#d9c8dc'],
+    color: DATA_COLORS,
     tooltip: {
       trigger: 'item',
       formatter: ({ name, value, percent }) => `${name}<br>${Number(value).toLocaleString('ru-RU')} ответов · ${percent}%`
     },
     legend: {
       top: '5%', left: 'center', type: 'scroll', width: '88%',
-      textStyle: { color: textColor, fontSize: 11 }
+      textStyle: { color: textColor, fontSize: 13 }
     },
     series: [{
       name: 'Ответы', type: 'pie', radius: ['40%', '70%'], center: ['50%', '58%'],
@@ -172,22 +270,50 @@ async function renderD002Map(question) {
   document.getElementById('d002RegionStats').hidden = true;
   let response;
   try {
-    response = await fetch(`${activeApiUrl}/api/d002/map?${params}`);
-    const result = await response.json().catch(() => ({}));
+    const selectedYear = document.getElementById('d002YearSelect').value;
+    let result;
+    if (selectedYear === 'all') {
+      const years = [...document.getElementById('d002YearSelect').options].map((option) => option.value).filter((year) => year !== 'all');
+      const yearlyMaps = await Promise.all(years.map(async (year) => {
+        const yearParams = new URLSearchParams({ year, form: document.getElementById('d002FormSelect').value, question: question.id });
+        const mapResponse = await fetch(`${activeApiUrl}/api/d002/map?${yearParams}`);
+        return mapResponse.ok ? mapResponse.json() : null;
+      }));
+      const available = yearlyMaps.filter(Boolean);
+      result = available[0];
+      if (result) {
+        result.categories = [...new Map(available.flatMap((entry) => entry.categories || []).map((item) => [item.code, item])).values()];
+        const regionMap = new Map();
+        available.flatMap((entry) => entry.regions || []).forEach((region) => {
+          const current = regionMap.get(region.code) || { ...region, answered: 0, distribution: region.distribution.map((item) => ({ ...item, count: 0 })) };
+          current.answered += Number(region.answered || 0);
+          region.distribution.forEach((item) => {
+            const match = current.distribution.find((value) => value.code === item.code);
+            if (match) match.count += Number(item.count || 0);
+            else current.distribution.push({ ...item });
+          });
+          regionMap.set(region.code, current);
+        });
+        result.regions = [...regionMap.values()].map((region) => ({ ...region, distribution: region.distribution.map((item) => ({ ...item, share: region.answered ? Math.round(item.count / region.answered * 1000) / 10 : 0 })) }));
+      }
+    } else {
+      response = await fetch(`${activeApiUrl}/api/d002/map?${params}`);
+      result = await response.json().catch(() => ({}));
+    }
     if (revision !== d002MapRevision) return;
-    if (!response.ok) {
+    if (response && !response.ok) {
       const serverMessage = result.error ? ` Сервер сообщил: ${result.error}` : '';
       const restartHint = response.status === 404
         ? ' Перезапустите приложение целиком, чтобы Flask загрузил маршрут карты.'
         : '';
       throw new Error(`Flask API вернул HTTP ${response.status}.${serverMessage}${restartHint}`);
     }
-    if (!result.regions?.length || !result.categories?.length) {
+    if (!result?.regions?.length || !result.categories?.length) {
       panel.hidden = true;
       return;
     }
     d002MapRegions = result.regions;
-    setText('d002MapStatus', 'Каждый круг — отдельная область. Цвет сектора соответствует варианту ответа; наведите курсор или нажмите на круг для подробностей.');
+    setText('d002MapStatus', 'Каждый круг — область. Прокручивайте колёсико, чтобы приблизить карту; перетаскивайте её мышью или пальцем. Нажмите на круг для подробностей.');
     if (!window.echarts) throw new Error('Библиотека ECharts недоступна.');
     d002Map = window.echarts.getInstanceByDom(chartElement) || window.echarts.init(chartElement);
     if (!d002MapGeoJSON) {
@@ -198,7 +324,7 @@ async function renderD002Map(question) {
     }
     if (revision !== d002MapRevision) return;
     const dark = document.body.classList.contains('dark-theme');
-    const colors = ['#fbb085', '#c9aace', '#a88db1', '#df987d', '#e8c785', '#9ab7a6', '#d87979', '#8db9c3', '#bb9a80', '#c1c1d3'];
+    const colors = DATA_COLORS;
     d002Map.setOption({
       color: colors,
       tooltip: {
@@ -212,14 +338,14 @@ async function renderD002Map(question) {
       },
       legend: {
         type: 'scroll', bottom: 2, left: 'center', data: result.categories.map((item) => item.label),
-        textStyle: { color: dark ? '#e7dce8' : '#51484f', fontSize: 11 },
-        pageTextStyle: { color: dark ? '#e7dce8' : '#51484f' }
+        textStyle: { color: dark ? '#d4e4d4' : '#48534b', fontSize: 13 },
+        pageTextStyle: { color: dark ? '#d4e4d4' : '#48534b' }
       },
       geo: {
-        map: 'KZ_D002', roam: false, zoom: 1,
+        map: 'KZ_D002', roam: true, zoom: 1,
         layoutCenter: [' 0%', '130%'], layoutSize: '297%',
-        itemStyle: { areaColor: dark ? '#39333b' : '#f4ede8', borderColor: dark ? '#c9aace' : '#ad91b3', borderWidth: 1.1 },
-        emphasis: { itemStyle: { areaColor: dark ? '#514352' : '#e8d6e9' }, label: { show: true, color: dark ? '#fff' : '#342c35', fontSize: 10 } },
+        itemStyle: { areaColor: dark ? '#48534b' : '#8b9298', borderColor: dark ? '#b8d6a0' : '#40684c', borderWidth: 1.1 },
+        emphasis: { itemStyle: { areaColor: dark ? '#34584d' : '#d4e4d4' }, label: { show: true, color: dark ? '#fff' : '#293a30', fontSize: 13 } },
         label: { show: false }
       },
       series: result.regions.filter((region) => d002RegionCoordinates[region.code]).map((region) => ({
@@ -233,7 +359,7 @@ async function renderD002Map(question) {
         avoidLabelOverlap: true,
         itemStyle: { borderColor: dark ? '#2c282d' : '#fff', borderWidth: 1, borderRadius: 2 },
         label: { show: false },
-        emphasis: { scale: true, scaleSize: 5, label: { show: true, formatter: '{b}\n{d}%', color: dark ? '#fff' : '#342c35', fontSize: 9, fontWeight: 700 } },
+        emphasis: { scale: true, scaleSize: 5, label: { show: true, formatter: '{b}\n{d}%', color: dark ? '#fff' : '#293a30', fontSize: 13, fontWeight: 700 } },
         data: region.distribution.map((answer) => ({
           name: answer.label, value: answer.count, share: answer.share,
           count: answer.count, regionCode: region.code
@@ -268,7 +394,7 @@ function showD002RegionDetails(region) {
   totalValue.textContent = Number(region.answered).toLocaleString('ru-RU');
   total.append(totalLabel, totalValue);
   stats.append(total);
-  const palette = ['#fbb085', '#c9aace', '#a88db1', '#df987d', '#e8c785', '#9ab7a6', '#d87979', '#8db9c3', '#bb9a80', '#c1c1d3'];
+  const palette = DATA_COLORS;
   region.distribution.forEach((item, index) => {
     const row = document.createElement('article');
     row.className = 'd002-region-answer';
@@ -300,9 +426,9 @@ function renderD006Pie(id, items) {
   const styles = getComputedStyle(element.closest('.d006-chart-panel'));
   const textColor = styles.getPropertyValue('--text-primary').trim() || '#222222';
   chart.setOption({
-    color: ['#fbb085', '#c9aace', '#222222', '#e9d4c2', '#a987b0', '#756b6b', '#f4c7aa'],
+    color: DATA_COLORS,
     tooltip: { trigger: 'item', formatter: ({ name, value, percent }) => `${name}<br>${Number(value).toLocaleString('ru-RU')} домохозяйств · ${percent}%` },
-    legend: { top: '3%', left: 'center', type: 'scroll', textStyle: { color: textColor, fontSize: 11 } },
+    legend: { top: '3%', left: 'center', type: 'scroll', textStyle: { color: textColor, fontSize: 13 } },
     series: [{
       name: 'Домохозяйства', type: 'pie', radius: ['40%', '70%'], center: ['50%', '59%'],
       avoidLabelOverlap: false, padAngle: 4,
@@ -325,16 +451,16 @@ function renderD006Bars(id, items, valueKey, valueSuffix = '') {
   const textColor = styles.getPropertyValue('--text-primary').trim() || '#222222';
   const sorted = [...items].sort((a, b) => Number(b[valueKey]) - Number(a[valueKey]));
   chart.setOption({
-    color: ['#fbb085', '#c9aace', '#a88db1', '#df987d'],
+    color: DATA_COLORS,
     tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: (params) => `${params[0].name}<br>${Number(params[0].value).toLocaleString('ru-RU')}${valueSuffix}` },
     grid: { left: 16, right: 70, top: 12, bottom: 14, containLabel: true },
     dataZoom: [
       { type: 'inside', yAxisIndex: 0, startValue: 0, endValue: Math.min(items.length - 1, 17), filterMode: 'none', zoomOnMouseWheel: false, moveOnMouseWheel: true },
-      { type: 'slider', yAxisIndex: 0, startValue: 0, endValue: Math.min(items.length - 1, 17), right: 8, width: 9, showDetail: false, brushSelect: false, borderColor: 'transparent', backgroundColor: 'rgba(201,170,206,.12)', fillerColor: 'rgba(201,170,206,.35)', handleStyle: { color: '#c9aace' }, textStyle: { color: textColor } }
+      { type: 'slider', yAxisIndex: 0, startValue: 0, endValue: Math.min(items.length - 1, 17), right: 8, width: 9, showDetail: false, brushSelect: false, borderColor: 'transparent', backgroundColor: 'rgba(184,214,160,.12)', fillerColor: 'rgba(184,214,160,.35)', handleStyle: { color: '#b8d6a0' }, textStyle: { color: textColor } }
     ],
-    xAxis: { type: 'value', max: valueSuffix === '%' ? 100 : undefined, axisLabel: { color: textColor, formatter: valueSuffix === '%' ? '{value}%' : '{value}' }, splitLine: { lineStyle: { type: 'dashed', color: 'rgba(201,170,206,.23)' } } },
-    yAxis: { type: 'category', inverse: true, data: sorted.map((item) => item.label), axisLabel: { color: textColor, width: 270, overflow: 'truncate', fontSize: 10 }, axisLine: { show: false }, axisTick: { show: false } },
-    series: [{ type: 'bar', data: sorted.map((item, index) => ({ value: item[valueKey], itemStyle: { color: ['#fbb085', '#c9aace', '#a88db1', '#df987d'][index % 4] } })), barMaxWidth: 20, showBackground: true, backgroundStyle: { color: 'rgba(201,170,206,.11)', borderRadius: [0, 7, 7, 0] }, itemStyle: { borderRadius: [0, 7, 7, 0] }, label: { show: true, position: 'right', color: textColor, fontSize: 10, formatter: ({ value }) => `${Number(value).toLocaleString('ru-RU')}${valueSuffix}` } }]
+    xAxis: { type: 'value', max: valueSuffix === '%' ? 100 : undefined, axisLabel: { color: textColor, formatter: valueSuffix === '%' ? '{value}%' : '{value}' }, splitLine: { lineStyle: { type: 'dashed', color: 'rgba(184,214,160,.23)' } } },
+    yAxis: { type: 'category', inverse: true, data: sorted.map((item) => item.label), axisLabel: { color: textColor, width: 270, overflow: 'truncate', fontSize: 13 }, axisLine: { show: false }, axisTick: { show: false } },
+    series: [{ type: 'bar', data: sorted.map((item, index) => ({ value: item[valueKey], itemStyle: { color: DATA_COLORS[index % DATA_COLORS.length] } })), barMaxWidth: 20, showBackground: true, backgroundStyle: { color: 'rgba(139,146,152,.11)', borderRadius: [0, 7, 7, 0] }, itemStyle: { borderRadius: [0, 7, 7, 0] }, label: { show: true, position: 'right', color: textColor, fontSize: 13, formatter: ({ value }) => `${Number(value).toLocaleString('ru-RU')}${valueSuffix}` } }]
   });
   chart.resize();
 }
@@ -350,9 +476,15 @@ async function loadD006Page() {
   status.dataset.state = 'loading';
   status.textContent = 'Загружаем данные о жилищных условиях…';
   try {
-    const response = await fetch(`${activeApiUrl}/api/d006/data?year=${encodeURIComponent(year)}`);
-    const result = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(result.error || 'Не удалось загрузить D006.');
+    let result;
+    if (year === 'all') {
+      const years = [...document.getElementById('d006YearSelect').options].map((option) => option.value).filter((value) => value !== 'all');
+      result = combineD006(await fetchDatasetYearData('/api/d006/data', years));
+    } else {
+      const response = await fetch(`${activeApiUrl}/api/d006/data?year=${encodeURIComponent(year)}`);
+      result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || 'Не удалось загрузить D006.');
+    }
     disposeD006Charts();
     setText('d006RespondentsStat', Number(result.respondents).toLocaleString('ru-RU'));
     setText('d006TerritoriesStat', Number(result.territories).toLocaleString('ru-RU'));
@@ -365,7 +497,7 @@ async function loadD006Page() {
     renderD006Pie('d006LandChart', result.land_access);
     renderD006Bars('d006AmenitiesChart', result.amenities, 'share', '%');
     renderD006Bars('d006GoodsChart', result.durable_goods, 'count');
-    setText('d006SourceNote', `Год ${result.year}. Источник: ${result.source === 'database.sqlite' ? 'database.sqlite' : 'CSV в data/sinte'}. Средние значения рассчитаны по анкетам с заполненным ответом.`);
+    setText('d006SourceNote', year === 'all' ? `Итоги за ${[...document.getElementById('d006YearSelect').options].map((option) => option.value).filter((value) => value !== 'all').join(', ')} годы. Категории суммированы, средние значения взвешены по числу анкет.` : `Год ${result.year}. Источник: ${result.source === 'database.sqlite' ? 'database.sqlite' : 'CSV в data/sinte'}. Средние значения рассчитаны по анкетам с заполненным ответом.`);
     status.dataset.state = 'success';
     status.textContent = `${result.year}: ${Number(result.respondents).toLocaleString('ru-RU')} анкет по ${Number(result.territories).toLocaleString('ru-RU')} территориям.`;
   } catch (error) {
@@ -383,9 +515,9 @@ async function initializeD006(apiBaseUrl) {
     const options = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(options.error || 'Не удалось получить список данных D006.');
     if (!options.years.length) throw new Error('Данные D006 не найдены ни в data/sinte, ни в database.sqlite.');
-    appendOptions(document.getElementById('d006YearSelect'), options.years, String, String);
-    if (options.years.includes('2024')) document.getElementById('d006YearSelect').value = '2024';
+    appendOptions(document.getElementById('d006YearSelect'), ['all', ...options.years], String, (year) => year === 'all' ? 'Все годы' : year);
     if (!dashboard.dataset.listenersReady) {
+      bindDatasetYearTabs('d006', document.getElementById('d006YearSelect'), preferredDatasetYear(options.years));
       document.getElementById('d006YearSelect').addEventListener('change', loadD006Page);
       window.addEventListener('resize', () => d006Charts.forEach((chart) => chart.resize()));
       dashboard.dataset.listenersReady = 'true';
@@ -408,9 +540,9 @@ function renderD008Pie(id, items) {
   const styles = getComputedStyle(element.closest('.d006-chart-panel'));
   const textColor = styles.getPropertyValue('--text-primary').trim() || '#222222';
   chart.setOption({
-    color: ['#fbb085', '#c9aace', '#222222', '#e9d4c2', '#a987b0', '#756b6b', '#f4c7aa', '#d9c8dc'],
+    color: DATA_COLORS,
     tooltip: { trigger: 'item', formatter: ({ name, value, percent }) => `${name}<br>${Number(value).toLocaleString('ru-RU')} человек · ${percent}%` },
-    legend: { top: '3%', left: 'center', type: 'scroll', textStyle: { color: textColor, fontSize: 11 } },
+    legend: { top: '3%', left: 'center', type: 'scroll', textStyle: { color: textColor, fontSize: 13 } },
     series: [{
       name: 'Участники обследования', type: 'pie', radius: ['40%', '70%'], center: ['50%', '59%'],
       avoidLabelOverlap: false, padAngle: 4,
@@ -433,12 +565,12 @@ function renderD008Bars(id, items, valueKey, suffix = '', sortByValue = true) {
   const textColor = styles.getPropertyValue('--text-primary').trim() || '#222222';
   const sorted = sortByValue ? [...items].sort((a, b) => Number(a[valueKey]) - Number(b[valueKey])) : items;
   chart.setOption({
-    color: ['#fbb085'],
+    color: DATA_COLORS,
     tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: (params) => `${params[0].name}<br>${Number(params[0].value).toLocaleString('ru-RU')}${suffix}` },
     grid: { left: 12, right: 45, top: 10, bottom: 10, containLabel: true },
-    xAxis: { type: 'value', max: suffix === '%' ? 100 : undefined, axisLabel: { color: textColor, formatter: suffix === '%' ? '{value}%' : '{value}' }, splitLine: { lineStyle: { color: 'rgba(201, 170, 206, 0.2)' } } },
+    xAxis: { type: 'value', max: suffix === '%' ? 100 : undefined, axisLabel: { color: textColor, formatter: suffix === '%' ? '{value}%' : '{value}' }, splitLine: { lineStyle: { color: 'rgba(139, 146, 152, 0.25)' } } },
     yAxis: { type: 'category', data: sorted.map((item) => item.label), axisLabel: { color: textColor, width: 245, overflow: 'truncate' }, axisLine: { show: false } },
-    series: [{ type: 'bar', data: sorted.map((item) => item[valueKey]), barMaxWidth: 25, itemStyle: { borderRadius: [0, 7, 7, 0] }, label: { show: true, position: 'right', color: textColor, formatter: ({ value }) => `${Number(value).toLocaleString('ru-RU')}${suffix}` } }]
+    series: [{ type: 'bar', data: sorted.map((item, index) => ({ value: item[valueKey], itemStyle: { color: DATA_COLORS[index % DATA_COLORS.length] } })), barMaxWidth: 25, itemStyle: { borderRadius: [0, 7, 7, 0] }, label: { show: true, position: 'right', color: textColor, fontSize: 13, formatter: ({ value }) => `${Number(value).toLocaleString('ru-RU')}${suffix}` } }]
   });
   chart.resize();
 }
@@ -454,9 +586,15 @@ async function loadD008Page() {
   status.dataset.state = 'loading';
   status.textContent = 'Загружаем состав домохозяйств…';
   try {
-    const response = await fetch(`${activeApiUrl}/api/d008/data?year=${encodeURIComponent(year)}`);
-    const result = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(result.error || 'Не удалось загрузить D008.');
+    let result;
+    if (year === 'all') {
+      const years = [...document.getElementById('d008YearSelect').options].map((option) => option.value).filter((value) => value !== 'all');
+      result = combineD008(await fetchDatasetYearData('/api/d008/data', years));
+    } else {
+      const response = await fetch(`${activeApiUrl}/api/d008/data?year=${encodeURIComponent(year)}`);
+      result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || 'Не удалось загрузить D008.');
+    }
     disposeD008Charts();
     setText('d008PeopleStat', Number(result.people).toLocaleString('ru-RU'));
     setText('d008HouseholdsStat', Number(result.households).toLocaleString('ru-RU'));
@@ -474,7 +612,7 @@ async function loadD008Page() {
     renderD008Bars('d008ActivityChart', result.activity, 'share', '%');
     renderD008Bars('d008AgeChart', result.age_structure, 'share', '%', false);
     renderD008Bars('d008HouseholdSizeChart', result.household_sizes, 'count', '', false);
-    setText('d008SourceNote', `Год ${result.year}. Источник: ${result.source === 'database.sqlite' ? 'database.sqlite' : 'CSV в data/sinte'}. Средний возраст рассчитывается на 1 января отчётного года; анкета за ${result.year} год содержит ${Number(result.people).toLocaleString('ru-RU')} записей о людях.`);
+    setText('d008SourceNote', year === 'all' ? 'Итоги за все доступные годы. Категории объединены по количеству записей, средние значения взвешены.' : `Год ${result.year}. Источник: ${result.source === 'database.sqlite' ? 'database.sqlite' : 'CSV в data/sinte'}. Средний возраст рассчитывается на 1 января отчётного года; анкета за ${result.year} год содержит ${Number(result.people).toLocaleString('ru-RU')} записей о людях.`);
     status.dataset.state = 'success';
     status.textContent = `${result.year}: ${Number(result.people).toLocaleString('ru-RU')} человек из ${Number(result.households).toLocaleString('ru-RU')} обследованных домохозяйств.`;
   } catch (error) {
@@ -492,9 +630,9 @@ async function initializeD008(apiBaseUrl) {
     const options = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(options.error || 'Не удалось получить список данных D008.');
     if (!options.years.length) throw new Error('Данные D008 не найдены ни в data/sinte, ни в database.sqlite.');
-    appendOptions(document.getElementById('d008YearSelect'), options.years, String, String);
-    if (options.years.includes('2024')) document.getElementById('d008YearSelect').value = '2024';
+    appendOptions(document.getElementById('d008YearSelect'), ['all', ...options.years], String, (year) => year === 'all' ? 'Все годы' : year);
     if (!dashboard.dataset.listenersReady) {
+      bindDatasetYearTabs('d008', document.getElementById('d008YearSelect'), preferredDatasetYear(options.years));
       document.getElementById('d008YearSelect').addEventListener('change', loadD008Page);
       window.addEventListener('resize', () => d008Charts.forEach((chart) => chart.resize()));
       dashboard.dataset.listenersReady = 'true';
@@ -518,9 +656,24 @@ async function loadD002Page() {
   status.dataset.state = 'loading';
   status.textContent = 'Загружаем ответы обследования…';
   try {
-    const response = await fetch(`${activeApiUrl}/api/d002/data?${params}`);
-    const result = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(result.error || 'Не удалось загрузить D002.');
+    let result;
+    if (params.get('year') === 'all') {
+      const years = [...document.getElementById('d002YearSelect').options].map((option) => option.value).filter((value) => value !== 'all');
+      const results = await fetchDatasetYearData('/api/d002/data', years, { form: params.get('form') });
+      const questionMap = new Map();
+      results.forEach((yearResult) => yearResult.questions.forEach((question) => {
+        const current = questionMap.get(question.id) || { ...question, answered: 0, missing: 0, distribution: [] };
+        current.answered += Number(question.answered || 0);
+        current.missing += Number(question.missing || 0);
+        current.distribution.push(...question.distribution);
+        questionMap.set(question.id, current);
+      }));
+      result = { ...results[0], year: 'Все годы', respondents: results.reduce((sum, item) => sum + Number(item.respondents || 0), 0), territories: Math.max(...results.map((item) => Number(item.territories || 0))), questions: [...questionMap.values()].map((question) => ({ ...question, distribution: mergeCounts([question.distribution]) })), question_count: questionMap.size };
+    } else {
+      const response = await fetch(`${activeApiUrl}/api/d002/data?${params}`);
+      result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || 'Не удалось загрузить D002.');
+    }
 
     setText('d002FormDescription', result.form_description);
     setText('d002ChartCaption', `${result.year} · ${result.form_label}. Найдено вопросов: ${Number(result.question_count).toLocaleString('ru-RU')}.`);
@@ -533,7 +686,7 @@ async function loadD002Page() {
     document.getElementById('d002QuestionSearch').value = '';
     renderD002Question();
     status.dataset.state = 'success';
-    status.textContent = `${result.year}: ${Number(result.respondents).toLocaleString('ru-RU')} анкет. Источник: ${result.source === 'database.sqlite' ? 'database.sqlite' : 'CSV в data/sinte'}.`;
+    status.textContent = `${result.year}: ${Number(result.respondents).toLocaleString('ru-RU')} анкет.`;
   } catch (error) {
     status.dataset.state = 'error';
     status.textContent = error.message;
@@ -554,10 +707,10 @@ async function initializeD002(apiBaseUrl) {
       throw new Error('Не найдены данные D002 в папке data/sinte или таблицы D002 в database.sqlite.');
     }
 
-    appendOptions(document.getElementById('d002YearSelect'), options.years, String, String);
+    appendOptions(document.getElementById('d002YearSelect'), ['all', ...options.years], String, (year) => year === 'all' ? 'Все годы' : year);
     appendOptions(document.getElementById('d002FormSelect'), options.forms, (item) => item.id, (item) => item.label);
-    if (options.years.includes('2024')) document.getElementById('d002YearSelect').value = '2024';
     if (!dashboard.dataset.listenersReady) {
+      bindDatasetYearTabs('d002', document.getElementById('d002YearSelect'), preferredDatasetYear(options.years));
       ['d002YearSelect', 'd002FormSelect'].forEach((id) => {
         document.getElementById(id).addEventListener('change', loadD002Page);
       });
@@ -624,8 +777,8 @@ function renderD004Chart(chartData, metric, moduleLabel, year, quarter) {
   if (!chartElement || !window.echarts) return;
   d004Chart = window.echarts.getInstanceByDom(chartElement) || window.echarts.init(chartElement);
   const dark = document.body.classList.contains('dark-theme');
-  const textColor = dark ? '#eee5ed' : '#51484f';
-  const colors = ['#fbb085', '#c9aace', '#a88db1', '#df987d'];
+  const textColor = dark ? '#eee5ed' : '#48534b';
+  const colors = DATA_COLORS;
   d004Chart.setOption({
     color: colors,
     tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, textStyle: { color: '#222' } },
@@ -634,7 +787,7 @@ function renderD004Chart(chartData, metric, moduleLabel, year, quarter) {
       type: 'category',
       data: chartData.labels,
       axisLabel: { rotate: 35, interval: 0, color: textColor },
-      axisLine: { lineStyle: { color: dark ? '#655a66' : '#d9ced6' } }
+      axisLine: { lineStyle: { color: dark ? '#48534b' : '#d9ced6' } }
     },
     yAxis: { type: 'value', name: metric === 'Количество записей' ? 'Записей' : 'Значение', minInterval: 1, axisLabel: { color: textColor }, nameTextStyle: { color: textColor }, splitLine: { lineStyle: { color: dark ? 'rgba(255,255,255,.08)' : 'rgba(34,34,34,.08)' } } },
     series: [{
@@ -643,7 +796,7 @@ function renderD004Chart(chartData, metric, moduleLabel, year, quarter) {
       data: chartData.values.map((value, index) => ({ value, itemStyle: { color: colors[index % colors.length] } })),
       barMaxWidth: 42,
       showBackground: true,
-      backgroundStyle: { color: dark ? 'rgba(201,170,206,.12)' : 'rgba(201,170,206,.18)', borderRadius: [5, 5, 0, 0] },
+      backgroundStyle: { color: dark ? 'rgba(184,214,160,.12)' : 'rgba(184,214,160,.18)', borderRadius: [5, 5, 0, 0] },
       itemStyle: { borderRadius: [5, 5, 0, 0] }
     }],
     title: {
@@ -717,15 +870,15 @@ async function renderD004Map(summary, metric, period) {
     d004Map.setOption({
       animation: false,
       tooltip: { trigger: 'item', formatter: (params) => `${params.name}<br>${metricConfig.label}: ${params.value == null ? 'Нет данных' : Number(params.value).toLocaleString('ru-RU')}` },
-      visualMap: { min: low, max: high, left: 16, bottom: 12, orient: 'horizontal', calculable: true, inRange: { color: ['#f7e9df', '#fbb085', '#a88db1'] }, textStyle: { color: document.body.classList.contains('dark-theme') ? '#e7dce8' : '#51484f' } },
+      visualMap: { min: low, max: high, left: 16, bottom: 12, orient: 'horizontal', calculable: true, inRange: { color: MAP_SCALE }, textStyle: { color: document.body.classList.contains('dark-theme') ? '#d4e4d4' : '#48534b' } },
       series: [{
-        type: 'map', map: 'KZ_D004', roam: false, zoom: 1, layoutCenter: ['50%', '50%'], layoutSize: '88%', selectedMode: 'single', data,
-        itemStyle: { borderColor: document.body.classList.contains('dark-theme') ? '#e0c9e4' : '#fff', borderWidth: 1 },
+        type: 'map', map: 'KZ_D004', roam: true, zoom: 1, layoutCenter: ['50%', '50%'], layoutSize: '88%', selectedMode: 'single', data,
+        itemStyle: { areaColor: document.body.classList.contains('dark-theme') ? '#48534b' : '#8b9298', borderColor: document.body.classList.contains('dark-theme') ? '#b8d6a0' : '#fff', borderWidth: 1 },
         emphasis: { label: { show: true } },
-        select: { itemStyle: { areaColor: '#fbb085', borderColor: '#8a5844', borderWidth: 2 }, label: { show: true, color: '#222222' } }
+        select: { itemStyle: { areaColor: '#a8cf45', borderColor: '#3e9b59', borderWidth: 2 }, label: { show: true, color: '#222222' } }
       }]
     }, true);
-    setText('d004MapCaption', `${metricConfig.label} · ${period}. Наведите курсор для быстрой подсказки или нажмите на регион для подробностей.`);
+    setText('d004MapCaption', `${metricConfig.label} · ${period}. Красный — меньше, зелёный — больше, серый — нет данных. Колёсико приближает карту, перетаскивание перемещает её.`);
     if (!element.dataset.listenersReady) {
       d004Map.on('click', (params) => {
         d004SelectedRegion = params.name;
@@ -843,11 +996,11 @@ async function initializeD004(apiBaseUrl) {
     appendOptions(document.getElementById('d004YearSelect'), ['all', ...options.years], String, (value) => value === 'all' ? 'Все годы' : value);
     appendOptions(document.getElementById('d004QuarterSelect'), ['all', ...options.quarters], String, (value) => value === 'all' ? 'Все кварталы' : value.toUpperCase());
     appendOptions(document.getElementById('d004ModuleSelect'), options.modules, (item) => item.id, (item) => `${item.label} (vopr${item.id})`);
-    if (options.years.includes('2024')) document.getElementById('d004YearSelect').value = '2024';
-    document.getElementById('d004QuarterSelect').value = '4kv';
+    document.getElementById('d004QuarterSelect').value = 'all';
     document.getElementById('d004ModuleSelect').value = '1';
 
     if (!dashboard.dataset.listenersReady) {
+      bindDatasetYearTabs('d004', document.getElementById('d004YearSelect'), preferredDatasetYear(options.years), document.getElementById('d004QuarterSelect'));
       ['d004YearSelect', 'd004QuarterSelect', 'd004ModuleSelect'].forEach((id) => {
         document.getElementById(id).addEventListener('change', () => {
           currentPage = 1;

@@ -11,11 +11,13 @@ export let summaryChartInstance = null;
 export let multiSummaryChartInstance = null; // Инстанс мульти-графика
 export let kzMapInstance = null;
 let cachedKZJson = null;
+const DATA_COLORS = ['#d94343', '#f28c28', '#f2c94c', '#a8cf45', '#3e9b59', '#8b9298'];
+const MAP_SCALE = ['#d94343', '#f28c28', '#f2c94c', '#a8cf45', '#3e9b59'];
 
 const commonToolbox = {
   feature: {
-    dataView: { readOnly: true, title: 'Data view' },
-    saveAsImage: { pixelRatio: 2, title: 'Save as Image' }
+    dataView: { readOnly: true, title: 'Таблица данных' },
+    saveAsImage: { pixelRatio: 2, title: 'Сохранить изображение' }
   }
 };
 
@@ -96,15 +98,15 @@ export async function updateBarChart(apiBaseUrl, indicator, year) {
         toolbox: commonToolbox,
         tooltip: { trigger: 'axis', formatter: (p) => `<b>${p[0].name}</b><br/>${indicator}: <b>${p[0].value.toLocaleString('ru-RU')}</b>` },
         grid: { top: '22%', bottom: '15%', left: '8%', right: '5%', containLabel: true },
-        xAxis: { type: 'category', data: labels, axisLabel: { interval: 0, rotate: 35, fontSize: 9, color: getThemeColors().textColor } },
-        yAxis: { type: 'value', axisLabel: { fontSize: 10, color: getThemeColors().textColor }, splitLine: { lineStyle: { color: '#f1f5f9' } } },
+        xAxis: { type: 'category', data: labels, axisLabel: { interval: 0, rotate: 35, fontSize: 13, color: getThemeColors().textColor } },
+        yAxis: { type: 'value', axisLabel: { fontSize: 13, color: getThemeColors().textColor }, splitLine: { lineStyle: { color: '#f5f7f6' } } },
         series: [{
           data: values,
           type: 'bar',
           showBackground: true,
           backgroundStyle: { color: 'rgba(180, 180, 180, 0.15)', borderRadius: [4, 4, 0, 0] },
           itemStyle: {
-            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: '#3b82f6' }, { offset: 1, color: '#1d4ed8' }]),
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: DATA_COLORS[4] }, { offset: 1, color: DATA_COLORS[3] }]),
             borderRadius: [4, 4, 0, 0]
           },
           barMaxWidth: 25
@@ -134,19 +136,19 @@ export async function updateLineChart(apiBaseUrl, indicator, year) {
         toolbox: commonToolbox,
         tooltip: { trigger: 'axis' },
         grid: { top: '22%', bottom: '15%', left: '8%', right: '5%', containLabel: true },
-        xAxis: { type: 'category', data: labels, axisLabel: { interval: 0, rotate: 35, fontSize: 9, color: getThemeColors().textColor } },
-        yAxis: { type: 'value', axisLabel: { fontSize: 10, color: getThemeColors().textColor }, splitLine: { lineStyle: { color: '#f1f5f9' } } },
+        xAxis: { type: 'category', data: labels, axisLabel: { interval: 0, rotate: 35, fontSize: 13, color: getThemeColors().textColor } },
+        yAxis: { type: 'value', axisLabel: { fontSize: 13, color: getThemeColors().textColor }, splitLine: { lineStyle: { color: '#f5f7f6' } } },
         series: [{
           data: values,
           type: 'line',
           smooth: true,
           symbol: 'circle',
           symbolSize: 6,
-          itemStyle: { color: '#0770FF' },
+          itemStyle: { color: '#4f9b7c' },
           areaStyle: {
             color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: 'rgba(7, 112, 255, 0.6)' },
-              { offset: 1, color: 'rgba(7, 112, 255, 0.05)' }
+              { offset: 0, color: 'rgba(62, 155, 89, 0.28)' },
+              { offset: 1, color: 'rgba(62, 155, 89, 0.02)' }
             ])
           }
         }]
@@ -170,12 +172,13 @@ export async function updatePieChart(apiBaseUrl, indicator, year) {
     if (domPie) {
       if (!pieChartInstance) pieChartInstance = echarts.init(domPie);
       pieChartInstance.setOption({
+        color: DATA_COLORS,
         animation: true,
         animationDuration: 1000,
         title: { text: window.activeAnalyzerDatasetMode === 'distribution' ? 'Доли вариантов ответа' : 'Доли по регионам', left: 'center', textStyle: { fontSize: 13, color: getThemeColors().textColor } },
         toolbox: commonToolbox,
         tooltip: { trigger: 'item', formatter: '{b}: <b>{c}</b> ({d}%)' },
-        legend: { type: 'scroll', orient: 'vertical', left: 'left', top: '15%', textStyle: { fontSize: 9, color: getThemeColors().textColor } },
+        legend: { type: 'scroll', orient: 'vertical', left: 'left', top: '15%', textStyle: { fontSize: 13, color: getThemeColors().textColor } },
         series: [{
           type: 'pie',
           radius: ['35%', '60%'],
@@ -219,20 +222,20 @@ export async function updateHBarChart(apiBaseUrl, indicator, year) {
         tooltip: { trigger: 'axis', formatter: (p) => `<b>${p[0].data[1]}</b><br/>${indicator}: <b>${p[0].data[0].toLocaleString('ru-RU')}</b>` },
         dataset: { source: sourceData },
         grid: { containLabel: true, top: '18%', bottom: '22%', left: '5%', right: '5%' },
-        xAxis: { type: 'value', axisLabel: { fontSize: 9, color: getThemeColors().textColor }, splitLine: { lineStyle: { color: '#f1f5f9' } } },
-        yAxis: { type: 'category', axisLabel: { fontSize: 9, color: getThemeColors().textColor } },
+        xAxis: { type: 'value', axisLabel: { fontSize: 13, color: getThemeColors().textColor }, splitLine: { lineStyle: { color: '#f5f7f6' } } },
+        yAxis: { type: 'category', axisLabel: { fontSize: 13, color: getThemeColors().textColor } },
         visualMap: {
           orient: 'horizontal',
           left: 'center',
           bottom: '2%',
           itemWidth: 12,
           itemHeight: 100,
-          textStyle: { fontSize: 9, color: getThemeColors().textColor },
+          textStyle: { fontSize: 13, color: getThemeColors().textColor },
           min: minVal,
           max: maxVal === minVal ? maxVal + 1 : maxVal,
           text: ['Макс', 'Мин'],
           dimension: 0,
-          inRange: { color: ['#65B581', '#FFCE34', '#FD665F'] }
+          inRange: { color: MAP_SCALE }
         },
         series: [{
           type: 'bar',
@@ -260,18 +263,18 @@ export async function updateStackedAreaChart(apiBaseUrl, indicator, year) {
 
       stackedAreaChartInstance.setOption({
         animation: true,
-        title: { text: `${indicator} (${year})`, left: 'center', textStyle: { fontSize: 12, color: getThemeColors().textColor } },
+        title: { text: `${indicator} (${year})`, left: 'center', textStyle: { fontSize: 13, color: getThemeColors().textColor } },
         toolbox: { feature: { magicType: { type: ['stack'] }, dataView: { readOnly: true }, saveAsImage: { pixelRatio: 2 } } },
         tooltip: { trigger: 'axis' },
         grid: { top: '25%', bottom: '15%', left: '8%', right: '5%', containLabel: true },
-        xAxis: { data: labels, splitLine: { show: false }, axisLabel: { interval: 0, rotate: 35, fontSize: 9, color: getThemeColors().textColor } },
-        yAxis: { type: 'value', axisLabel: { fontSize: 10, color: getThemeColors().textColor }, splitLine: { lineStyle: { color: '#f1f5f9' } } },
+        xAxis: { data: labels, splitLine: { show: false }, axisLabel: { interval: 0, rotate: 35, fontSize: 13, color: getThemeColors().textColor } },
+        yAxis: { type: 'value', axisLabel: { fontSize: 13, color: getThemeColors().textColor }, splitLine: { lineStyle: { color: '#f5f7f6' } } },
         series: [
           {
             name: indicator,
             type: 'bar',
             data: values,
-            itemStyle: { color: '#3b82f6', borderRadius: [4, 4, 0, 0] },
+            itemStyle: { color: DATA_COLORS[4], borderRadius: [4, 4, 0, 0] },
             emphasis: { focus: 'series' },
             animationDelay: function (idx) { return idx * 20; }
           }
@@ -300,30 +303,31 @@ export async function updateCustomChart(apiBaseUrl, indicator, year, chartType) 
       }
 
       let option = {
+        color: DATA_COLORS,
         animation: true,
         animationDuration: 1000,
         toolbox: commonToolbox,
         grid: { top: '22%', bottom: '15%', left: '8%', right: '5%', containLabel: true },
-        xAxis: { type: 'category', data: labels, axisLabel: { interval: 0, rotate: 35, fontSize: 9, color: getThemeColors().textColor } },
-        yAxis: { type: 'value', axisLabel: { fontSize: 10, color: getThemeColors().textColor }, splitLine: { lineStyle: { color: '#f1f5f9' } } }
+        xAxis: { type: 'category', data: labels, axisLabel: { interval: 0, rotate: 35, fontSize: 13, color: getThemeColors().textColor } },
+        yAxis: { type: 'value', axisLabel: { fontSize: 13, color: getThemeColors().textColor }, splitLine: { lineStyle: { color: '#f5f7f6' } } }
       };
 
       if (chartType === 'line') {
         option.title = { text: `Динамика: ${indicator}`, left: 'center', textStyle: { fontSize: 13, color: getThemeColors().textColor } };
         option.tooltip = { trigger: 'axis' };
-        option.series = [{ data: values, type: 'line', smooth: true, itemStyle: { color: '#0770FF' }, areaStyle: { color: 'rgba(7, 112, 255, 0.2)' } }];
+        option.series = [{ data: values, type: 'line', smooth: true, itemStyle: { color: '#4f9b7c' }, areaStyle: { color: 'rgba(62, 155, 89, 0.18)' } }];
       } else if (chartType === 'pie') {
         const pieData = labels.map((lbl, idx) => ({ name: lbl, value: values[idx] })).filter(item => item.value > 0);
         option.title = { text: `Доли: ${indicator}`, left: 'center', textStyle: { fontSize: 13, color: getThemeColors().textColor } };
         option.tooltip = { trigger: 'item', formatter: '{b}: <b>{c}</b> ({d}%)' };
-        option.legend = { type: 'scroll', orient: 'vertical', left: 'left', top: '15%', textStyle: { fontSize: 9, color: getThemeColors().textColor } };
+        option.legend = { type: 'scroll', orient: 'vertical', left: 'left', top: '15%', textStyle: { fontSize: 13, color: getThemeColors().textColor } };
         option.series = [{ type: 'pie', radius: ['35%', '60%'], center: ['65%', '55%'], data: pieData }];
         delete option.xAxis;
         delete option.yAxis;
       } else {
         option.title = { text: `Распределение: ${indicator}`, left: 'center', textStyle: { fontSize: 13, color: getThemeColors().textColor } };
         option.tooltip = { trigger: 'axis', formatter: (p) => `<b>${p[0].name}</b><br/>${indicator}: <b>${p[0].value.toLocaleString('ru-RU')}</b>` };
-        option.series = [{ data: values, type: 'bar', itemStyle: { color: '#3b82f6', borderRadius: [4, 4, 0, 0] } }];
+        option.series = [{ data: values, type: 'bar', itemStyle: { color: DATA_COLORS[4], borderRadius: [4, 4, 0, 0] } }];
       }
 
       customChartInstance.setOption(option, true);
@@ -380,12 +384,12 @@ export async function updateSummaryChart(apiBaseUrl, indicator) {
       xAxis: {
         type: 'category',
         data: labels && labels.length ? labels : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-        axisLabel: { fontSize: 9, color: getThemeColors().textColor }
+        axisLabel: { fontSize: 13, color: getThemeColors().textColor }
       },
       yAxis: {
         type: 'value',
-        axisLabel: { fontSize: 10, color: getThemeColors().textColor },
-        splitLine: { lineStyle: { color: isDarkMode() ? '#334155' : '#f1f5f9' } }
+        axisLabel: { fontSize: 13, color: getThemeColors().textColor },
+        splitLine: { lineStyle: { color: isDarkMode() ? '#3a4b40' : '#f5f7f6' } }
       },
       series: [
         {
@@ -397,7 +401,7 @@ export async function updateSummaryChart(apiBaseUrl, indicator) {
             borderRadius: [4, 4, 0, 0]
           },
           itemStyle: {
-            color: '#3b82f6',
+            color: DATA_COLORS[4],
             borderRadius: [4, 4, 0, 0]
           },
           barMaxWidth: 30
@@ -425,7 +429,7 @@ function getThemeColors() {
   return {
     textColor: dark ? '#f5eee9' : '#222222',
     subTextColor: dark ? '#c6b7c8' : '#64748b',
-    splitLineColor: dark ? 'rgba(201,170,206,0.2)' : '#f1f5f9'
+    splitLineColor: dark ? 'rgba(184,214,160,0.2)' : '#f5f7f6'
   };
 }
 
@@ -449,7 +453,7 @@ export function updateChartThemeColors() {
     const currentOption = chart.getOption();
     const dark = isDarkMode();
     const option = {
-      color: dark ? ['#fbb085', '#c9aace', '#e7a489', '#a88db1', '#d4b6d9'] : ['#fbb085', '#c9aace', '#df987d', '#a88db1', '#e5c2ac'],
+      color: DATA_COLORS,
       title: { textStyle: { color: textColor } }
     };
 
@@ -465,10 +469,10 @@ export function updateChartThemeColors() {
     if (dark && currentOption.series?.length) {
       option.series = currentOption.series.map((series) => {
         const nextSeries = { type: series.type };
-        const color = series.type === 'line' ? '#c9aace' : '#fbb085';
+        const color = series.type === 'line' ? DATA_COLORS[4] : DATA_COLORS[3];
         if (series.itemStyle) nextSeries.itemStyle = { color };
         if (series.lineStyle) nextSeries.lineStyle = { color };
-        if (series.areaStyle) nextSeries.areaStyle = { color: 'rgba(201,170,206,.22)' };
+        if (series.areaStyle) nextSeries.areaStyle = { color: 'rgba(62,155,89,.18)' };
         return nextSeries;
       });
     }
@@ -498,10 +502,10 @@ export async function updateMultiSummaryChart(apiBaseUrl) {
   ];
 
   const palette = [
-    { line: '#10b981', area: 'rgba(16, 185, 129, 0.2)' },
-    { line: '#3b82f6', area: 'rgba(59, 130, 246, 0.2)' },
-    { line: '#f59e0b', area: 'rgba(245, 158, 11, 0.2)' },
-    { line: '#ef4444', area: 'rgba(239, 68, 68, 0.2)' }
+    { line: DATA_COLORS[4], area: 'rgba(62, 155, 89, 0.2)' },
+    { line: DATA_COLORS[1], area: 'rgba(242, 140, 40, 0.2)' },
+    { line: DATA_COLORS[2], area: 'rgba(242, 201, 76, 0.2)' },
+    { line: DATA_COLORS[0], area: 'rgba(217, 67, 67, 0.2)' }
   ];
 
   try {
@@ -554,7 +558,7 @@ export async function updateMultiSummaryChart(apiBaseUrl) {
         type: 'scroll',
         data: indicators,
         top: '8%',
-        textStyle: { fontSize: 10, color: getThemeColors().textColor }
+        textStyle: { fontSize: 13, color: getThemeColors().textColor }
       },
       toolbox: commonToolbox,
       grid: {
@@ -568,12 +572,12 @@ export async function updateMultiSummaryChart(apiBaseUrl) {
         type: 'category',
         boundaryGap: false,
         data: labels,
-        axisLabel: { fontSize: 10, color: getThemeColors().textColor }
+        axisLabel: { fontSize: 13, color: getThemeColors().textColor }
       },
       yAxis: {
         type: 'value',
-        axisLabel: { fontSize: 10, color: getThemeColors().textColor },
-        splitLine: { lineStyle: { color: isDarkMode() ? '#334155' : '#f1f5f9' } }
+        axisLabel: { fontSize: 13, color: getThemeColors().textColor },
+        splitLine: { lineStyle: { color: isDarkMode() ? '#3a4b40' : '#f5f7f6' } }
       },
       series: series
     };
@@ -623,18 +627,18 @@ export async function initKazakhstanMap(apiBaseUrl, indicator, year) {
       title: { text: `Географическое распределение: ${indicator} (${year})`, left: 'center', textStyle: { fontSize: 14, color: getThemeColors().textColor } },
       toolbox: commonToolbox,
       tooltip: { trigger: 'item', formatter: (params) => `<b>${params.name}</b><br/>Значение: <b>${params.value !== undefined ? params.value.toLocaleString('ru-RU') : 'Нет данных'}</b>` },
-      visualMap: { left: 14, bottom: 14, orient: 'horizontal', min: minVal, max: maxVal, inRange: { color: ['#f7e9df', '#fbb085', '#c9aace', '#a88db1'] }, text: ['Макс', 'Мин'], calculable: true, textStyle: { color: getThemeColors().textColor } },
+      visualMap: { left: 14, bottom: 14, orient: 'horizontal', min: minVal, max: maxVal, inRange: { color: MAP_SCALE }, text: ['Макс', 'Мин'], calculable: true, textStyle: { color: getThemeColors().textColor } },
       series: [{
         type: 'map',
         map: 'KZ',
-        roam: false,
+        roam: true,
         layoutCenter: ['50%', '50%'],
         layoutSize: '88%',
         zoom: 1,
         data: formattedData,
-        itemStyle: { borderColor: document.body.classList.contains('dark-theme') ? '#e0c9e4' : '#fff', borderWidth: 1 },
-        emphasis: { itemStyle: { areaColor: '#fbb085' }, label: { show: true, color: '#222', fontSize: 9 } },
-        label: { show: false, fontSize: 8 },
+        itemStyle: { areaColor: document.body.classList.contains('dark-theme') ? '#48534b' : '#8b9298', borderColor: document.body.classList.contains('dark-theme') ? '#b8d6a0' : '#fff', borderWidth: 1 },
+        emphasis: { itemStyle: { areaColor: '#86b93f' }, label: { show: true, color: '#222', fontSize: 13 } },
+        label: { show: false, fontSize: 13 },
         universalTransition: true
       }]
     };

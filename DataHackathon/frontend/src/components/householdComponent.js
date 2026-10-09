@@ -60,16 +60,16 @@ export async function initHouseholdSection(apiBaseUrl) {
             radius: '50%',
             center: ['50%', '58%'],
             splitNumber: 4,
-            axisName: { color: '#475569', fontSize: 11 },
-            splitLine: { lineStyle: { color: ['#e2e8f0', '#cbd5e1', '#94a3b8', '#64748b'] } },
+            axisName: { color: '#475569', fontSize: 13 },
+            splitLine: { lineStyle: { color: ['#dfe4df', '#cbd3cb', '#aeb8af', '#8b9298'] } },
             splitArea: { areaStyle: { color: ['rgba(248,250,252,0.6)', 'rgba(241,245,249,0.6)'] } }
           },
           series: [{
             type: 'radar',
             data: [{ value: values, name: 'Кол-во людей' }],
-            areaStyle: { color: 'rgba(59, 130, 246, 0.4)' },
-            lineStyle: { color: '#2563eb', width: 2 },
-            itemStyle: { color: '#1d4ed8' }
+            areaStyle: { color: 'rgba(62, 155, 89, 0.24)' },
+            lineStyle: { color: '#3e9b59', width: 2 },
+            itemStyle: { color: '#3e9b59' }
           }]
         };
 
@@ -269,7 +269,7 @@ function renderGeneralCharts(rawData) {
             name: 'Возраст респондентов',
             type: 'bar',
             data: ages,
-            itemStyle: { color: '#2563eb', borderRadius: [4, 4, 0, 0] }
+            itemStyle: { color: '#3e9b59', borderRadius: [4, 4, 0, 0] }
         }]
     }, true);
     chart.resize();

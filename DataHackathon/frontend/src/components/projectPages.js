@@ -19,14 +19,14 @@ export function initProjectPages() {
             { name: 'Data', max: 10 }, { name: 'Design', max: 10 }, { name: 'AI', max: 10 }
           ],
           radius: '66%', center: ['50%', '55%'], splitNumber: 4,
-          axisName: { color: dark ? '#d4c7d5' : '#776d78', fontSize: 9 },
+          axisName: { color: dark ? '#d4c7d5' : '#776d78', fontSize: 13 },
           axisLine: { lineStyle: { color: dark ? 'rgba(201,170,206,.28)' : 'rgba(137,111,144,.2)' } },
           splitLine: { lineStyle: { color: dark ? 'rgba(201,170,206,.2)' : 'rgba(137,111,144,.14)' } },
           splitArea: { areaStyle: { color: dark ? ['rgba(201,170,206,.02)', 'rgba(201,170,206,.05)'] : ['rgba(201,170,206,.025)', 'rgba(201,170,206,.07)'] } }
         },
         series: [{ type: 'radar', symbol: 'circle', symbolSize: 3,
-          lineStyle: { color: '#b28dbb', width: 2 },
-          itemStyle: { color: '#e99c79' },
+          lineStyle: { color: '#3e9b59', width: 2 },
+          itemStyle: { color: '#f28c28' },
           areaStyle: { color: 'rgba(201,170,206,.28)' },
           data: [{ value: profiles[element.dataset.memberChart] || [5, 5, 5, 5, 5] }]
         }]
