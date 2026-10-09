@@ -4,5 +4,8 @@ node_modules
 .venv
 __MACOSX
 DataHackathon/data/raw
+DataHackathon/data/sinte/
+DataHackathon/data.zip
+DataHackathon/database.sqlite
 *.sqlite
 __pycache__
