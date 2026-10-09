@@ -31,8 +31,8 @@ const PAGE_CONFIG = {
   }
 };
 
-const DATA_COLORS = ['#d94343', '#f28c28', '#f2c94c', '#a8cf45', '#3e9b59', '#8b9298'];
-const MAP_SCALE = ['#d94343', '#f28c28', '#f2c94c', '#a8cf45', '#3e9b59'];
+const DATA_COLORS = ['#17b981', '#50b9d2', '#46cbb0', '#7fdef5', '#7ef5ad', '#13966d'];
+const MAP_SCALE = ['#7fdef5', '#50b9d2', '#46cbb0', '#17b981', '#13966d'];
 
 async function fetchDatasetYearData(path, years, params = {}) {
   const results = [];
@@ -875,7 +875,7 @@ async function renderD004Map(summary, metric, period) {
         type: 'map', map: 'KZ_D004', roam: true, zoom: 1, layoutCenter: ['50%', '50%'], layoutSize: '88%', selectedMode: 'single', data,
         itemStyle: { areaColor: document.body.classList.contains('dark-theme') ? '#48534b' : '#8b9298', borderColor: document.body.classList.contains('dark-theme') ? '#b8d6a0' : '#fff', borderWidth: 1 },
         emphasis: { label: { show: true } },
-        select: { itemStyle: { areaColor: '#a8cf45', borderColor: '#3e9b59', borderWidth: 2 }, label: { show: true, color: '#222222' } }
+        select: { itemStyle: { areaColor: '#7ef5ad', borderColor: '#17b981', borderWidth: 2 }, label: { show: true, color: '#222222' } }
       }]
     }, true);
     setText('d004MapCaption', `${metricConfig.label} · ${period}. Красный — меньше, зелёный — больше, серый — нет данных. Колёсико приближает карту, перетаскивание перемещает её.`);

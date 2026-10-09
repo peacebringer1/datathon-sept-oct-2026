@@ -11,8 +11,8 @@ export let summaryChartInstance = null;
 export let multiSummaryChartInstance = null; // Инстанс мульти-графика
 export let kzMapInstance = null;
 let cachedKZJson = null;
-const DATA_COLORS = ['#d94343', '#f28c28', '#f2c94c', '#a8cf45', '#3e9b59', '#8b9298'];
-const MAP_SCALE = ['#d94343', '#f28c28', '#f2c94c', '#a8cf45', '#3e9b59'];
+const DATA_COLORS = ['#17b981', '#50b9d2', '#46cbb0', '#7fdef5', '#7ef5ad', '#13966d'];
+const MAP_SCALE = ['#7fdef5', '#50b9d2', '#46cbb0', '#17b981', '#13966d'];
 
 const commonToolbox = {
   feature: {
@@ -502,10 +502,10 @@ export async function updateMultiSummaryChart(apiBaseUrl) {
   ];
 
   const palette = [
-    { line: DATA_COLORS[4], area: 'rgba(62, 155, 89, 0.2)' },
-    { line: DATA_COLORS[1], area: 'rgba(242, 140, 40, 0.2)' },
-    { line: DATA_COLORS[2], area: 'rgba(242, 201, 76, 0.2)' },
-    { line: DATA_COLORS[0], area: 'rgba(217, 67, 67, 0.2)' }
+    { line: DATA_COLORS[0], area: 'rgba(23, 185, 129, 0.2)' },
+    { line: DATA_COLORS[1], area: 'rgba(80, 185, 210, 0.2)' },
+    { line: DATA_COLORS[2], area: 'rgba(70, 203, 176, 0.2)' },
+    { line: DATA_COLORS[3], area: 'rgba(127, 222, 245, 0.2)' }
   ];
 
   try {

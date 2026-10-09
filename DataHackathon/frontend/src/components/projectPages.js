@@ -25,9 +25,9 @@ export function initProjectPages() {
           splitArea: { areaStyle: { color: dark ? ['rgba(201,170,206,.02)', 'rgba(201,170,206,.05)'] : ['rgba(201,170,206,.025)', 'rgba(201,170,206,.07)'] } }
         },
         series: [{ type: 'radar', symbol: 'circle', symbolSize: 3,
-          lineStyle: { color: '#3e9b59', width: 2 },
-          itemStyle: { color: '#f28c28' },
-          areaStyle: { color: 'rgba(201,170,206,.28)' },
+          lineStyle: { color: '#17b981', width: 2 },
+          itemStyle: { color: '#50b9d2' },
+          areaStyle: { color: 'rgba(80,185,210,.22)' },
           data: [{ value: profiles[element.dataset.memberChart] || [5, 5, 5, 5, 5] }]
         }]
       }, true);

@@ -67,9 +67,9 @@ export async function initHouseholdSection(apiBaseUrl) {
           series: [{
             type: 'radar',
             data: [{ value: values, name: 'Кол-во людей' }],
-            areaStyle: { color: 'rgba(62, 155, 89, 0.24)' },
-            lineStyle: { color: '#3e9b59', width: 2 },
-            itemStyle: { color: '#3e9b59' }
+            areaStyle: { color: 'rgba(23, 185, 129, 0.24)' },
+            lineStyle: { color: '#17b981', width: 2 },
+            itemStyle: { color: '#17b981' }
           }]
         };
 
@@ -269,7 +269,7 @@ function renderGeneralCharts(rawData) {
             name: 'Возраст респондентов',
             type: 'bar',
             data: ages,
-            itemStyle: { color: '#3e9b59', borderRadius: [4, 4, 0, 0] }
+            itemStyle: { color: '#17b981', borderRadius: [4, 4, 0, 0] }
         }]
     }, true);
     chart.resize();
