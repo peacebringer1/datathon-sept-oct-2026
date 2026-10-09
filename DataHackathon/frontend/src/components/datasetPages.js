@@ -122,6 +122,7 @@ let d002MapRegions = [];
 let d006Charts = new Map();
 let d008Charts = new Map();
 let d004Map = null;
+let d004MapResizeObserver = null;
 let d004GeoJSON = null;
 let d004MapSummary = [];
 let d004MapPeriod = '';
@@ -840,6 +841,10 @@ async function renderD004Map(summary, metric, period) {
   const element = document.getElementById('d004MapChart');
   if (!element || !window.echarts) return;
   d004Map = window.echarts.getInstanceByDom(element) || window.echarts.init(element);
+  if (!d004MapResizeObserver && typeof ResizeObserver !== 'undefined') {
+    d004MapResizeObserver = new ResizeObserver(() => d004Map?.resize());
+    d004MapResizeObserver.observe(element);
+  }
   try {
     if (!d004GeoJSON) {
       const response = await fetch('https://raw.githubusercontent.com/artemnovichkov/KazakhstanMapExample/main/KazakhstanMapExample/kazakhstan.geojson');
@@ -872,7 +877,7 @@ async function renderD004Map(summary, metric, period) {
       tooltip: { trigger: 'item', formatter: (params) => `${params.name}<br>${metricConfig.label}: ${params.value == null ? 'Нет данных' : Number(params.value).toLocaleString('ru-RU')}` },
       visualMap: { min: low, max: high, left: 16, bottom: 12, orient: 'horizontal', calculable: true, inRange: { color: MAP_SCALE }, textStyle: { color: document.body.classList.contains('dark-theme') ? '#d4e4d4' : '#48534b' } },
       series: [{
-        type: 'map', map: 'KZ_D004', roam: true, zoom: 1, layoutCenter: ['50%', '50%'], layoutSize: '88%', selectedMode: 'single', data,
+        type: 'map', map: 'KZ_D004', roam: true, zoom: 1.1, layoutCenter: ['50%', '50%'], layoutSize: '108%', selectedMode: 'single', data,
         itemStyle: { areaColor: document.body.classList.contains('dark-theme') ? '#48534b' : '#8b9298', borderColor: document.body.classList.contains('dark-theme') ? '#b8d6a0' : '#fff', borderWidth: 1 },
         emphasis: { label: { show: true } },
         select: { itemStyle: { areaColor: '#7ef5ad', borderColor: '#17b981', borderWidth: 2 }, label: { show: true, color: '#222222' } }
