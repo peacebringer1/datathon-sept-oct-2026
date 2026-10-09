@@ -1,4 +1,5 @@
 export let chatHistory = [];
+const aiRecentPrompts = [];
 
 export function toggleAIChat() {
   const sidebar = document.getElementById('aiPopupSidebar');
@@ -53,21 +54,26 @@ export function initAIChat(apiBaseUrl) {
 }
 
 function initChartSuggestions() {
-  const chatMessages = document.getElementById('chatMessages');
-  if (!chatMessages || document.getElementById('aiChartSuggestions')) return;
-
-  const suggestions = document.createElement('div');
-  suggestions.id = 'aiChartSuggestions';
-  suggestions.className = 'ai-chat-suggestions';
-  suggestions.setAttribute('aria-label', 'Примеры запросов для построения графика');
+  const suggestions = document.getElementById('aiChartSuggestions');
+  if (!suggestions || suggestions.dataset.ready) return;
+  suggestions.dataset.ready = 'true';
   [
-    'Построй график распределения жителей по городу и селу за 2024 год по D008.',
-    'Построй график доступности бытовых удобств по D006 за 2024 год.',
-    'Покажи количество домохозяйств по территориям D004 за 2024 год.'
-  ].forEach((prompt) => {
+    ['📈', 'Сравнить по годам', 'Покажи динамику показателя по годам.'],
+    ['🧭', 'Сравнить регионы', 'Сравни выбранный показатель между регионами.'],
+    ['👥', 'Изучить демографию', 'Покажи возрастной состав населения по D008.'],
+    ['⌕', 'Найти закономерность', 'Какие заметные изменения есть в выбранном наборе?']
+  ].forEach(([icon, title, prompt]) => {
     const button = document.createElement('button');
     button.type = 'button';
-    button.textContent = prompt;
+    button.className = 'ai-quick-action-card';
+    const mark = document.createElement('span');
+    mark.className = 'ai-quick-action-mark';
+    mark.textContent = icon;
+    const heading = document.createElement('strong');
+    heading.textContent = title;
+    const description = document.createElement('small');
+    description.textContent = prompt;
+    button.append(mark, heading, description);
     button.addEventListener('click', () => {
       const input = document.getElementById('chatInput');
       if (!input || input.disabled) return;
@@ -76,7 +82,54 @@ function initChartSuggestions() {
     });
     suggestions.append(button);
   });
-  chatMessages.after(suggestions);
+
+  const historySearch = document.getElementById('aiHistorySearch');
+  const historyList = document.getElementById('aiHistoryList');
+  const renderHistory = () => {
+    if (!historyList) return;
+    const query = historySearch?.value.trim().toLocaleLowerCase('ru-RU') || '';
+    const prompts = aiRecentPrompts.filter((item) => item.toLocaleLowerCase('ru-RU').includes(query));
+    historyList.replaceChildren();
+    if (!prompts.length) {
+      const empty = document.createElement('p');
+      empty.className = 'ai-history-empty';
+      empty.textContent = aiRecentPrompts.length ? 'Ничего не найдено' : 'Пока нет запросов';
+      historyList.append(empty);
+    }
+    prompts.forEach((prompt) => {
+      const item = document.createElement('button');
+      item.type = 'button';
+      item.className = 'ai-history-item';
+      item.textContent = prompt;
+      item.addEventListener('click', () => {
+        const input = document.getElementById('chatInput');
+        if (input) { input.value = prompt; input.focus(); }
+      });
+      historyList.append(item);
+    });
+  };
+  historySearch?.addEventListener('input', renderHistory);
+  document.addEventListener('ai-chat-history-updated', renderHistory);
+  document.getElementById('aiClearHistoryButton')?.addEventListener('click', () => {
+    aiRecentPrompts.splice(0, aiRecentPrompts.length);
+    renderHistory();
+  });
+  document.getElementById('aiNewChatButton')?.addEventListener('click', () => {
+    chatHistory = [];
+    const chatMessages = document.getElementById('chatMessages');
+    chatMessages?.querySelectorAll('.chat-chart').forEach((element) => window.echarts?.getInstanceByDom(element)?.dispose());
+    chatMessages?.replaceChildren();
+    appendMessage('Здравствуйте! Я помогу разобраться в показателях и сравнить данные по годам.', 'ai');
+    const input = document.getElementById('chatInput');
+    if (input) { input.value = ''; input.focus(); }
+  });
+  document.getElementById('aiFaqButton')?.addEventListener('click', () => {
+    const input = document.getElementById('chatInput');
+    if (input) {
+      input.value = 'Какие вопросы можно задать по открытому набору данных?';
+      input.focus();
+    }
+  });
 }
 
 function getDashboardContext() {
@@ -104,19 +157,20 @@ function getDashboardContext() {
     };
     if (activeDataset === 'd002') {
       datasetFilters.form = document.getElementById('d002FormSelect')?.value || '';
+      datasetFilters.question = document.getElementById('d002CurrentQuestionCode')?.textContent?.trim() || '';
+      datasetFilters.value_mode = document.getElementById('d002ValueMode')?.value || 'share';
+      if (datasetFilters.year === 'all') {
+        datasetFilters.years = Array.from(document.getElementById('d002YearSelect')?.options || []).map((option) => option.value).filter((year) => year !== 'all');
+      }
     } else if (activeDataset === 'd004') {
       datasetFilters.quarter = document.getElementById('d004QuarterSelect')?.value || '';
       datasetFilters.module = document.getElementById('d004ModuleSelect')?.value || '';
     } else if (activeDataset === 'd008') {
       datasetFilters.years = [...document.querySelectorAll('input[name="d008Year"]:checked')].map((input) => input.value);
-      datasetFilters.age_group = document.getElementById('d008FilterAge')?.value || '';
-      datasetFilters.gender = document.getElementById('d008FilterGender')?.value || '';
-      datasetFilters.settlement = document.getElementById('d008FilterSettlement')?.value || '';
-      datasetFilters.relationship = document.getElementById('d008FilterRelationship')?.value || '';
-      datasetFilters.education = document.getElementById('d008FilterEducation')?.value || '';
-      datasetFilters.marital_status = document.getElementById('d008FilterMarital')?.value || '';
-      datasetFilters.activity = document.getElementById('d008FilterActivity')?.value || '';
-      datasetFilters.value_mode = document.getElementById('d008ValueMode')?.value || 'count';
+      datasetFilters.chartFilters = Object.fromEntries([...document.querySelectorAll('[data-d008-chart]')].map((panel) => [
+        panel.dataset.d008Chart,
+        Object.fromEntries([...panel.querySelectorAll('[data-d008-filter]')].map((control) => [control.dataset.d008Filter, control.value]).filter(([, value]) => value))
+      ]));
     }
     context.datasetFilters = datasetFilters;
   }
@@ -198,7 +252,8 @@ function appendChartMessage(chartData) {
         }
     },
     toolbox: { right: 8, feature: { saveAsImage: { title: 'Сохранить график', pixelRatio: 2 } } },
-    grid: { left: 48, right: 18, top: 38, bottom: 54, containLabel: true },
+    legend: hasSeries ? { type: 'scroll', bottom: 2, left: 8, right: 8 } : undefined,
+    grid: { left: 48, right: 18, top: 38, bottom: hasSeries ? 72 : 54, containLabel: true },
     series: chartData.chart_type === 'pie'
       ? [{
         type: 'pie',
@@ -257,6 +312,9 @@ export async function sendMessageToAI(apiBaseUrl) {
   }
 
   const nextHistory = [...chatHistory, { role: 'user', text: message }].slice(-10);
+  aiRecentPrompts.unshift(message.slice(0, 160));
+  aiRecentPrompts.splice(12);
+  document.dispatchEvent(new Event('ai-chat-history-updated'));
 
   try {
     const response = await fetch(`${apiBaseUrl}/api/ai-chat`, {

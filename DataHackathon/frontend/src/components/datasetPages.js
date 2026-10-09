@@ -31,8 +31,20 @@ const PAGE_CONFIG = {
   }
 };
 
-const DATA_COLORS = ['#17b981', '#50b9d2', '#46cbb0', '#7fdef5', '#7ef5ad', '#13966d'];
-const MAP_SCALE = ['#7fdef5', '#50b9d2', '#46cbb0', '#17b981', '#13966d'];
+let DATA_COLORS = ['#17b981', '#50b9d2', '#46cbb0', '#7fdef5', '#7ef5ad', '#13966d'];
+let MAP_SCALE = ['#7fdef5', '#50b9d2', '#46cbb0', '#17b981', '#13966d'];
+window.addEventListener('app-style-preset-changed', (event) => {
+  const palettes = {
+    classic: ['#a78bfa', '#7c9cff', '#6ee7f9', '#5be7c4', '#a3f7bd', '#b8a6ff'],
+    green: ['#17b981', '#50b9d2', '#46cbb0', '#7fdef5', '#7ef5ad', '#13966d']
+  };
+  const mapPalettes = {
+    classic: ['#a78bfa', '#7c9cff', '#6ee7f9', '#5be7c4', '#a3f7bd'],
+    green: ['#7fdef5', '#50b9d2', '#46cbb0', '#17b981', '#13966d']
+  };
+  DATA_COLORS = palettes[event.detail?.preset] || palettes.green;
+  MAP_SCALE = mapPalettes[event.detail?.preset] || mapPalettes.green;
+});
 
 async function fetchDatasetYearData(path, years, params = {}) {
   const results = [];
@@ -44,44 +56,6 @@ async function fetchDatasetYearData(path, years, params = {}) {
   }
   if (!results.length) throw new Error('За выбранные годы данные не найдены.');
   return results;
-}
-
-function mergeCounts(itemsByYear, key = 'code') {
-  const merged = new Map();
-  itemsByYear.flat().forEach((item) => {
-    const id = item[key] ?? item.label;
-    const current = merged.get(id) || { ...item, count: 0 };
-    current.count += Number(item.count || 0);
-    merged.set(id, current);
-  });
-  const items = [...merged.values()];
-  const total = items.reduce((sum, item) => sum + item.count, 0);
-  return items.map((item) => ({ ...item, share: total ? Math.round(item.count / total * 1000) / 10 : 0 }));
-}
-
-function combineD006(results) {
-  const total = results.reduce((sum, item) => sum + Number(item.respondents || 0), 0);
-  const weighted = (field) => {
-    const valid = results.filter((item) => item[field] != null);
-    const denominator = valid.reduce((sum, item) => sum + Number(item.respondents || 0), 0);
-    return denominator ? Math.round(valid.reduce((sum, item) => sum + Number(item[field]) * Number(item.respondents || 0), 0) / denominator * 10) / 10 : null;
-  };
-  return {
-    ...results[0], year: 'Все годы', respondents: total,
-    territories: Math.max(...results.map((item) => Number(item.territories || 0))),
-    average_total_area: weighted('average_total_area'), average_living_area: weighted('average_living_area'), average_rooms: weighted('average_rooms'),
-    home_types: mergeCounts(results.map((item) => item.home_types)), ownership: mergeCounts(results.map((item) => item.ownership)),
-    city_rural: mergeCounts(results.map((item) => item.city_rural)), land_access: mergeCounts(results.map((item) => item.land_access)),
-    amenities: results[0].amenities.map((item) => {
-      const count = results.reduce((sum, result) => sum + Number(result.amenities.find((entry) => entry.code === item.code)?.count || 0), 0);
-      const answered = results.reduce((sum, result) => {
-        const yearly = result.amenities.find((entry) => entry.code === item.code);
-        return sum + (yearly?.share > 0 ? yearly.count / (yearly.share / 100) : Number(result.respondents || 0));
-      }, 0);
-      return { ...item, count, share: answered ? Math.round(count / answered * 1000) / 10 : 0 };
-    }),
-    durable_goods: mergeCounts(results.map((item) => item.durable_goods), 'code').sort((a, b) => b.count - a.count).slice(0, 15)
-  };
 }
 
 let activeApiUrl = '';
@@ -102,6 +76,7 @@ let d006Charts = new Map();
 let d008Charts = new Map();
 let d008AvailableYears = [];
 let d008RequestId = 0;
+let d008BaseResults = [];
 let d004Map = null;
 let d004MapResizeObserver = null;
 let d004GeoJSON = null;
@@ -109,6 +84,8 @@ let d004MapSummary = [];
 let d004MapPeriod = '';
 let d004MapMetricValue = 'records';
 let d004SelectedRegion = '';
+let d004QuestionnaireObserver = null;
+let d004QuestionnaireRevision = 0;
 
 function setText(id, value) {
   const element = document.getElementById(id);
@@ -125,24 +102,6 @@ function appendOptions(select, items, valueOf, labelOf) {
     select.append(option);
   });
   if ([...select.options].some((option) => option.value === previousValue)) select.value = previousValue;
-}
-
-function bindDatasetYearTabs(dataset, yearSelect, latestYear, quarterSelect = null) {
-  const buttons = [...document.querySelectorAll(`[data-dataset="${dataset}"][data-year-mode]`)];
-  const yearLabel = yearSelect.closest('label');
-  const activate = (mode, load = true) => {
-    buttons.forEach((button) => {
-      const selected = button.dataset.yearMode === mode;
-      button.setAttribute('aria-selected', String(selected));
-      button.classList.toggle('active', selected);
-    });
-    if (yearLabel) yearLabel.hidden = mode === 'all';
-    yearSelect.value = mode === 'all' ? 'all' : latestYear;
-    if (quarterSelect) quarterSelect.value = mode === 'all' ? 'all' : '4kv';
-    if (load) yearSelect.dispatchEvent(new Event('change', { bubbles: true }));
-  };
-  buttons.forEach((button) => button.addEventListener('click', () => activate(button.dataset.yearMode)));
-  activate(yearSelect.value === 'all' ? 'all' : 'single', false);
 }
 
 function preferredDatasetYear(years) {
@@ -162,33 +121,40 @@ function renderD002QuestionChart(element, question) {
   d002Charts.set(element, chart);
   const styles = getComputedStyle(element.closest('.dataset-panel') || element);
   const textColor = styles.getPropertyValue('--text-primary').trim() || '#222222';
-  const surfaceColor = styles.backgroundColor || '#ffffff';
+  const years = question.yearly?.length ? question.yearly : [question];
+  const categories = new Map();
+  years.forEach((item) => (item.distribution || []).forEach((answer) => categories.set(String(answer.code ?? answer.label), answer.label)));
+  const isTrend = years.length > 1;
+  const valueKey = document.getElementById('d002ValueMode')?.value || 'share';
+  const suffix = valueKey === 'share' ? '%' : '';
   chart.setOption({
     color: DATA_COLORS,
     tooltip: {
-      trigger: 'item',
-      formatter: ({ name, value, percent }) => `${name}<br>${Number(value).toLocaleString('ru-RU')} ответов · ${percent}%`
+      trigger: 'axis',
+      axisPointer: { type: 'shadow' },
+      formatter: (params) => {
+        const points = Array.isArray(params) ? params : [params];
+        return `${points[0]?.axisValue || ''}<br>${points.map((point) => `${point.marker}${point.seriesName}: <strong>${Number(point.value).toLocaleString('ru-RU')}${suffix}</strong>`).join('<br>')}`;
+      }
     },
-    legend: {
-      top: '5%', left: 'center', type: 'scroll', width: '88%',
-      textStyle: { color: textColor, fontSize: 13 }
-    },
-    series: [{
-      name: 'Ответы', type: 'pie', radius: ['40%', '70%'], center: ['50%', '58%'],
-      avoidLabelOverlap: false, padAngle: 5,
-      data: question.distribution.map((item) => ({ value: item.count, name: item.label })),
-      label: { show: false, position: 'center' },
-      emphasis: {
-        scaleSize: 8,
-        label: {
-          show: true, color: textColor, fontSize: 19, fontWeight: 'bold',
-          formatter: ({ name, percent }) => `${name}\n${percent}%`
-        }
-      },
-      labelLine: { show: false },
-      itemStyle: { borderRadius: 10, borderColor: surfaceColor, borderWidth: 3 }
+    legend: { type: 'scroll', bottom: 0, left: 10, right: 10, textStyle: { color: textColor, fontSize: 12 } },
+    toolbox: { right: 8, feature: { dataView: { readOnly: true }, restore: {}, saveAsImage: {} } },
+    dataZoom: [{ type: 'inside', start: 0, end: 100 }, { type: 'slider', height: 18, bottom: 34, start: 0, end: 100 }],
+    grid: { left: 58, right: 24, top: 28, bottom: 95, containLabel: true },
+    xAxis: { type: 'category', boundaryGap: !isTrend, data: isTrend ? years.map((item) => String(item.year)) : [...categories.values()], axisLabel: { color: textColor, interval: 0, rotate: !isTrend && categories.size > 6 ? 25 : 0, hideOverlap: true } },
+    yAxis: { type: 'value', min: 0, max: valueKey === 'share' ? 100 : undefined, minInterval: valueKey === 'count' ? 1 : undefined, axisLabel: { color: textColor, formatter: (value) => `${Number(value).toLocaleString('ru-RU')}${suffix}` }, splitLine: { lineStyle: { color: 'rgba(139,146,152,.2)' } } },
+    series: isTrend ? [...categories.entries()].map(([code, name]) => ({
+      name, type: 'bar', emphasis: { focus: 'series' },
+      data: years.map((item) => {
+        const answer = (item.distribution || []).find((entry) => String(entry.code ?? entry.label) === code);
+        return answer ? Number(answer[valueKey] || 0) : null;
+      })
+    })) : [{
+      name: valueKey === 'share' ? 'Доля ответов' : 'Число ответов',
+      type: 'bar',
+      data: [...categories.keys()].map((code) => Number((years[0].distribution || []).find((entry) => String(entry.code ?? entry.label) === code)?.[valueKey] || 0))
     }]
-  });
+  }, true);
   chart.resize();
 }
 
@@ -219,7 +185,9 @@ function renderD002Question() {
   setText('d002MissingCount', Number(question.missing).toLocaleString('ru-RU'));
   setText('d002AnswerRate', `${d002Respondents ? Math.round(question.answered / d002Respondents * 1000) / 10 : 0}%`);
   setText('d002QuestionNote', question.chart_note || 'Доля рассчитана среди участников, ответивших на этот вопрос.');
-  setText('d002ChartCaption', `Ответы ${Number(question.answered).toLocaleString('ru-RU')} участников. Наведите на сектор, чтобы увидеть число и долю.`);
+  setText('d002ChartCaption', question.yearly?.length > 1
+    ? `Столбцы сравнивают ответы по годам. Значения каждого года показаны отдельно и не суммируются.`
+    : `${Number(question.answered).toLocaleString('ru-RU')} ответов. Столбцы показывают варианты ответа в ${question.year || 'выбранном году'}.`);
   renderD002QuestionChart(document.getElementById('d002QuestionChart'), question);
   renderD002Map(question);
 }
@@ -254,34 +222,10 @@ async function renderD002Map(question) {
   try {
     const selectedYear = document.getElementById('d002YearSelect').value;
     let result;
-    if (selectedYear === 'all') {
-      const years = [...document.getElementById('d002YearSelect').options].map((option) => option.value).filter((year) => year !== 'all');
-      const yearlyMaps = await Promise.all(years.map(async (year) => {
-        const yearParams = new URLSearchParams({ year, form: document.getElementById('d002FormSelect').value, question: question.id });
-        const mapResponse = await fetch(`${activeApiUrl}/api/d002/map?${yearParams}`);
-        return mapResponse.ok ? mapResponse.json() : null;
-      }));
-      const available = yearlyMaps.filter(Boolean);
-      result = available[0];
-      if (result) {
-        result.categories = [...new Map(available.flatMap((entry) => entry.categories || []).map((item) => [item.code, item])).values()];
-        const regionMap = new Map();
-        available.flatMap((entry) => entry.regions || []).forEach((region) => {
-          const current = regionMap.get(region.code) || { ...region, answered: 0, distribution: region.distribution.map((item) => ({ ...item, count: 0 })) };
-          current.answered += Number(region.answered || 0);
-          region.distribution.forEach((item) => {
-            const match = current.distribution.find((value) => value.code === item.code);
-            if (match) match.count += Number(item.count || 0);
-            else current.distribution.push({ ...item });
-          });
-          regionMap.set(region.code, current);
-        });
-        result.regions = [...regionMap.values()].map((region) => ({ ...region, distribution: region.distribution.map((item) => ({ ...item, share: region.answered ? Math.round(item.count / region.answered * 1000) / 10 : 0 })) }));
-      }
-    } else {
-      response = await fetch(`${activeApiUrl}/api/d002/map?${params}`);
-      result = await response.json().catch(() => ({}));
-    }
+    const mapYear = selectedYear === 'trend' ? question.yearly?.at(-1)?.year : selectedYear;
+    params.set('year', mapYear || selectedYear);
+    response = await fetch(`${activeApiUrl}/api/d002/map?${params}`);
+    result = await response.json().catch(() => ({}));
     if (revision !== d002MapRevision) return;
     if (response && !response.ok) {
       const serverMessage = result.error ? ` Сервер сообщил: ${result.error}` : '';
@@ -354,7 +298,7 @@ async function renderD002Map(question) {
       if (region) showD002RegionDetails(region);
     });
     d002Map.resize();
-    setText('d002MapCaption', `${question.label} · сравнение распределения ответов по областям. Размер круга условный; секторы показывают доли ответов.`);
+    setText('d002MapCaption', `${question.label} · ${mapYear}. Карта показывает распределение ответов за этот год; круги по регионам не суммируются по периодам.`);
   } catch (error) {
     if (revision !== d002MapRevision) return;
     const networkHint = response ? '' : ' Проверьте, запущен ли Flask-сервер.';
@@ -401,27 +345,7 @@ function showD002RegionDetails(region) {
 }
 
 function renderD006Pie(id, items) {
-  const element = document.getElementById(id);
-  if (!element || !window.echarts || !items.length) return;
-  const chart = window.echarts.init(element);
-  d006Charts.set(id, chart);
-  const styles = getComputedStyle(element.closest('.d006-chart-panel'));
-  const textColor = styles.getPropertyValue('--text-primary').trim() || '#222222';
-  chart.setOption({
-    color: DATA_COLORS,
-    tooltip: { trigger: 'item', formatter: ({ name, value, percent }) => `${name}<br>${Number(value).toLocaleString('ru-RU')} домохозяйств · ${percent}%` },
-    legend: { top: '3%', left: 'center', type: 'scroll', textStyle: { color: textColor, fontSize: 13 } },
-    series: [{
-      name: 'Домохозяйства', type: 'pie', radius: ['40%', '70%'], center: ['50%', '59%'],
-      avoidLabelOverlap: false, padAngle: 4,
-      data: items.map((item) => ({ value: item.count, name: item.label })),
-      label: { show: false, position: 'center' },
-      emphasis: { label: { show: true, color: textColor, fontSize: 16, fontWeight: 'bold', formatter: ({ name, percent }) => `${name}\n${percent}%` } },
-      labelLine: { show: false },
-      itemStyle: { borderRadius: 9, borderColor: styles.backgroundColor, borderWidth: 3 }
-    }]
-  });
-  chart.resize();
+  renderD006Bars(id, items, 'share', '%');
 }
 
 function renderD006Bars(id, items, valueKey, valueSuffix = '') {
@@ -459,14 +383,9 @@ async function loadD006Page() {
   status.textContent = 'Загружаем данные о жилищных условиях…';
   try {
     let result;
-    if (year === 'all') {
-      const years = [...document.getElementById('d006YearSelect').options].map((option) => option.value).filter((value) => value !== 'all');
-      result = combineD006(await fetchDatasetYearData('/api/d006/data', years));
-    } else {
-      const response = await fetch(`${activeApiUrl}/api/d006/data?year=${encodeURIComponent(year)}`);
-      result = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(result.error || 'Не удалось загрузить D006.');
-    }
+    const response = await fetch(`${activeApiUrl}/api/d006/data?year=${encodeURIComponent(year)}`);
+    result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(result.error || 'Не удалось загрузить D006.');
     disposeD006Charts();
     setText('d006RespondentsStat', Number(result.respondents).toLocaleString('ru-RU'));
     setText('d006TerritoriesStat', Number(result.territories).toLocaleString('ru-RU'));
@@ -479,7 +398,7 @@ async function loadD006Page() {
     renderD006Pie('d006LandChart', result.land_access);
     renderD006Bars('d006AmenitiesChart', result.amenities, 'share', '%');
     renderD006Bars('d006GoodsChart', result.durable_goods, 'count');
-    setText('d006SourceNote', year === 'all' ? `Итоги за ${[...document.getElementById('d006YearSelect').options].map((option) => option.value).filter((value) => value !== 'all').join(', ')} годы. Категории суммированы, средние значения взвешены по числу анкет.` : `Год ${result.year}. Источник: ${result.source === 'database.sqlite' ? 'database.sqlite' : 'CSV в data/sinte'}. Средние значения рассчитаны по анкетам с заполненным ответом.`);
+    setText('d006SourceNote', `Год ${result.year}. Источник: ${result.source === 'database.sqlite' ? 'database.sqlite' : 'CSV в data/sinte'}. Средние значения рассчитаны по анкетам с заполненным ответом.`);
     status.dataset.state = 'success';
     status.textContent = `${result.year}: ${Number(result.respondents).toLocaleString('ru-RU')} анкет по ${Number(result.territories).toLocaleString('ru-RU')} территориям.`;
   } catch (error) {
@@ -497,9 +416,9 @@ async function initializeD006(apiBaseUrl) {
     const options = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(options.error || 'Не удалось получить список данных D006.');
     if (!options.years.length) throw new Error('Данные D006 не найдены ни в data/sinte, ни в database.sqlite.');
-    appendOptions(document.getElementById('d006YearSelect'), ['all', ...options.years], String, (year) => year === 'all' ? 'Все годы' : year);
+    appendOptions(document.getElementById('d006YearSelect'), options.years, String, String);
     if (!dashboard.dataset.listenersReady) {
-      bindDatasetYearTabs('d006', document.getElementById('d006YearSelect'), preferredDatasetYear(options.years));
+      document.getElementById('d006YearSelect').value = preferredDatasetYear(options.years);
       document.getElementById('d006YearSelect').addEventListener('change', loadD006Page);
       window.addEventListener('resize', () => d006Charts.forEach((chart) => chart.resize()));
       dashboard.dataset.listenersReady = 'true';
@@ -533,17 +452,10 @@ function renderD008Trend(id, yearlyResults, metric, valueMode) {
 
   const valueKey = valueMode === 'share' ? 'share' : 'count';
   const suffix = valueMode === 'share' ? '%' : '';
-  const lineTypes = ['solid', 'dashed', 'dotted'];
-  const symbols = ['circle', 'roundRect', 'triangle', 'diamond', 'rect', 'pin'];
-  const series = categoryEntries.map(([code, label], index) => ({
+  const series = categoryEntries.map(([code, label]) => ({
     name: label,
-    type: 'line',
-    smooth: .18,
-    connectNulls: false,
-    showSymbol: true,
-    symbol: symbols[index % symbols.length],
-    symbolSize: 8,
-    lineStyle: { width: 2.5, type: lineTypes[Math.floor(index / DATA_COLORS.length) % lineTypes.length] },
+    type: 'bar',
+    barMaxWidth: 42,
     emphasis: { focus: 'series', scale: 1.25 },
     data: yearlyResults.map((result) => {
       if (metric === 'age_structure' && !result.age_available) return null;
@@ -559,7 +471,7 @@ function renderD008Trend(id, yearlyResults, metric, valueMode) {
     tooltip: {
       trigger: 'axis',
       confine: true,
-      axisPointer: { type: 'cross', label: { backgroundColor: '#48534b' } },
+      axisPointer: { type: 'shadow' },
       formatter: (params) => {
         const points = Array.isArray(params) ? params : [params];
         return `${points[0]?.axisValue || ''}<br>${points.map((point) => `${point.marker}${point.seriesName}: <strong>${Number(point.value).toLocaleString('ru-RU')}${suffix}</strong>`).join('<br>')}`;
@@ -567,7 +479,7 @@ function renderD008Trend(id, yearlyResults, metric, valueMode) {
     },
     legend: { type: 'scroll', bottom: 0, left: 8, right: 8, height: 48, itemWidth: 12, itemHeight: 8, textStyle: { color: textColor, fontSize: 12 } },
     grid: { left: 58, right: 22, top: 16, bottom: 65, containLabel: true },
-    xAxis: { type: 'category', boundaryGap: false, data: yearlyResults.map((result) => String(result.year)), axisLabel: { color: textColor, fontSize: 13 }, axisLine: { lineStyle: { color: 'rgba(139, 146, 152, .45)' } }, axisTick: { show: false } },
+    xAxis: { type: 'category', boundaryGap: true, data: yearlyResults.map((result) => String(result.year)), axisLabel: { color: textColor, fontSize: 13 }, axisLine: { lineStyle: { color: 'rgba(139, 146, 152, .45)' } }, axisTick: { show: false } },
     yAxis: { type: 'value', min: 0, max: valueMode === 'share' ? 100 : undefined, scale: valueMode !== 'share', minInterval: valueMode === 'count' ? 1 : undefined, axisLabel: { color: textColor, fontSize: 12, formatter: (value) => `${Number(value).toLocaleString('ru-RU')}${suffix}` }, splitLine: { lineStyle: { color: 'rgba(139, 146, 152, .2)' } } },
     series
   }, true);
@@ -579,45 +491,117 @@ function disposeD008Charts() {
   d008Charts.clear();
 }
 
+const D008_CHARTS = [
+  ['settlement', 'd008SettlementChart', 'd008UnitSettlement'],
+  ['gender', 'd008GenderChart', 'd008UnitGender'],
+  ['relationships', 'd008RelationshipChart', 'd008UnitRelationship'],
+  ['education', 'd008EducationChart', 'd008UnitEducation'],
+  ['marital_status', 'd008MaritalChart', 'd008UnitMarital'],
+  ['activity', 'd008ActivityChart', 'd008UnitActivity'],
+  ['age_structure', 'd008AgeChart', 'd008UnitAge'],
+  ['household_sizes', 'd008HouseholdSizeChart', 'd008UnitHouseholds']
+];
+
+const D008_FILTER_OPTIONS = [
+  ['age_group', 'Возраст', [['', 'Все возрасты'], ['0-14', '0–14 лет'], ['15-24', '15–24 года'], ['25-39', '25–39 лет'], ['40-59', '40–59 лет'], ['60+', '60 лет и старше']]],
+  ['gender', 'Пол', [['', 'Любой'], ['1', 'Мужчины'], ['2', 'Женщины']]],
+  ['settlement', 'Город или село', [['', 'Все территории'], ['1', 'Город'], ['2', 'Село']]],
+  ['relationship', 'Родство', [['', 'Любое'], ['1', 'Глава домохозяйства'], ['2', 'Супруг или супруга'], ['3', 'Сын или дочь'], ['4', 'Отец или мать'], ['5', 'Брат или сестра'], ['6', 'Дедушка или бабушка'], ['7', 'Внук или внучка'], ['8', 'Другая степень родства'], ['9', 'Не родственник']]],
+  ['education', 'Образование', [['', 'Любой уровень'], ['1', 'Дошкольное'], ['2', 'Начальное'], ['3', 'Основное среднее'], ['4', 'Среднее или профессиональное'], ['5', 'Высшее'], ['6', 'Послевузовское'], ['7', 'Нет достигнутого уровня']]],
+  ['marital_status', 'Семейное положение', [['', 'Любое'], ['1', 'Не состоял(а) в браке'], ['2', 'Состоит в браке'], ['3', 'Вдовец или вдова'], ['4', 'Разведён(а)']]],
+  ['activity', 'Занятость', [['', 'Любой статус'], ['1', 'Работа по найму'], ['2', 'Предпринимательство'], ['3', 'Ищет работу'], ['4', 'Пенсионер'], ['5', 'Учащийся или студент'], ['6', 'Домашнее хозяйство или уход'], ['7', 'Нетрудоспособен'], ['8', 'Не работает по другим причинам']]],
+  ['value_mode', 'Показатель', [['count', 'Абсолютное число'], ['share', 'Доля, %']]]
+];
+
+function initializeD008ChartFilters() {
+  document.querySelectorAll('[data-d008-chart]').forEach((panel) => {
+    if (panel.querySelector('.d008-chart-filter-details')) return;
+    const details = document.createElement('details');
+    details.className = 'd008-chart-filter-details';
+    const summary = document.createElement('summary');
+    summary.textContent = 'Фильтры графика';
+    const controls = document.createElement('div');
+    controls.className = 'd008-chart-filter-grid';
+    D008_FILTER_OPTIONS.forEach(([name, label, options]) => {
+      const field = document.createElement('label');
+      field.textContent = label;
+      const select = document.createElement('select');
+      select.dataset.d008Filter = name;
+      options.forEach(([value, text]) => {
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = text;
+        select.append(option);
+      });
+      field.append(select);
+      controls.append(field);
+      select.addEventListener('change', () => refreshD008Chart(panel));
+    });
+    details.append(summary, controls);
+    panel.insertBefore(details, panel.querySelector('.dataset-chart'));
+  });
+}
+
+function d008PanelFilters(panel) {
+  return Object.fromEntries([...panel.querySelectorAll('[data-d008-filter]')]
+    .map((control) => [control.dataset.d008Filter, control.value]).filter(([, value]) => value));
+}
+
+async function fetchD008Year(year, filters = {}) {
+  const params = new URLSearchParams({ year });
+  Object.entries(filters).forEach(([key, value]) => { if (value) params.set(key, value); });
+  const response = await fetch(`${activeApiUrl}/api/d008/data?${params}`);
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(result.error || `Не удалось загрузить D008 за ${year}.`);
+  return result;
+}
+
+async function refreshD008Chart(panel) {
+  const metric = panel.dataset.d008Chart;
+  const chartConfig = D008_CHARTS.find(([key]) => key === metric);
+  if (!chartConfig) return;
+  const [, chartId, unitId] = chartConfig;
+  const filters = d008PanelFilters(panel);
+  const valueMode = filters.value_mode || 'count';
+  delete filters.value_mode;
+  const currentId = String(Number(panel.dataset.requestId || 0) + 1);
+  panel.dataset.requestId = currentId;
+  try {
+    const yearlyResults = Object.keys(filters).length
+      ? await Promise.all(d008BaseResults.map(({ year }) => fetchD008Year(year, filters)))
+      : d008BaseResults;
+    if (panel.dataset.requestId !== currentId) return;
+    const latest = yearlyResults.at(-1);
+    renderD008Trend(chartId, yearlyResults, metric, valueMode);
+    const answeredValue = latest?.answered?.[metric] ?? (metric === 'household_sizes' ? latest?.households : latest?.people);
+    const answered = Number(answeredValue ?? 0);
+    setText(unitId, valueMode === 'share' ? `доля от ${answered.toLocaleString('ru-RU')}, %` : `${metric === 'household_sizes' ? 'домохозяйств' : 'ответов'} · ${answered.toLocaleString('ru-RU')}`);
+    if (metric === 'age_structure') {
+      document.getElementById(chartId).hidden = !yearlyResults.some((result) => result.age_available);
+      document.getElementById('d008AgeNoData').hidden = yearlyResults.some((result) => result.age_available);
+    }
+  } catch (error) {
+    if (panel.dataset.requestId === currentId) {
+      const chart = window.echarts?.getInstanceByDom(document.getElementById(chartId));
+      chart?.setOption({ graphic: [{ type: 'text', left: 'center', top: 'middle', style: { text: error.message, fill: '#c84444', fontSize: 13 } }] }, true);
+    }
+  }
+}
+
 async function loadD008Page() {
   const status = document.getElementById('d008Status');
   const requestId = ++d008RequestId;
   const selectedYears = [...document.querySelectorAll('input[name="d008Year"]:checked')].map((input) => input.value).filter((year) => d008AvailableYears.includes(year));
-  const valueMode = document.getElementById('d008ValueMode').value;
   status.dataset.state = 'loading';
   status.textContent = 'Сравниваем демографические показатели по выбранным годам…';
   try {
     if (!selectedYears.length) throw new Error('Выберите хотя бы один год для сравнения.');
-    const filters = {
-      age_group: document.getElementById('d008FilterAge').value,
-      gender: document.getElementById('d008FilterGender').value,
-      settlement: document.getElementById('d008FilterSettlement').value,
-      relationship: document.getElementById('d008FilterRelationship').value,
-      education: document.getElementById('d008FilterEducation').value,
-      marital_status: document.getElementById('d008FilterMarital').value,
-      activity: document.getElementById('d008FilterActivity').value
-    };
-    const yearlyResults = await Promise.all(selectedYears.map(async (year) => {
-      const params = new URLSearchParams({ year });
-      Object.entries(filters).forEach(([key, value]) => { if (value) params.set(key, value); });
-      const response = await fetch(`${activeApiUrl}/api/d008/data?${params}`);
-      const result = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(result.error || `Не удалось загрузить D008 за ${year}.`);
-      return result;
-    }));
+    const yearlyResults = await Promise.all(selectedYears.map((year) => fetchD008Year(year)));
     if (requestId !== d008RequestId) return;
     yearlyResults.sort((a, b) => Number(a.year) - Number(b.year));
+    d008BaseResults = yearlyResults;
     disposeD008Charts();
     const latest = yearlyResults.at(-1);
-    const denominatorByChart = {
-      Settlement: 'settlement', Gender: 'gender', Relationship: 'relationships', Education: 'education',
-      Marital: 'marital_status', Activity: 'activity', Age: 'age_structure', Households: 'household_sizes'
-    };
-    Object.entries(denominatorByChart).forEach(([name, metric]) => {
-      const denominator = Number(latest.answered?.[metric] || 0).toLocaleString('ru-RU');
-      const unit = valueMode === 'share' ? `доля от ${denominator}, %` : `${name === 'Households' ? 'домохозяйств' : 'ответов'} · ${denominator}`;
-      setText(`d008Unit${name}`, unit);
-    });
     setText('d008PeopleLabel', `Людей в выборке · ${latest.year}`);
     setText('d008HouseholdsLabel', `Домохозяйств · ${latest.year}`);
     setText('d008HouseholdSizeLabel', `Средний размер семьи · ${latest.year}`);
@@ -628,21 +612,15 @@ async function loadD008Page() {
     setText('d008AverageAgeStat', latest.average_age == null ? '—' : `${Number(latest.average_age).toLocaleString('ru-RU', { maximumFractionDigits: 1 })} года`);
     setText('d008ChildrenStat', latest.under_15_share == null ? '—' : `${Number(latest.under_15_share).toLocaleString('ru-RU', { maximumFractionDigits: 1 })}%`);
     setText('d008TerritoriesStat', Number(latest.territories).toLocaleString('ru-RU'));
-    document.getElementById('d008AgeNoData').hidden = yearlyResults.some((result) => result.age_available);
-    document.getElementById('d008AgeChart').hidden = !yearlyResults.some((result) => result.age_available);
-    renderD008Trend('d008SettlementChart', yearlyResults, 'settlement', valueMode);
-    renderD008Trend('d008GenderChart', yearlyResults, 'gender', valueMode);
-    renderD008Trend('d008RelationshipChart', yearlyResults, 'relationships', valueMode);
-    renderD008Trend('d008EducationChart', yearlyResults, 'education', valueMode);
-    renderD008Trend('d008MaritalChart', yearlyResults, 'marital_status', valueMode);
-    renderD008Trend('d008ActivityChart', yearlyResults, 'activity', valueMode);
-    renderD008Trend('d008AgeChart', yearlyResults, 'age_structure', valueMode);
-    renderD008Trend('d008HouseholdSizeChart', yearlyResults, 'household_sizes', valueMode);
+    D008_CHARTS.forEach(([metric]) => {
+      const panel = document.querySelector(`[data-d008-chart="${metric}"]`);
+      if (panel) void refreshD008Chart(panel);
+    });
     const yearsLabel = yearlyResults.map((result) => result.year).join(', ');
     const sources = [...new Set(yearlyResults.map((result) => result.source === 'database.sqlite' ? 'database.sqlite' : 'CSV в data/sinte'))].join(', ');
-    setText('d008SourceNote', `Сравниваются годы ${yearsLabel}; значения каждого года рассчитаны отдельно. Источник: ${sources}. Показатели среднего возраста и размера семьи рассчитаны для ${latest.year} года с учётом выбранных фильтров. Графики показывают ${valueMode === 'share' ? 'доли от заполненных ответов' : 'целые абсолютные значения'}.`);
+    setText('d008SourceNote', `Сравниваются годы ${yearsLabel}; значения каждого года рассчитаны отдельно. Источник: ${sources}. Средний возраст и размер домохозяйства показаны для ${latest.year} года. В каждой карточке графика можно отдельно настроить фильтры.`);
     status.dataset.state = 'success';
-    status.textContent = `${yearsLabel}: каждый год показан отдельно. В ${latest.year} году после фильтров осталось ${Number(latest.people).toLocaleString('ru-RU')} человек и ${Number(latest.households).toLocaleString('ru-RU')} домохозяйств.`;
+    status.textContent = `${yearsLabel}: каждый год показан отдельно. В выборке ${latest.year} года — ${Number(latest.people).toLocaleString('ru-RU')} человек и ${Number(latest.households).toLocaleString('ru-RU')} домохозяйств.`;
   } catch (error) {
     if (requestId !== d008RequestId) return;
     disposeD008Charts();
@@ -659,19 +637,19 @@ async function initializeD008(apiBaseUrl) {
     const options = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(options.error || 'Не удалось получить список данных D008.');
     if (!options.years.length) throw new Error('Данные D008 не найдены ни в data/sinte, ни в database.sqlite.');
-    d008AvailableYears = ['2022', '2023', '2024'].filter((year) => options.years.includes(year));
-    if (!d008AvailableYears.length) throw new Error('Для динамики нужны данные D008 за 2022, 2023 или 2024 год.');
+    d008AvailableYears = ['2021', '2022', '2023', '2024'].filter((year) => options.years.includes(year));
+    if (!d008AvailableYears.length) throw new Error('Для динамики нужны данные D008 за 2021–2024 годы.');
     const isFirstInitialization = !dashboard.dataset.listenersReady;
     document.querySelectorAll('input[name="d008Year"]').forEach((input) => {
       input.disabled = !d008AvailableYears.includes(input.value);
       if (isFirstInitialization || input.disabled) input.checked = d008AvailableYears.includes(input.value);
     });
     if (!dashboard.dataset.listenersReady) {
-      document.querySelectorAll('#d008Dashboard input, #d008Dashboard select').forEach((control) => control.addEventListener('change', loadD008Page));
+      initializeD008ChartFilters();
+      document.querySelectorAll('input[name="d008Year"]').forEach((control) => control.addEventListener('change', loadD008Page));
       document.getElementById('d008ResetFilters').addEventListener('click', () => {
         document.querySelectorAll('input[name="d008Year"]').forEach((input) => { input.checked = d008AvailableYears.includes(input.value); });
-        ['d008FilterAge', 'd008FilterGender', 'd008FilterSettlement', 'd008FilterRelationship', 'd008FilterEducation', 'd008FilterMarital', 'd008FilterActivity'].forEach((id) => { document.getElementById(id).value = ''; });
-        document.getElementById('d008ValueMode').value = 'count';
+        document.querySelectorAll('[data-d008-filter]').forEach((control) => { control.value = control.dataset.d008Filter === 'value_mode' ? 'count' : ''; });
         loadD008Page();
       });
       window.addEventListener('resize', () => d008Charts.forEach((chart) => chart.resize()));
@@ -697,26 +675,32 @@ async function loadD002Page() {
   status.textContent = 'Загружаем ответы обследования…';
   try {
     let result;
-    if (params.get('year') === 'all') {
-      const years = [...document.getElementById('d002YearSelect').options].map((option) => option.value).filter((value) => value !== 'all');
-      const results = await fetchDatasetYearData('/api/d002/data', years, { form: params.get('form') });
+    if (params.get('year') === 'trend') {
+      const years = [...document.getElementById('d002YearSelect').options].map((option) => option.value).filter((value) => value !== 'trend');
+      const results = (await fetchDatasetYearData('/api/d002/data', years, { form: params.get('form') })).sort((a, b) => Number(a.year) - Number(b.year));
       const questionMap = new Map();
       results.forEach((yearResult) => yearResult.questions.forEach((question) => {
-        const current = questionMap.get(question.id) || { ...question, answered: 0, missing: 0, distribution: [] };
-        current.answered += Number(question.answered || 0);
-        current.missing += Number(question.missing || 0);
-        current.distribution.push(...question.distribution);
+        const current = questionMap.get(question.id) || { ...question, yearly: [] };
+        current.yearly.push({ ...question, year: yearResult.year });
         questionMap.set(question.id, current);
       }));
-      result = { ...results[0], year: 'Все годы', respondents: results.reduce((sum, item) => sum + Number(item.respondents || 0), 0), territories: Math.max(...results.map((item) => Number(item.territories || 0))), questions: [...questionMap.values()].map((question) => ({ ...question, distribution: mergeCounts([question.distribution]) })), question_count: questionMap.size };
+      const latest = results.at(-1);
+      result = {
+        ...latest,
+        year: `Динамика ${results[0].year}–${latest.year}`,
+        questions: [...questionMap.values()].map((question) => ({ ...question, ...question.yearly.at(-1), yearly: question.yearly })),
+        question_count: questionMap.size
+      };
     } else {
       const response = await fetch(`${activeApiUrl}/api/d002/data?${params}`);
       result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || 'Не удалось загрузить D002.');
+      result.questions = (result.questions || []).map((question) => ({ ...question, yearly: [{ ...question, year: result.year }] }));
     }
 
     setText('d002FormDescription', result.form_description);
     setText('d002ChartCaption', `${result.year} · ${result.form_label}. Найдено вопросов: ${Number(result.question_count).toLocaleString('ru-RU')}.`);
+    setText('d002RespondentsLabel', `Анкет в ${result.year.includes('Динамика') ? result.year.split('–').at(-1) : result.year}`);
     setText('d002RespondentsStat', Number(result.respondents).toLocaleString('ru-RU'));
     setText('d002QuestionCountStat', Number(result.question_count).toLocaleString('ru-RU'));
     setText('d002TerritoriesStat', Number(result.territories).toLocaleString('ru-RU'));
@@ -747,10 +731,11 @@ async function initializeD002(apiBaseUrl) {
       throw new Error('Не найдены данные D002 в папке data/sinte или таблицы D002 в database.sqlite.');
     }
 
-    appendOptions(document.getElementById('d002YearSelect'), ['all', ...options.years], String, (year) => year === 'all' ? 'Все годы' : year);
+    const availableYears = [...options.years].sort((a, b) => Number(b) - Number(a));
+    appendOptions(document.getElementById('d002YearSelect'), [...availableYears, 'trend'], String, (year) => year === 'trend' ? `Динамика по годам (${[...availableYears].reverse().join('–')})` : year);
     appendOptions(document.getElementById('d002FormSelect'), options.forms, (item) => item.id, (item) => item.label);
     if (!dashboard.dataset.listenersReady) {
-      bindDatasetYearTabs('d002', document.getElementById('d002YearSelect'), preferredDatasetYear(options.years));
+      document.getElementById('d002YearSelect').value = preferredDatasetYear(availableYears);
       ['d002YearSelect', 'd002FormSelect'].forEach((id) => {
         document.getElementById(id).addEventListener('change', loadD002Page);
       });
@@ -764,6 +749,7 @@ async function initializeD002(apiBaseUrl) {
       document.getElementById('d002NextQuestion').addEventListener('click', () => {
         if (d002QuestionIndex < d002FilteredQuestions.length - 1) { d002QuestionIndex += 1; renderD002Question(); }
       });
+      document.getElementById('d002ValueMode').addEventListener('change', renderD002Question);
       dashboard.dataset.listenersReady = 'true';
     }
     dashboard.hidden = false;
@@ -937,6 +923,95 @@ async function renderD004Map(summary, metric, period) {
   }
 }
 
+const D004_FORM_DESCRIPTIONS = {
+  0: 'Паспорт домохозяйства и сведения о его составе.',
+  1: 'Покупки непродовольственных товаров и расходы на них.',
+  2: 'Жильё, коммунальные услуги, вода, энергия и топливо.',
+  3: 'Расходы на связь и телекоммуникационные услуги.',
+  4: 'Расходы домохозяйства на образование.',
+  5: 'Расходы домохозяйства на здравоохранение.',
+  6: 'Расходы на отдых, культуру и прочие услуги.',
+  7: 'Расходы домохозяйства на транспорт.',
+  9: 'Производство и услуги, выполняемые домохозяйством (часть 1).',
+  10: 'Производство и услуги, выполняемые домохозяйством (часть 2).',
+  11: 'Источники и показатели доходов домохозяйства.',
+  12: 'Заемные средства и кредитные обязательства домохозяйства.'
+};
+
+function loadD004QuestionnaireCard(card, revision) {
+  const module = card.dataset.module;
+  const params = new URLSearchParams({
+    year: document.getElementById('d004YearSelect').value,
+    quarter: document.getElementById('d004QuarterSelect').value,
+    module,
+    page: '1',
+    page_size: '10'
+  });
+  const chartElement = card.querySelector('[data-d004-form-chart]');
+  fetch(`${activeApiUrl}/api/d004/data?${params}`)
+    .then(async (response) => {
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || 'Не удалось загрузить этот раздел.');
+      if (revision !== d004QuestionnaireRevision) return;
+      const colors = DATA_COLORS;
+      const regions = [...(result.territory_summary || [])].sort((a, b) => Number(b.records) - Number(a.records));
+      const chart = window.echarts.getInstanceByDom(chartElement) || window.echarts.init(chartElement);
+      chart.setOption({
+        color: colors,
+        tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: (points) => `${points[0].name}<br>${Number(points[0].value).toLocaleString('ru-RU')}` },
+        grid: { left: 42, right: 12, top: 12, bottom: 46, containLabel: true },
+        xAxis: { type: 'category', data: regions.map((item) => item.territory), axisLabel: { rotate: 35, fontSize: 10, interval: 0 } },
+        yAxis: { type: 'value', minInterval: 1 },
+        series: [{ type: 'bar', barMaxWidth: 24, data: regions.map((item, index) => ({ value: Number(item.records), itemStyle: { color: colors[index % colors.length], borderRadius: [4, 4, 0, 0] } })) }]
+      }, true);
+      card.querySelector('[data-d004-form-status]').textContent = `${Number(result.total_rows).toLocaleString('ru-RU')} записей · количество по территориям`;
+    })
+    .catch((error) => {
+      if (revision === d004QuestionnaireRevision) card.querySelector('[data-d004-form-status]').textContent = error.message;
+    });
+}
+
+function renderD004QuestionnaireCards(modules) {
+  const container = document.getElementById('d004QuestionnaireCards');
+  if (!container) return;
+  d004QuestionnaireRevision += 1;
+  const revision = d004QuestionnaireRevision;
+  d004QuestionnaireObserver?.disconnect();
+  container.querySelectorAll('[data-d004-form-chart]').forEach((element) => window.echarts?.getInstanceByDom(element)?.dispose());
+  container.replaceChildren();
+  (modules || []).forEach((form) => {
+    const article = document.createElement('article');
+    article.className = 'd004-questionnaire-card';
+    article.dataset.module = String(form.id);
+    const heading = document.createElement('h3');
+    heading.textContent = form.label;
+    const description = document.createElement('p');
+    description.textContent = D004_FORM_DESCRIPTIONS[form.id] || `Показатели раздела «${form.label}» обследования домохозяйств.`;
+    const status = document.createElement('p');
+    status.className = 'd004-questionnaire-status';
+    status.dataset.d004FormStatus = '';
+    status.textContent = 'График загрузится при прокрутке к карточке.';
+    const chart = document.createElement('div');
+    chart.className = 'd004-questionnaire-chart';
+    chart.dataset.d004FormChart = '';
+    chart.setAttribute('role', 'img');
+    chart.setAttribute('aria-label', `Столбчатый график данных анкеты: ${form.label}`);
+    article.append(heading, description, status, chart);
+    container.append(article);
+  });
+  if (!('IntersectionObserver' in window)) {
+    container.querySelectorAll('.d004-questionnaire-card').forEach((card) => loadD004QuestionnaireCard(card, revision));
+    return;
+  }
+  d004QuestionnaireObserver = new IntersectionObserver((entries, observer) => {
+    entries.filter((entry) => entry.isIntersecting).forEach((entry) => {
+      observer.unobserve(entry.target);
+      loadD004QuestionnaireCard(entry.target, revision);
+    });
+  }, { rootMargin: '80px 0px' });
+  container.querySelectorAll('.d004-questionnaire-card').forEach((card) => d004QuestionnaireObserver.observe(card));
+}
+
 function showD004RegionDetails(regionName) {
   const record = d004MapSummary.find((item) => (d004RegionNames[item.territory] || item.territory) === regionName);
   setText('d004RegionTitle', regionName);
@@ -998,15 +1073,15 @@ async function loadD004Page() {
       ? 'Число строк по коду территории TE.'
       : 'Сумма поля STOIMK по строкам выбранного файла; это сумма записей выборки, а не оценка для всего населения.');
     setText('d004DescriptionMetric', result.chart_metric === 'Количество записей'
-      ? 'На графике каждая колонка показывает, сколько строк найдено для кода территории TE в выбранном разделе и периоде. При выборе всех лет или кварталов строки суммируются по всему выбранному диапазону.'
-      : 'На графике показана сумма стоимости (поле STOIMK) по строкам для каждой территории. Это сумма записей выборки, а не средний расход семьи и не официальная оценка. При выборе всех лет или кварталов суммируются все подходящие файлы.');
+      ? 'Каждая колонка показывает количество строк для территории в выбранном году, квартале и разделе анкеты.'
+      : 'Показана сумма STOIMK внутри выбранного года, квартала и раздела. Это сумма записей выборки, а не средний расход семьи и не официальная оценка.');
     setText('d004PageLabel', `Страница ${result.page} из ${Math.max(1, Math.ceil(totalRows / result.page_size))}`);
     document.getElementById('d004PrevPage').disabled = result.page <= 1;
     document.getElementById('d004NextPage').disabled = result.page * result.page_size >= totalRows;
     renderD004Table(result.columns, result.rows);
     renderD004Chart(result.chart, result.chart_metric, result.module_label, result.year, result.quarter);
     renderD004Summary(result.territory_summary || []);
-    await renderD004Map(result.territory_summary || [], result.chart_metric, `${result.year}, ${result.quarter.toUpperCase()}`);
+    void renderD004Map(result.territory_summary || [], result.chart_metric, `${result.year}, ${result.quarter.toUpperCase()}`);
     status.dataset.state = 'success';
     const sourceNote = result.source === 'database.sqlite'
       ? ' Используем таблицы из database.sqlite.'
@@ -1037,17 +1112,19 @@ async function initializeD004(apiBaseUrl) {
     if (!response.ok) throw new Error(options.error || 'Не удалось получить список файлов D004.');
     if (!options.years.length) throw new Error('Не найдены данные D004: проверьте CSV в data/sinte/d004 или убедитесь, что таблицы D004 импортированы в database.sqlite.');
 
-    appendOptions(document.getElementById('d004YearSelect'), ['all', ...options.years], String, (value) => value === 'all' ? 'Все годы' : value);
+    appendOptions(document.getElementById('d004YearSelect'), options.years, String, String);
     appendOptions(document.getElementById('d004QuarterSelect'), ['all', ...options.quarters], String, (value) => value === 'all' ? 'Все кварталы' : value.toUpperCase());
     appendOptions(document.getElementById('d004ModuleSelect'), options.modules, (item) => item.id, (item) => `${item.label} (vopr${item.id})`);
-    document.getElementById('d004QuarterSelect').value = 'all';
+    renderD004QuestionnaireCards(options.modules);
+    document.getElementById('d004QuarterSelect').value = '4kv';
     document.getElementById('d004ModuleSelect').value = '1';
 
     if (!dashboard.dataset.listenersReady) {
-      bindDatasetYearTabs('d004', document.getElementById('d004YearSelect'), preferredDatasetYear(options.years), document.getElementById('d004QuarterSelect'));
+      document.getElementById('d004YearSelect').value = preferredDatasetYear(options.years);
       ['d004YearSelect', 'd004QuarterSelect', 'd004ModuleSelect'].forEach((id) => {
         document.getElementById(id).addEventListener('change', () => {
           currentPage = 1;
+          renderD004QuestionnaireCards(options.modules);
           loadD004Page();
         });
       });

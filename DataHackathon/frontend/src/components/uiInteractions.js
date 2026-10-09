@@ -105,6 +105,43 @@ export function resetCustomCard() {
 }
 
 export function initThemeToggle() {
+  const styleButton = document.getElementById('stylePresetToggleBtn');
+  const styleMenu = document.getElementById('stylePresetMenu');
+  const styleOptions = [...(styleMenu?.querySelectorAll('[data-style-preset]') || [])];
+  const stylePalettes = {
+    classic: ['#a78bfa', '#7c9cff', '#6ee7f9', '#5be7c4', '#a3f7bd', '#b8a6ff'],
+    green: ['#17b981', '#50b9d2', '#46cbb0', '#7fdef5', '#7ef5ad', '#13966d']
+  };
+  const applyStylePreset = (preset) => {
+    if (!stylePalettes[preset]) return;
+    window.appChartPalette = stylePalettes[preset];
+    document.body.dataset.stylePreset = preset;
+    localStorage.setItem('app-style-preset', preset);
+    styleOptions.forEach((option) => option.setAttribute('aria-pressed', String(option.dataset.stylePreset === preset)));
+    document.querySelectorAll('[_echarts_instance_]').forEach((element) => {
+      window.echarts?.getInstanceByDom(element)?.setOption({ color: stylePalettes[preset] });
+    });
+    window.dispatchEvent(new CustomEvent('app-style-preset-changed', { detail: { preset } }));
+  };
+  const savedPreset = localStorage.getItem('app-style-preset');
+  applyStylePreset(savedPreset === 'classic' ? 'classic' : 'green');
+  styleButton?.addEventListener('click', () => {
+    const opening = styleMenu?.hidden ?? false;
+    if (!styleMenu) return;
+    styleMenu.hidden = !opening;
+    styleButton.setAttribute('aria-expanded', String(opening));
+  });
+  styleOptions.forEach((option) => option.addEventListener('click', () => {
+    applyStylePreset(option.dataset.stylePreset);
+    if (styleMenu) styleMenu.hidden = true;
+    styleButton?.setAttribute('aria-expanded', 'false');
+  }));
+  document.addEventListener('click', (event) => {
+    if (!styleMenu || styleMenu.hidden || event.target.closest('.style-preset-container')) return;
+    styleMenu.hidden = true;
+    styleButton?.setAttribute('aria-expanded', 'false');
+  });
+
   const themeToggleBtn = document.getElementById('themeToggleBtn');
   if (localStorage.getItem('theme') === 'dark') {
     document.body.classList.add('dark-theme');
