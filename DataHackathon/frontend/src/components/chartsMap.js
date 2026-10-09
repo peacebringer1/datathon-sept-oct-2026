@@ -11,10 +11,6 @@ export let summaryChartInstance = null;
 export let multiSummaryChartInstance = null; // Инстанс мульти-графика
 export let kzMapInstance = null;
 let cachedKZJson = null;
-<<<<<<< HEAD
-let isMapActive = false;
-=======
->>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
 
 const commonToolbox = {
   feature: {
@@ -427,15 +423,9 @@ function isDarkMode() {
 function getThemeColors() {
   const dark = isDarkMode();
   return {
-<<<<<<< HEAD
-    textColor: dark ? '#ffffff' : '#000000',
-    subTextColor: dark ? '#ffffff' : '#000000',
-    splitLineColor: dark ? '#334155' : '#f1f5f9'
-=======
     textColor: dark ? '#f5eee9' : '#222222',
     subTextColor: dark ? '#c6b7c8' : '#64748b',
     splitLineColor: dark ? 'rgba(201,170,206,0.2)' : '#f1f5f9'
->>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
   };
 }
 
@@ -457,15 +447,11 @@ export function updateChartThemeColors() {
     if (!chart) return;
 
     const currentOption = chart.getOption();
-<<<<<<< HEAD
-    const option = { title: { textStyle: { color: textColor } } };
-=======
     const dark = isDarkMode();
     const option = {
       color: dark ? ['#fbb085', '#c9aace', '#e7a489', '#a88db1', '#d4b6d9'] : ['#fbb085', '#c9aace', '#df987d', '#a88db1', '#e5c2ac'],
       title: { textStyle: { color: textColor } }
     };
->>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
 
     if (currentOption.legend?.length) {
       option.legend = currentOption.legend.map(() => ({ textStyle: { color: textColor } }));
@@ -476,8 +462,6 @@ export function updateChartThemeColors() {
     if (currentOption.yAxis?.length) {
       option.yAxis = currentOption.yAxis.map(() => ({ axisLabel: { color: textColor } }));
     }
-<<<<<<< HEAD
-=======
     if (dark && currentOption.series?.length) {
       option.series = currentOption.series.map((series) => {
         const nextSeries = { type: series.type };
@@ -488,7 +472,6 @@ export function updateChartThemeColors() {
         return nextSeries;
       });
     }
->>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
 
     chart.setOption(option);
   });
@@ -609,14 +592,6 @@ export async function initKazakhstanMap(apiBaseUrl, indicator, year) {
 
   if (!kzMapInstance) {
     kzMapInstance = echarts.init(chartDom);
-<<<<<<< HEAD
-    
-    // Клик по самому графику карты тоже активирует зум
-    chartDom.addEventListener('click', () => {
-      activateMapZoom();
-    });
-=======
->>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
   }
 
   if (!cachedKZJson) {
@@ -648,17 +623,6 @@ export async function initKazakhstanMap(apiBaseUrl, indicator, year) {
       title: { text: `Географическое распределение: ${indicator} (${year})`, left: 'center', textStyle: { fontSize: 14, color: getThemeColors().textColor } },
       toolbox: commonToolbox,
       tooltip: { trigger: 'item', formatter: (params) => `<b>${params.name}</b><br/>Значение: <b>${params.value !== undefined ? params.value.toLocaleString('ru-RU') : 'Нет данных'}</b>` },
-<<<<<<< HEAD
-      visualMap: { left: 'right', min: minVal, max: maxVal, inRange: { color: ['#e0f3f8', '#abd9e9', '#74add1', '#4575b4', '#313695'] }, text: ['Макс', 'Мин'], calculable: true },
-      series: [{
-        type: 'map',
-        map: 'KZ',
-        roam: isMapActive ? true : false, 
-        center: [67.0, 48.0],
-        zoom: 2.5,
-        data: formattedData,
-        label: { show: true, fontSize: 8 },
-=======
       visualMap: { left: 14, bottom: 14, orient: 'horizontal', min: minVal, max: maxVal, inRange: { color: ['#f7e9df', '#fbb085', '#c9aace', '#a88db1'] }, text: ['Макс', 'Мин'], calculable: true, textStyle: { color: getThemeColors().textColor } },
       series: [{
         type: 'map',
@@ -671,7 +635,6 @@ export async function initKazakhstanMap(apiBaseUrl, indicator, year) {
         itemStyle: { borderColor: document.body.classList.contains('dark-theme') ? '#e0c9e4' : '#fff', borderWidth: 1 },
         emphasis: { itemStyle: { areaColor: '#fbb085' }, label: { show: true, color: '#222', fontSize: 9 } },
         label: { show: false, fontSize: 8 },
->>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
         universalTransition: true
       }]
     };
@@ -684,39 +647,6 @@ export async function initKazakhstanMap(apiBaseUrl, indicator, year) {
   }
 }
 
-<<<<<<< HEAD
-// Активация зума и перемещения карты
-export function activateMapZoom() {
-  if (!kzMapInstance) return;
-  isMapActive = true;
-  const wrapper = document.getElementById('mapWrapper');
-  if (wrapper) wrapper.classList.add('active');
-  
-  kzMapInstance.setOption({ 
-    series: [{ roam: true }] 
-  });
-}
-
-// Глобальный клик для блокировки карты при клике вне её области
-document.addEventListener('click', (event) => {
-  const wrapper = document.getElementById('mapWrapper');
-  if (!wrapper || !kzMapInstance) return;
-
-  if (!wrapper.contains(event.target) && isMapActive) {
-    isMapActive = false;
-    wrapper.classList.remove('active');
-    
-    kzMapInstance.setOption({ 
-      series: [{ roam: false }] 
-    });
-  }
-});
-
-// Делаем функцию глобальной для HTML-атрибута onclick
-window.activateMapZoom = activateMapZoom;
-
-=======
->>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
 // Функция управления сайдбаром с принудительным пересчетом размеров графиков
 export function toggleSidebar() {
   const sidebar = document.getElementById('aiSidebar');
@@ -791,8 +721,4 @@ export function initChartsResizeObserver() {
 // Инициализация наблюдателя размеров при загрузке DOM
 document.addEventListener('DOMContentLoaded', () => {
   initChartsResizeObserver();
-<<<<<<< HEAD
 });
-=======
-});
->>>>>>> dc8732dbe208308ef095b862befeb070e1b443be

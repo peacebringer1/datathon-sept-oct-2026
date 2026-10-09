@@ -144,9 +144,6 @@ const translations = {
   'Ключ не подключён.': ['Кілт қосылмаған.', 'No key connected.'],
   'Ключ Claude сохранён. Его действительность проверится при первом запросе.': ['Claude кілті сақталды. Оның жарамдылығы алғашқы сұрауда тексеріледі.', 'Claude key saved. It will be validated on the first request.'],
   'Сохранённый ключ удалён.': ['Сақталған кілт жойылды.', 'Saved key removed.'],
-<<<<<<< HEAD
-  'Вставьте API-ключ Claude из Anthropic Console.': ['Anthropic Console ішінен Claude API кілтін енгізіңіз.', 'Paste a Claude API key from the Anthropic Console.']
-=======
   'Вставьте API-ключ Claude из Anthropic Console.': ['Anthropic Console ішінен Claude API кілтін енгізіңіз.', 'Paste a Claude API key from the Anthropic Console.'],
   'Big data analysis in the Republic of Kazakhstan': ['Қазақстан Республикасының үлкен деректерін талдау', 'Big data analysis in the Republic of Kazakhstan'],
   'Главная': ['Басты бет', 'Home'],
@@ -476,7 +473,6 @@ const translations = {
   '25–39 лет': ['25–39 жас', 'Ages 25–39'],
   '40–59 лет': ['40–59 жас', 'Ages 40–59'],
   '60 лет и старше': ['60 жас және одан жоғары', 'Ages 60 and over']
->>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
 };
 
 const textNodes = new WeakMap();
@@ -514,15 +510,12 @@ function translateValue(value, language = getCurrentLanguage()) {
     return language === 'kk' ? `${year[1]} жыл` : year[1];
   }
 
-<<<<<<< HEAD
-=======
   const questionPart = normalized.match(/^(\d+)\s+часть\s+вопрос\s+([\d._-]+)$/i);
   if (questionPart) {
     if (language === 'kk') return `${questionPart[1]}-бөлім, ${questionPart[2]}-сұрақ`;
     if (language === 'en') return `Part ${questionPart[1]}, question ${questionPart[2]}`;
   }
 
->>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
   return value;
 }
 
@@ -562,11 +555,7 @@ function updateChartLanguage(language) {
   if (!window.echarts) return;
   const translate = value => typeof value === 'string' ? translateValue(value, language) : value;
 
-<<<<<<< HEAD
-  document.querySelectorAll('.chart-box-h330, .chart-container, .summary-chart-inner, .radar-box, #realDetailedChart')
-=======
   document.querySelectorAll('.chart-box-h330, .chart-container, .summary-chart-inner, .radar-box, .dataset-chart, .d002-question-chart, .d002-single-question-chart, .d002-map-chart, .home-mini-chart, #realDetailedChart')
->>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
     .forEach(element => {
       const chart = window.echarts.getInstanceByDom(element);
       if (!chart) return;
@@ -616,8 +605,6 @@ function toggleLanguage() {
 
 window.translateAppText = translateValue;
 window.getAppLanguage = getCurrentLanguage;
-<<<<<<< HEAD
-=======
 window.getAppTextVariants = (value) => {
   const normalized = String(value || '').trim().replace(/\s+/g, ' ').toLocaleLowerCase();
   const variants = new Set([String(value || '')]);
@@ -635,7 +622,6 @@ window.getAppTextVariants = (value) => {
   }
   return [...variants];
 };
->>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
 window.toggleLanguage = toggleLanguage;
 
 document.addEventListener('DOMContentLoaded', () => {

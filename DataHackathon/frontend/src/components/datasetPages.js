@@ -12,11 +12,7 @@ const PAGE_CONFIG = {
   d008: {
     title: 'Демография',
     breadcrumb: 'Население · Демография',
-<<<<<<< HEAD
-    description: 'Демографические данные Казахстана. Выберите общий дашборд для просмотра текущих демографических графиков.'
-=======
     description: 'Возрастной и социальный состав участников обследования домохозяйств: пол, родство, образование, семейное положение и основная деятельность.'
->>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
   },
   d004: {
     title: 'Доходы и расходы домохозяйств',
@@ -26,20 +22,12 @@ const PAGE_CONFIG = {
   d006: {
     title: 'Жилищные условия',
     breadcrumb: 'Население · Жилищные условия',
-<<<<<<< HEAD
-    description: 'Раздел жилищной статистики. Данные можно будет подключить к этой странице отдельно.'
-=======
     description: 'Ежегодный опрос о типе и площади жилья, коммунальных удобствах, собственности, доступе к земле и имуществе домохозяйств.'
->>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
   },
   d002: {
     title: 'Социальные оценки',
     breadcrumb: 'Население · Социальные оценки · D002',
-<<<<<<< HEAD
-    description: 'Обследование качества жизни и оценок населения. Данные D002 будут подключены отдельным этапом.'
-=======
     description: 'Ежегодное обследование о том, как люди оценивают свою жизнь, какие условия и услуги им доступны и с какими трудностями сталкиваются домохозяйства.'
->>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
   }
 };
 
@@ -47,8 +35,6 @@ let activeApiUrl = '';
 let currentPage = 1;
 let totalRows = 0;
 let d004Chart = null;
-<<<<<<< HEAD
-=======
 let d002Charts = new Map();
 let d002ChartObserver = null;
 let d002Questions = [];
@@ -61,7 +47,6 @@ let d002MapRevision = 0;
 let d002MapRegions = [];
 let d006Charts = new Map();
 let d008Charts = new Map();
->>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
 let d004Map = null;
 let d004GeoJSON = null;
 let d004MapSummary = [];
@@ -84,8 +69,6 @@ function appendOptions(select, items, valueOf, labelOf) {
   });
 }
 
-<<<<<<< HEAD
-=======
 function disposeD002Charts() {
   if (d002ChartObserver) d002ChartObserver.disconnect();
   d002ChartObserver = null;
@@ -600,7 +583,6 @@ async function initializeD002(apiBaseUrl) {
   }
 }
 
->>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
 function activeD004Query() {
   const params = new URLSearchParams({
     year: document.getElementById('d004YearSelect').value,
@@ -641,23 +623,6 @@ function renderD004Chart(chartData, metric, moduleLabel, year, quarter) {
   const chartElement = document.getElementById('d004TerritoryChart');
   if (!chartElement || !window.echarts) return;
   d004Chart = window.echarts.getInstanceByDom(chartElement) || window.echarts.init(chartElement);
-<<<<<<< HEAD
-  d004Chart.setOption({
-    color: ['#2563eb'],
-    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-    grid: { left: 48, right: 24, top: 24, bottom: 68, containLabel: true },
-    xAxis: {
-      type: 'category',
-      data: chartData.labels,
-      axisLabel: { rotate: 35, interval: 0 }
-    },
-    yAxis: { type: 'value', name: metric === 'Количество записей' ? 'Записей' : 'Значение', minInterval: 1 },
-    series: [{
-      name: metric,
-      type: 'bar',
-      data: chartData.values,
-      barMaxWidth: 42,
-=======
   const dark = document.body.classList.contains('dark-theme');
   const textColor = dark ? '#eee5ed' : '#51484f';
   const colors = ['#fbb085', '#c9aace', '#a88db1', '#df987d'];
@@ -679,17 +644,12 @@ function renderD004Chart(chartData, metric, moduleLabel, year, quarter) {
       barMaxWidth: 42,
       showBackground: true,
       backgroundStyle: { color: dark ? 'rgba(201,170,206,.12)' : 'rgba(201,170,206,.18)', borderRadius: [5, 5, 0, 0] },
->>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
       itemStyle: { borderRadius: [5, 5, 0, 0] }
     }],
     title: {
       text: `${moduleLabel} · ${year}, ${quarter.toUpperCase()}`,
       left: 'center',
-<<<<<<< HEAD
-      textStyle: { fontSize: 13, fontWeight: 500 }
-=======
     textStyle: { fontSize: 13, fontWeight: 600, color: textColor }
->>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
     }
   }, true);
   d004Chart.resize();
@@ -757,20 +717,12 @@ async function renderD004Map(summary, metric, period) {
     d004Map.setOption({
       animation: false,
       tooltip: { trigger: 'item', formatter: (params) => `${params.name}<br>${metricConfig.label}: ${params.value == null ? 'Нет данных' : Number(params.value).toLocaleString('ru-RU')}` },
-<<<<<<< HEAD
-      visualMap: { min: low, max: high, left: 'right', bottom: 24, calculable: true, inRange: { color: ['#dbeafe', '#60a5fa', '#1d4ed8'] } },
-      series: [{
-        type: 'map', map: 'KZ_D004', roam: true, zoom: 1.35, selectedMode: 'single', data,
-        emphasis: { label: { show: true } },
-        select: { itemStyle: { areaColor: '#f59e0b', borderColor: '#92400e', borderWidth: 2 }, label: { show: true, color: '#111827' } }
-=======
       visualMap: { min: low, max: high, left: 16, bottom: 12, orient: 'horizontal', calculable: true, inRange: { color: ['#f7e9df', '#fbb085', '#a88db1'] }, textStyle: { color: document.body.classList.contains('dark-theme') ? '#e7dce8' : '#51484f' } },
       series: [{
         type: 'map', map: 'KZ_D004', roam: false, zoom: 1, layoutCenter: [' 0%', '130%'], layoutSize: '297%', selectedMode: 'single', data,
         itemStyle: { borderColor: document.body.classList.contains('dark-theme') ? '#e0c9e4' : '#fff', borderWidth: 1 },
         emphasis: { label: { show: true } },
         select: { itemStyle: { areaColor: '#fbb085', borderColor: '#8a5844', borderWidth: 2 }, label: { show: true, color: '#222222' } }
->>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
       }]
     }, true);
     setText('d004MapCaption', `${metricConfig.label} · ${period}. Наведите курсор для быстрой подсказки или нажмите на регион для подробностей.`);
@@ -943,13 +895,10 @@ export async function openSidebarDatasetPage(datasetId, element, apiBaseUrl) {
 
   document.querySelectorAll('.cat-subitem').forEach((item) => item.classList.remove('active'));
   if (element) element.classList.add('active');
-<<<<<<< HEAD
-=======
   document.querySelectorAll('.sidebar-home-link').forEach((item) => {
     item.classList.remove('active');
     item.removeAttribute('aria-current');
   });
->>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
   document.querySelectorAll('.cat-header').forEach((item) => item.classList.remove('active'));
   document.querySelectorAll('.program-switcher-button').forEach((button) => {
     const active = button.dataset.program === 'dashboard';
@@ -961,25 +910,15 @@ export async function openSidebarDatasetPage(datasetId, element, apiBaseUrl) {
   document.getElementById('householdSection').style.display = 'none';
   document.getElementById('dataAnalyzerSection').style.display = 'none';
   document.getElementById('detailedViewSection').style.display = 'none';
-<<<<<<< HEAD
-=======
   document.getElementById('populationHypothesesSection').style.display = 'none';
   document.getElementById('aboutProjectSection').style.display = 'none';
   document.querySelector('.app-layout')?.classList.remove('home-route-active');
->>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
   const section = document.getElementById('datasetViewSection');
   section.style.display = 'block';
   setText('datasetPageTitle', page.title);
   setText('datasetPageBreadcrumb', page.breadcrumb);
   setText('datasetPageDescription', page.description);
 
-<<<<<<< HEAD
-  const d004 = datasetId === 'd004';
-  document.getElementById('d004Dashboard').hidden = !d004;
-  document.getElementById('datasetPlaceholder').hidden = d004;
-  if (d004) {
-    await initializeD004(apiBaseUrl);
-=======
   const d002 = datasetId === 'd002';
   const d004 = datasetId === 'd004';
   const d006 = datasetId === 'd006';
@@ -997,16 +936,11 @@ export async function openSidebarDatasetPage(datasetId, element, apiBaseUrl) {
     await initializeD006(apiBaseUrl);
   } else if (d008) {
     await initializeD008(apiBaseUrl);
->>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
   } else {
     const placeholder = document.getElementById('datasetPlaceholder');
     placeholder.replaceChildren();
     const message = document.createElement('p');
-<<<<<<< HEAD
-    message.textContent = 'Сейчас подключён D004. Этот раздел откроется здесь после подключения его набора данных.';
-=======
     message.textContent = 'Данные для этого раздела пока не подключены.';
->>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
     placeholder.append(message);
   }
 }

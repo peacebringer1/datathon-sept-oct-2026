@@ -14,10 +14,7 @@ import { fetchAIInsights } from './insightsTicker.js';
 import { setSelectValuePrecise } from './appInit.js';
 import { updateChartAnalysis } from './chartAnalysis.js';
 import { openSidebarDatasetPage } from './datasetPages.js';
-<<<<<<< HEAD
-=======
 import { startAppLoading, transitionAppPage } from './loadingIndicator.js';
->>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
 
 const categoryDashboards = {
   "Население": [
@@ -166,14 +163,10 @@ export async function onSummaryFilterChange(API_BASE_URL) {
 }
 
 export async function switchSubSection(subDataset, el, apiBaseUrl) {
-<<<<<<< HEAD
-  await openSidebarDatasetPage(subDataset, el, apiBaseUrl);
-=======
   const finishLoading = startAppLoading('Загружаем данные раздела…');
   try {
     await transitionAppPage(() => openSidebarDatasetPage(subDataset, el, apiBaseUrl));
   } finally {
     finishLoading();
   }
->>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
 }

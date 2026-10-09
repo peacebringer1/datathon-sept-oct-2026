@@ -78,22 +78,15 @@ function getDashboardContext() {
 
 export async function sendMessageToAI(apiBaseUrl) {
   const input = document.getElementById('chatInput');
-<<<<<<< HEAD
-  const sendButton = document.querySelector('.chat-input-area button');
-=======
   const sendButton = document.getElementById('chatSendButton');
   const sendButtonLabel = document.getElementById('chatSendButtonLabel');
   const sendSpinner = sendButton?.querySelector('.chat-send-spinner');
->>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
   const message = input?.value.trim();
   if (!message || !input) return;
 
   appendMessage(message, 'user');
   input.value = '';
   input.disabled = true;
-<<<<<<< HEAD
-  if (sendButton) sendButton.disabled = true;
-=======
   if (sendButton) {
     sendButton.disabled = true;
   }
@@ -109,7 +102,6 @@ export async function sendMessageToAI(apiBaseUrl) {
       loadingBubble.innerHTML = '<span class="loading-spinner" aria-hidden="true"></span><span>Формирую ответ…</span>';
     }
   }, 5000);
->>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
 
   const nextHistory = [...chatHistory, { role: 'user', text: message }].slice(-10);
 
@@ -155,13 +147,6 @@ export async function sendMessageToAI(apiBaseUrl) {
       : 'Не удалось получить ответ ИИ. Проверьте подключение и попробуйте ещё раз.';
     appendMessage(friendlyMessage, 'ai');
   } finally {
-<<<<<<< HEAD
-    input.disabled = false;
-    if (sendButton) sendButton.disabled = false;
-    input.focus();
-  }
-}
-=======
     window.clearTimeout(loadingTimer);
     loadingBubble?.remove();
     input.disabled = false;
@@ -174,4 +159,3 @@ export async function sendMessageToAI(apiBaseUrl) {
     input.focus();
   }
 }
->>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
