@@ -664,7 +664,7 @@
               <p class="d006-intro-note">Круговые диаграммы показывают долю домохозяйств в каждой категории. В блоке удобств отображается доля ответивших «да», а в списке товаров — суммарное количество указанных предметов.</p>
             </article>
 
-            <div class="d006-chart-grid">
+            <div class="d006-chart-grid d008-trend-grid">
               <article class="dataset-panel d006-chart-panel">
                 <div class="d006-chart-heading"><div><p class="d006-eyebrow">Основное жильё</p><h2>Тип жилья</h2></div><span class="d006-chart-unit">доля домохозяйств</span></div>
                 <div id="d006HomeTypeChart" class="dataset-chart d006-chart" role="img" aria-label="Распределение домохозяйств по типу основного жилья"></div>
@@ -694,19 +694,32 @@
           </div>
 
           <div id="d008Dashboard" hidden>
-            <div class="dataset-filter-panel d006-filter-panel">
-              <div class="dataset-year-tabs" role="tablist" aria-label="Период данных"><button type="button" role="tab" aria-selected="false" data-dataset="d008" data-year-mode="single">По годам</button><button type="button" role="tab" aria-selected="true" data-dataset="d008" data-year-mode="all">Итоги за все годы</button></div>
-              <label>Год обследования
-                <select id="d008YearSelect" aria-label="Год обследования D008"></select>
-              </label>
+            <div class="d008-filter-panel dataset-panel">
+              <div class="d008-filter-heading"><div><p class="d006-eyebrow">ДИНАМИКА</p><h2>Сравнение 2022, 2023 и 2024 годов</h2><p>Годы показаны отдельно. Значения за разные годы не складываются.</p></div><button id="d008ResetFilters" type="button">Сбросить фильтры</button></div>
+              <fieldset class="d008-year-filter"><legend>Годы на графиках</legend>
+                <label><input type="checkbox" name="d008Year" value="2022" checked> 2022</label>
+                <label><input type="checkbox" name="d008Year" value="2023" checked> 2023</label>
+                <label><input type="checkbox" name="d008Year" value="2024" checked> 2024</label>
+              </fieldset>
+              <div class="d008-filter-grid">
+                <label>Возраст<select id="d008FilterAge"><option value="">Все возрасты</option><option value="0-14">0–14 лет</option><option value="15-24">15–24 года</option><option value="25-39">25–39 лет</option><option value="40-59">40–59 лет</option><option value="60+">60 лет и старше</option></select></label>
+                <label>Пол<select id="d008FilterGender"><option value="">Любой</option><option value="1">Мужчины</option><option value="2">Женщины</option></select></label>
+                <label>Город или село<select id="d008FilterSettlement"><option value="">Все территории</option><option value="1">Город</option><option value="2">Село</option></select></label>
+                <label>Родство в семье<select id="d008FilterRelationship"><option value="">Любое</option><option value="1">Глава домохозяйства</option><option value="2">Супруг или супруга</option><option value="3">Сын или дочь</option><option value="4">Отец или мать</option><option value="5">Брат или сестра</option><option value="6">Дедушка или бабушка</option><option value="7">Внук или внучка</option><option value="8">Другая степень родства</option><option value="9">Не родственник</option></select></label>
+                <label>Образование<select id="d008FilterEducation"><option value="">Любой уровень</option><option value="1">Дошкольное</option><option value="2">Начальное</option><option value="3">Основное среднее</option><option value="4">Среднее или профессиональное</option><option value="5">Высшее</option><option value="6">Послевузовское</option><option value="7">Нет достигнутого уровня</option></select></label>
+                <label>Семейное положение<select id="d008FilterMarital"><option value="">Любое</option><option value="1">Не состоял(а) в браке</option><option value="2">Состоит в браке</option><option value="3">Вдовец или вдова</option><option value="4">Разведён(а)</option></select></label>
+                <label>Занятость<select id="d008FilterActivity"><option value="">Любой статус</option><option value="1">Работа по найму</option><option value="2">Предпринимательство</option><option value="3">Ищет работу</option><option value="4">Пенсионер</option><option value="5">Учащийся или студент</option><option value="6">Домашнее хозяйство или уход</option><option value="7">Нетрудоспособен</option><option value="8">Не работает по другим причинам</option></select></label>
+                <label>Показатель на графиках<select id="d008ValueMode"><option value="count">Число людей / домохозяйств</option><option value="share">Доля, % от ответивших</option></select></label>
+              </div>
+              <p class="d008-filter-note">Фильтры применяются ко всем графикам. Пустые ответы не включаются в доли; неклассифицированные коды показаны отдельно.</p>
             </div>
             <p id="d008Status" class="dataset-status" role="status" aria-live="polite">Загрузка параметров D008…</p>
 
             <div class="dataset-stat-grid d008-stat-grid">
-              <article class="dataset-stat-card"><span>Членов домохозяйств в данных</span><strong id="d008PeopleStat">—</strong></article>
-              <article class="dataset-stat-card"><span>Домохозяйств</span><strong id="d008HouseholdsStat">—</strong></article>
-              <article class="dataset-stat-card"><span>Средний размер семьи</span><strong id="d008HouseholdSizeStat">—</strong></article>
-              <article class="dataset-stat-card"><span>Средний возраст</span><strong id="d008AverageAgeStat">—</strong></article>
+              <article class="dataset-stat-card"><span id="d008PeopleLabel">Людей в выборке</span><strong id="d008PeopleStat">—</strong></article>
+              <article class="dataset-stat-card"><span id="d008HouseholdsLabel">Домохозяйств в выборке</span><strong id="d008HouseholdsStat">—</strong></article>
+              <article class="dataset-stat-card"><span id="d008HouseholdSizeLabel">Средний размер семьи</span><strong id="d008HouseholdSizeStat">—</strong></article>
+              <article class="dataset-stat-card"><span id="d008AverageAgeLabel">Средний возраст</span><strong id="d008AverageAgeStat">—</strong></article>
               <article class="dataset-stat-card"><span>Доля детей младше 15 лет</span><strong id="d008ChildrenStat">—</strong></article>
               <article class="dataset-stat-card"><span>Территорий</span><strong id="d008TerritoriesStat">—</strong></article>
             </div>
@@ -714,42 +727,42 @@
             <article class="dataset-panel d006-intro-panel">
               <p class="d006-eyebrow">D-008 · Состав домохозяйства</p>
               <h2>Кто входит в домохозяйства</h2>
-              <p>Контрольная карточка перечисляет членов выбранных для обследования домохозяйств и их социально-демографические характеристики: родство, пол, возраст, семейное положение, образование и основную занятость. Карточка обновляется в течение года.</p>
+              <p>Линии показывают изменение социально-демографического состава выборки в 2022, 2023 и 2024 годах. Каждый год рассчитывается отдельно — общие суммы между годами не складываются.</p>
               <p class="d006-intro-note">Каждая строка набора соответствует человеку. Показатели описывают участников обследования, а не всё население страны. Файлы в проекте — синтетические учебные данные, а не официальные результаты.</p>
             </article>
 
             <div class="d006-chart-grid">
               <article class="dataset-panel d006-chart-panel">
-                <div class="d006-chart-heading"><div><p class="d006-eyebrow">Распределение участников</p><h2>Город и село</h2></div><span class="d006-chart-unit">доля людей</span></div>
+                <div class="d006-chart-heading"><div><p class="d006-eyebrow">Динамика по годам</p><h2>Город и село</h2></div><span id="d008UnitSettlement" class="d006-chart-unit">число людей</span></div>
                 <div id="d008SettlementChart" class="dataset-chart d006-chart" role="img" aria-label="Распределение участников обследования по городу и селу"></div>
               </article>
               <article class="dataset-panel d006-chart-panel">
-                <div class="d006-chart-heading"><div><p class="d006-eyebrow">Распределение участников</p><h2>Пол</h2></div><span class="d006-chart-unit">доля людей</span></div>
+                <div class="d006-chart-heading"><div><p class="d006-eyebrow">Динамика по годам</p><h2>Пол</h2></div><span id="d008UnitGender" class="d006-chart-unit">число людей</span></div>
                 <div id="d008GenderChart" class="dataset-chart d006-chart" role="img" aria-label="Распределение участников обследования по полу"></div>
               </article>
               <article class="dataset-panel d006-chart-panel">
-                <div class="d006-chart-heading"><div><p class="d006-eyebrow">Структура семьи</p><h2>Кем участники приходятся главе</h2></div><span class="d006-chart-unit">доля людей</span></div>
+                <div class="d006-chart-heading"><div><p class="d006-eyebrow">Динамика по годам</p><h2>Кем участники приходятся главе</h2></div><span id="d008UnitRelationship" class="d006-chart-unit">число людей</span></div>
                 <div id="d008RelationshipChart" class="dataset-chart d006-chart" role="img" aria-label="Распределение участников по родству с главой домохозяйства"></div>
               </article>
               <article class="dataset-panel d006-chart-panel">
-                <div class="d006-chart-heading"><div><p class="d006-eyebrow">Уровень образования</p><h2>Образование участников</h2></div><span class="d006-chart-unit">доля ответивших</span></div>
+                <div class="d006-chart-heading"><div><p class="d006-eyebrow">Динамика по годам</p><h2>Образование участников</h2></div><span id="d008UnitEducation" class="d006-chart-unit">число ответов</span></div>
                 <div id="d008EducationChart" class="dataset-chart d006-chart" role="img" aria-label="Распределение участников по уровню образования"></div>
               </article>
               <article class="dataset-panel d006-chart-panel">
-                <div class="d006-chart-heading"><div><p class="d006-eyebrow">Семейное положение</p><h2>Семейное положение участников</h2></div><span class="d006-chart-unit">доля ответивших</span></div>
+                <div class="d006-chart-heading"><div><p class="d006-eyebrow">Динамика по годам</p><h2>Семейное положение участников</h2></div><span id="d008UnitMarital" class="d006-chart-unit">число ответов</span></div>
                 <div id="d008MaritalChart" class="dataset-chart d006-chart" role="img" aria-label="Распределение участников по семейному положению"></div>
               </article>
               <article class="dataset-panel d006-chart-panel">
-                <div class="d006-chart-heading"><div><p class="d006-eyebrow">Основная деятельность</p><h2>Статус занятости</h2></div><span class="d006-chart-unit">доля ответивших 15+</span></div>
+                <div class="d006-chart-heading"><div><p class="d006-eyebrow">Динамика по годам</p><h2>Статус занятости</h2></div><span id="d008UnitActivity" class="d006-chart-unit">число ответов</span></div>
                 <div id="d008ActivityChart" class="dataset-chart d006-chart-tall" role="img" aria-label="Распределение участников старше 15 лет по основной деятельности"></div>
               </article>
               <article class="dataset-panel d006-chart-panel">
-                <div class="d006-chart-heading"><div><p class="d006-eyebrow">Возрастной состав</p><h2>Возрастные группы</h2></div><span class="d006-chart-unit">доля людей</span></div>
-                <p id="d008AgeNoData" class="dataset-panel-caption" hidden>В файле за 2021 год нет года рождения, поэтому возрастные показатели для него не рассчитываются.</p>
+                <div class="d006-chart-heading"><div><p class="d006-eyebrow">Динамика по годам</p><h2>Возрастные группы</h2></div><span id="d008UnitAge" class="d006-chart-unit">число людей</span></div>
+                <p id="d008AgeNoData" class="dataset-panel-caption" hidden>Для выбранных годов нет данных о дате рождения.</p>
                 <div id="d008AgeChart" class="dataset-chart d006-chart" role="img" aria-label="Распределение участников по возрастным группам"></div>
               </article>
               <article class="dataset-panel d006-chart-panel d006-chart-panel-wide">
-                <div class="d006-chart-heading"><div><p class="d006-eyebrow">Размер домохозяйства</p><h2>Сколько человек живёт вместе</h2></div><span class="d006-chart-unit">число домохозяйств</span></div>
+                <div class="d006-chart-heading"><div><p class="d006-eyebrow">Динамика по годам</p><h2>Сколько человек живёт вместе</h2></div><span id="d008UnitHouseholds" class="d006-chart-unit">число домохозяйств</span></div>
                 <div id="d008HouseholdSizeChart" class="dataset-chart d006-chart-tall" role="img" aria-label="Распределение домохозяйств по числу членов семьи"></div>
               </article>
             </div>
