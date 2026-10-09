@@ -5,7 +5,10 @@ node_modules
 __MACOSX
 DataHackathon/data/raw
 DataHackathon/data/sinte/
+DataHackathon/data/
 DataHackathon/data.zip
 DataHackathon/database.sqlite
 *.sqlite
+*.sqlite3
+*.db
 __pycache__
