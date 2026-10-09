@@ -343,6 +343,13 @@ const translations = {
   'Загрузка приложения': ['Қолданба жүктелуде', 'Loading the app'],
   'Подготавливаем данные и графики…': ['Деректер мен графиктер дайындалуда…', 'Preparing data and charts…'],
   'Отправляется…': ['Жіберілуде…', 'Sending…'],
+  'Привет! Я готов проанализировать демографию 📊': ['Сәлем! Демографияны талдауға дайынмын 📊', 'Hi! I’m ready to analyze demographics 📊'],
+  'Спросите меня о показателях и графиках.': ['Көрсеткіштер мен графиктер туралы сұраңыз.', 'Ask me about indicators and charts.'],
+  'Помогу разобраться в данных по регионам Казахстана.': ['Қазақстан өңірлері бойынша деректерді түсінуге көмектесемін.', 'I can help explore data across Kazakhstan’s regions.'],
+  'Радар показывает условный профиль по описанию роли и не является оценкой навыков участников.': ['Радар рөл сипаттамасына негізделген шартты профильді көрсетеді және қатысушылардың дағдыларын бағаламайды.', 'The radar is an illustrative profile based on each role description, not an assessment of team members’ skills.'],
+  'Посмотреть профиль': ['Профильді көру', 'View profile'],
+  'Нажмите, чтобы вернуться': ['Қайту үшін басыңыз', 'Tap to return'],
+  'Нажмите, чтобы увидеть профиль вклада': ['Үлес профилін көру үшін басыңыз', 'Activate to view the contribution profile'],
   'Совпадений не найдено': ['Сәйкестік табылмады', 'No matches found'],
   'Проверка доступности ИИ': ['ЖИ қолжетімділігін тексеру', 'Checking AI availability'],
   'Запускаем приложение и подключаем данные…': ['Қолданба іске қосылып, деректерге қосылуда…', 'Starting the app and connecting data…'],
@@ -486,12 +493,25 @@ function getCurrentLanguage() {
 function translateValue(value, language = getCurrentLanguage()) {
   const normalized = value.trim().replace(/\s+/g, ' ');
   const matchingEntry = Object.entries(translations).find(([original, translated]) =>
-    original === normalized || translated.includes(normalized)
+    original === normalized || translated.some((variant) => variant === normalized)
   );
   if (matchingEntry) {
     const [original, translated] = matchingEntry;
     if (language === 'ru') return original;
     return translated[language === 'kk' ? 0 : 1];
+  }
+
+  // Translate known fragments inside generated labels and sentences too (chart titles,
+  // captions and status messages often combine a translated label with a value).
+  if (language !== 'ru') {
+    let translated = normalized;
+    const fragments = Object.entries(translations)
+      .filter(([original]) => original.length >= 5 && normalized.includes(original))
+      .sort(([a], [b]) => b.length - a.length);
+    for (const [original, variants] of fragments) {
+      translated = translated.split(original).join(variants[language === 'kk' ? 0 : 1]);
+    }
+    if (translated !== normalized) return translated;
   }
 
   const count = normalized.match(/^(?:Записей в базе:|Дерекқордағы жазбалар:|Records in database:)\s*([\d\s.,]+)$/);
@@ -529,6 +549,7 @@ function translateElement(root, language) {
   }
 
   for (const node of nodes) {
+    if (node.parentElement?.closest('.about-member-chart')) continue;
     const original = textNodes.has(node) ? textNodes.get(node) : node.nodeValue;
     if (!textNodes.has(node)) textNodes.set(node, original);
     const translated = translateValue(original, language);
@@ -567,6 +588,9 @@ function updateChartLanguage(language) {
       for (const axis of [...(option.xAxis || []), ...(option.yAxis || [])]) {
         axis.name = translate(axis.name);
         if (Array.isArray(axis.data)) axis.data = axis.data.map(translate);
+      }
+      for (const radar of option.radar || []) {
+        if (Array.isArray(radar.indicator)) radar.indicator = radar.indicator.map((item) => ({ ...item, name: translate(item.name) }));
       }
       for (const series of option.series || []) {
         series.name = translate(series.name);
@@ -640,6 +664,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
       } else if (record.type === 'characterData') {
         const node = record.target;
+        if (node.parentElement?.closest('.about-member-chart')) continue;
         if (!textNodes.has(node)) textNodes.set(node, node.nodeValue);
         const original = textNodes.get(node);
         const translated = translateValue(original, language);

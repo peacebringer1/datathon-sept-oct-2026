@@ -79,7 +79,6 @@ function getDashboardContext() {
 export async function sendMessageToAI(apiBaseUrl) {
   const input = document.getElementById('chatInput');
   const sendButton = document.getElementById('chatSendButton');
-  const sendButtonLabel = document.getElementById('chatSendButtonLabel');
   const sendSpinner = sendButton?.querySelector('.chat-send-spinner');
   const message = input?.value.trim();
   if (!message || !input) return;
@@ -90,18 +89,16 @@ export async function sendMessageToAI(apiBaseUrl) {
   if (sendButton) {
     sendButton.disabled = true;
   }
-  if (sendButtonLabel) sendButtonLabel.textContent = 'Отправляется…';
-  let loadingBubble = null;
-  const loadingTimer = window.setTimeout(() => {
-    if (sendButton) sendButton.setAttribute('aria-busy', 'true');
-    if (sendButtonLabel) sendButtonLabel.textContent = 'Думаю…';
-    if (sendSpinner) sendSpinner.hidden = false;
-    loadingBubble = appendMessage('Формирую ответ…', 'ai');
-    if (loadingBubble) {
-      loadingBubble.classList.add('chat-loading');
-      loadingBubble.innerHTML = '<span class="loading-spinner" aria-hidden="true"></span><span>Формирую ответ…</span>';
-    }
-  }, 5000);
+  if (sendButton) {
+    sendButton.setAttribute('aria-busy', 'true');
+    sendButton.classList.add('is-loading');
+  }
+  if (sendSpinner) sendSpinner.hidden = false;
+  const loadingBubble = appendMessage('Формирую ответ…', 'ai');
+  if (loadingBubble) {
+    loadingBubble.classList.add('chat-loading');
+    loadingBubble.innerHTML = '<span class="loading-spinner" aria-hidden="true"></span><span>Формирую ответ…</span>';
+  }
 
   const nextHistory = [...chatHistory, { role: 'user', text: message }].slice(-10);
 
@@ -147,14 +144,13 @@ export async function sendMessageToAI(apiBaseUrl) {
       : 'Не удалось получить ответ ИИ. Проверьте подключение и попробуйте ещё раз.';
     appendMessage(friendlyMessage, 'ai');
   } finally {
-    window.clearTimeout(loadingTimer);
     loadingBubble?.remove();
     input.disabled = false;
     if (sendButton) {
       sendButton.disabled = false;
       sendButton.removeAttribute('aria-busy');
+      sendButton.classList.remove('is-loading');
     }
-    if (sendButtonLabel) sendButtonLabel.textContent = 'Отправить';
     if (sendSpinner) sendSpinner.hidden = true;
     input.focus();
   }

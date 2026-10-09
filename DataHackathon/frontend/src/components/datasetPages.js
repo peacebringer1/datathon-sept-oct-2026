@@ -719,7 +719,7 @@ async function renderD004Map(summary, metric, period) {
       tooltip: { trigger: 'item', formatter: (params) => `${params.name}<br>${metricConfig.label}: ${params.value == null ? 'Нет данных' : Number(params.value).toLocaleString('ru-RU')}` },
       visualMap: { min: low, max: high, left: 16, bottom: 12, orient: 'horizontal', calculable: true, inRange: { color: ['#f7e9df', '#fbb085', '#a88db1'] }, textStyle: { color: document.body.classList.contains('dark-theme') ? '#e7dce8' : '#51484f' } },
       series: [{
-        type: 'map', map: 'KZ_D004', roam: false, zoom: 1, layoutCenter: [' 0%', '130%'], layoutSize: '297%', selectedMode: 'single', data,
+        type: 'map', map: 'KZ_D004', roam: false, zoom: 1, layoutCenter: ['50%', '50%'], layoutSize: '88%', selectedMode: 'single', data,
         itemStyle: { borderColor: document.body.classList.contains('dark-theme') ? '#e0c9e4' : '#fff', borderWidth: 1 },
         emphasis: { label: { show: true } },
         select: { itemStyle: { areaColor: '#fbb085', borderColor: '#8a5844', borderWidth: 2 }, label: { show: true, color: '#222222' } }

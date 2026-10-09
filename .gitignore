@@ -7,8 +7,11 @@ DataHackathon/data/raw
 <<<<<<< HEAD
 =======
 DataHackathon/data/sinte/
+DataHackathon/data/
 DataHackathon/data.zip
 DataHackathon/database.sqlite
 >>>>>>> dc8732dbe208308ef095b862befeb070e1b443be
 *.sqlite
+*.sqlite3
+*.db
 __pycache__
