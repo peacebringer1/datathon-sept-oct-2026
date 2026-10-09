@@ -1426,6 +1426,62 @@ body.dark-theme .d002-question-card {
     .d008-trend-grid .d006-chart-tall { height: 360px; }
 }
 
+/* Dataset controls stay together as a compact page toolbar. */
+.dataset-view-section :is(.dataset-filter-panel, .d008-filter-panel) {
+    position: sticky;
+    top: 0;
+    z-index: 12;
+    border-color: color-mix(in srgb, var(--accent-color) 28%, var(--border-color));
+    background: color-mix(in srgb, var(--card-bg) 94%, transparent);
+    box-shadow: 0 8px 22px rgba(20, 32, 24, .08);
+    backdrop-filter: blur(14px);
+}
+.dataset-filter-panel.d002-filter-panel { grid-template-columns: repeat(4, minmax(150px, 1fr)); }
+.d002-map-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    min-width: min(380px, 48%);
+}
+.d002-map-filters label,
+.d006-chart-filter-grid label {
+    display: grid;
+    gap: 5px;
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 650;
+}
+.d002-map-filters label { flex: 1 1 150px; }
+.d002-map-filters select,
+.d006-chart-filter-grid select {
+    min-height: 36px;
+    width: 100%;
+    padding: 6px 9px;
+    border: 1px solid var(--border-color);
+    border-radius: 9px;
+    background: var(--bg-input);
+    color: var(--text-primary);
+    font: inherit;
+}
+.d006-chart-guide h2 { margin: 0 0 8px; color: var(--text-primary); font-size: 18px; }
+.d006-chart-guide p { margin: 0 0 10px; color: var(--text-secondary); line-height: 1.55; }
+.d006-color-guide-title { font-weight: 700; }
+.d006-color-scale { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); overflow: hidden; border-radius: 10px; }
+.d006-color-scale span { padding: 9px 5px; background: var(--scale-color); color: #17231d; font-size: 12px; font-weight: 800; text-align: center; }
+.d006-chart-filter-details { margin: 12px 0 6px; }
+.d006-chart-filter-details summary { width: fit-content; color: var(--accent-hover); font-size: 12px; font-weight: 700; cursor: pointer; }
+.d006-chart-filter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 10px; }
+
+@media (max-width: 700px) {
+    .dataset-filter-panel.d002-filter-panel { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .d002-map-filters { min-width: 0; }
+    .d006-color-scale { grid-template-columns: 1fr; }
+    .d006-color-scale span { padding: 6px 10px; text-align: left; }
+}
+@media (max-width: 440px) {
+    .dataset-filter-panel.d002-filter-panel { grid-template-columns: minmax(0, 1fr); }
+}
+
 .d006-intro-panel {
     padding: clamp(20px, 3vw, 34px);
     background: linear-gradient(125deg, rgba(134, 185, 63, 0.15), rgba(184, 214, 160, 0.16) 65%, var(--card-bg) 100%);
@@ -6636,4 +6692,81 @@ body[data-style-preset="classic"] .home-eyebrow { color: #fbb085; }
     .ai-history-item { max-width: 100px; }
     .ai-popup-sidebar .ai-card-header h3 { font-size: 13px; }
     .ai-popup-sidebar .ai-header-eyebrow { font-size: 9px; }
+}
+
+/* Keep chart cards and ECharts hosts from overflowing their grid or flex tracks. */
+.chart-section-block,
+.charts-grid-4,
+.sub-chart-card,
+.summary-card-box,
+.dataset-view-section,
+.dataset-panel,
+.d004-questionnaire-card,
+.detailed-chart-container {
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.chart-box-h330,
+.chart-container,
+.summary-chart-inner,
+.dataset-chart,
+.d002-single-question-chart,
+.d004-questionnaire-chart,
+.d006-chart,
+.d006-chart-tall,
+.chat-chart,
+#realDetailedChart,
+#kazakhstanMapChart {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.sub-chart-card > .chart-box-h330 {
+    flex: 0 0 auto;
+}
+
+.chart-section-block > h2,
+.chart-section-block > .section-description,
+.dataset-panel > h2,
+.d006-chart-heading > div {
+    min-width: 0;
+    overflow-wrap: break-word;
+}
+
+.d006-chart-heading .d006-chart-unit {
+    max-width: 48%;
+    white-space: normal;
+    text-align: right;
+}
+
+#d006Dashboard .d006-chart-tall {
+    height: 560px;
+}
+
+@media (max-width: 760px) {
+    .main-content-area {
+        min-width: 0;
+        padding-inline: 14px;
+    }
+
+    .chart-section-block,
+    .sub-chart-card,
+    .dataset-panel,
+    .summary-card-box {
+        padding: clamp(12px, 3vw, 18px);
+    }
+
+    .d006-chart-heading .d006-chart-unit {
+        max-width: 100%;
+        text-align: left;
+    }
+
+    #d006Dashboard .d006-chart-tall {
+        height: 660px;
+    }
 }
