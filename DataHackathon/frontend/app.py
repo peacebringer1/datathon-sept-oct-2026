@@ -731,18 +731,65 @@ def d008_data():
     if frame is None:
         return jsonify({'error': f'Данные D008 за {year} не найдены ни в data/sinte, ни в database.sqlite.'}), 404
     frame.columns = [str(column).strip().upper() for column in frame.columns]
+    full_frame = frame
+    people_before_filters = int(len(full_frame))
+    age_groups = [
+        ('0-14', '0–14 лет', 0, 14), ('15-24', '15–24 года', 15, 24),
+        ('25-39', '25–39 лет', 25, 39), ('40-59', '40–59 лет', 40, 59),
+        ('60+', '60 лет и старше', 60, 120)
+    ]
+
+    def calculate_ages(source_frame):
+        if 'GOD_ROJD' not in source_frame.columns:
+            return pd.Series(index=source_frame.index, dtype='float64')
+        birth_year = pd.to_numeric(source_frame['GOD_ROJD'], errors='coerce')
+        ages = int(year) - birth_year
+        if 'MES_ROJD' in source_frame.columns:
+            birth_month = pd.to_numeric(source_frame['MES_ROJD'], errors='coerce')
+            ages = ages - birth_month.gt(1).astype('int64')
+        return ages.where(ages.between(0, 120))
+
+    all_ages = calculate_ages(full_frame)
+    filter_columns = {
+        'settlement': ('K', {'1', '2'}),
+        'gender': ('POL', {'1', '2'}),
+        'relationship': ('RODSTVO', set(D008_RELATIONSHIPS)),
+        'education': ('UROV', set(D008_EDUCATION)),
+        'marital_status': ('SEM_POL', set(D008_MARITAL_STATUS)),
+        'activity': ('STATUS', set(D008_ACTIVITY))
+    }
+    applied_filters = {}
+    keep = pd.Series(True, index=full_frame.index)
+    for filter_name, (column, allowed_codes) in filter_columns.items():
+        selected = str(request.args.get(filter_name, '')).strip()
+        if selected and selected in allowed_codes and column in full_frame.columns:
+            keep &= full_frame[column].astype(str).str.strip().eq(selected)
+            applied_filters[filter_name] = selected
+
+    selected_age_group = str(request.args.get('age_group', '')).strip()
+    if selected_age_group:
+        age_spec = next((item for item in age_groups if item[0] == selected_age_group), None)
+        if age_spec:
+            _, _, lower, upper = age_spec
+            keep &= all_ages.between(lower, upper)
+            applied_filters['age_group'] = selected_age_group
+
+    frame = full_frame.loc[keep]
+    ages = all_ages.loc[frame.index].dropna()
     people_count = int(len(frame))
 
     def distribution(column, labels):
         if column not in frame.columns:
             return []
-        counts = frame[column].astype(str).str.strip().value_counts()
-        known = [(code, int(count)) for code, count in counts.items() if code in labels]
-        denominator = sum(count for _, count in known)
+        values = frame[column].astype(str).str.strip()
+        values = values[values.ne('')]
+        counts = values.value_counts()
+        denominator = int(counts.sum())
+        ordered = sorted(counts.items(), key=lambda item: (int(item[0]) if item[0].isdigit() else 999, item[0]))
         return [
-            {'code': code, 'label': labels[code], 'count': count,
-             'share': round(count / denominator * 100, 1) if denominator else 0}
-            for code, count in sorted(known, key=lambda item: (int(item[0]) if item[0].isdigit() else 999, item[0]))
+            {'code': code, 'label': labels.get(code, f'Не классифицировано (код {code})'), 'count': int(count),
+             'share': round(int(count) / denominator * 100, 1) if denominator else 0}
+            for code, count in ordered
         ]
 
     settlement = distribution('K', {'1': 'Город', '2': 'Село'})
@@ -757,33 +804,24 @@ def d008_data():
     marital_status = distribution('SEM_POL', D008_MARITAL_STATUS)
     activity = distribution('STATUS', D008_ACTIVITY)
 
-    ages = pd.Series(dtype='float64')
-    if 'GOD_ROJD' in frame.columns:
-        birth_year = pd.to_numeric(frame['GOD_ROJD'], errors='coerce')
-        age = pd.to_numeric(year, errors='coerce') - birth_year
-        if 'MES_ROJD' in frame.columns:
-            birth_month = pd.to_numeric(frame['MES_ROJD'], errors='coerce')
-            age = age - (birth_month.gt(1)).astype('int64')
-        ages = age[age.between(0, 120)].dropna()
     age_structure = []
-    if len(ages):
-        for label, lower, upper in D008_AGE_GROUPS:
-            count = int(ages.between(lower, upper).sum())
-            age_structure.append({
-                'label': label, 'count': count,
-                'share': round(count / len(ages) * 100, 1)
-            })
+    for code, label, lower, upper in age_groups:
+        count = int(ages.between(lower, upper).sum()) if len(ages) else 0
+        age_structure.append({
+            'code': code, 'label': label, 'count': count,
+            'share': round(count / len(ages) * 100, 1) if len(ages) else 0
+        })
 
-    if 'NOMER' in frame.columns:
-        household_sizes = frame.groupby(frame['NOMER'].astype(str).str.strip()).size()
-        household_sizes = household_sizes[household_sizes.index.astype(str) != '']
-    elif 'KOL_CHL' in frame.columns:
-        household_sizes = pd.to_numeric(frame['KOL_CHL'], errors='coerce').dropna()
+    if 'NOMER' in full_frame.columns:
+        household_ids = frame['NOMER'].astype(str).str.strip()
+        household_ids = set(household_ids[household_ids.ne('')])
+        all_household_ids = full_frame['NOMER'].astype(str).str.strip()
+        household_sizes = all_household_ids[all_household_ids.isin(household_ids)].value_counts()
     else:
-        household_sizes = pd.Series(dtype='float64')
+        household_sizes = pd.Series(dtype='int64')
     size_counts = household_sizes.value_counts().sort_index()
     household_size_distribution = [
-        {'label': f'{int(size)} ' + ('человек' if int(size) % 10 == 1 and int(size) % 100 != 11 else 'человека' if int(size) % 10 in {2, 3, 4} and int(size) % 100 not in {12, 13, 14} else 'человек'),
+        {'code': str(int(size)), 'label': f'{int(size)} ' + ('человек' if int(size) % 10 == 1 and int(size) % 100 != 11 else 'человека' if int(size) % 10 in {2, 3, 4} and int(size) % 100 not in {12, 13, 14} else 'человек'),
          'count': int(count), 'share': round(int(count) / len(household_sizes) * 100, 1) if len(household_sizes) else 0}
         for size, count in size_counts.items()
     ]
@@ -791,12 +829,24 @@ def d008_data():
     average_household_size = round(float(household_sizes.mean()), 1) if len(household_sizes) else None
     average_age = round(float(ages.mean()), 1) if len(ages) else None
     under_15_share = round(float(ages.lt(15).mean()) * 100, 1) if len(ages) else None
+    households = int(len(household_sizes))
 
     return jsonify({
         'dataset': 'd008', 'year': year, 'source': source,
-        'people': people_count, 'households': int(len(household_sizes)), 'territories': territories,
+        'people': people_count, 'people_before_filters': people_before_filters,
+        'households': households, 'territories': territories,
         'average_household_size': average_household_size, 'average_age': average_age,
         'under_15_share': under_15_share, 'age_available': len(ages) > 0,
+        'answered': {
+            'settlement': sum(item['count'] for item in settlement),
+            'gender': sum(item['count'] for item in gender),
+            'relationships': sum(item['count'] for item in relationships),
+            'education': sum(item['count'] for item in education),
+            'marital_status': sum(item['count'] for item in marital_status),
+            'activity': sum(item['count'] for item in activity),
+            'age_structure': len(ages), 'household_sizes': households
+        },
+        'filters': applied_filters,
         'settlement': settlement, 'gender': gender, 'relationships': relationships,
         'education': education, 'marital_status': marital_status, 'activity': activity,
         'age_structure': age_structure, 'household_sizes': household_size_distribution
@@ -1311,12 +1361,29 @@ AI_TOOLS = [{
                     'limit': {'type': 'INTEGER', 'description': 'Максимум строк результата, от 1 до 200.'}
                 }
             }
+        },
+        {
+            'name': 'query_d008',
+            'description': 'Получить показатели демографического обследования D008 за выбранные годы отдельно, с фильтрами и абсолютными числами или долями. Никогда не суммируй разные годы.',
+            'parameters': {
+                'type': 'OBJECT', 'properties': {
+                    'metric': {'type': 'STRING', 'enum': ['age_structure', 'settlement', 'gender', 'relationships', 'education', 'marital_status', 'activity', 'household_sizes']},
+                    'years': {'type': 'ARRAY', 'items': {'type': 'STRING', 'enum': ['2022', '2023', '2024']}},
+                    'value': {'type': 'STRING', 'enum': ['count', 'share']},
+                    'filters': {'type': 'OBJECT', 'properties': {
+                        'age_group': {'type': 'STRING'}, 'gender': {'type': 'STRING'}, 'settlement': {'type': 'STRING'},
+                        'relationship': {'type': 'STRING'}, 'education': {'type': 'STRING'},
+                        'marital_status': {'type': 'STRING'}, 'activity': {'type': 'STRING'}
+                    }}
+                }, 'required': ['metric']
+            }
         }
     ]
 }]
 
 AI_SYSTEM_INSTRUCTION = '''Ты аналитический помощник дашборда статистики Казахстана.
 Отвечай на русском языке, ясно и по существу. Для фактов, чисел, сравнений, рейтингов и трендов из базы обязательно вызывай query_demographics; не придумывай значения и не делай выводы по памяти.
+Для вопросов о наборе D008 обязательно используй query_d008. Каждый год показывай отдельно: никогда не складывай и не усредняй значения разных лет. Учитывай datasetFilters из контекста, если пользователь не задал более точные фильтры. В сравнении годов описывай динамику показателя, а долю трактуй как процент среди заполненных ответов; абсолютное значение — как число людей/домохозяйств.
 Если не знаешь точное название показателя или региона, сначала вызови get_dataset_overview. Учитывай, что база содержит агрегированные записи demographics: indicator, year, province, value. Объясняй, какие фильтры и годы использованы. Если запрос нельзя подтвердить данными, прямо скажи об этом.
 Если пользователь прямо просит построить, показать или визуализировать график, вызови build_dataset_chart. Для наборов D002, D004, D006 и D008 выбирай только метрики из описания инструмента. Для D002 укажи идентификатор вопроса анкеты; если его невозможно определить из запроса, попроси уточнить вопрос, не выбирая его наугад. Для таблицы demographics обязательно укажи точный показатель и группировку. Не представляй график как готовый, если инструмент вернул ошибку. В текстовом ответе кратко укажи источник данных, период и что показано.
 Не делай выводов о причинно-следственных связях только на основе графика. Отделяй наблюдаемые факты от гипотез.
@@ -1428,6 +1495,84 @@ def query_demographics(arguments):
         }
     finally:
         conn.close()
+
+
+def query_d008(arguments):
+    """Return D008 survey values by year without combining years."""
+    metric = arguments.get('metric')
+    metric_rows = {
+        'age_structure': ('Возрастные группы', 'age_structure'),
+        'settlement': ('Город и село', 'settlement'),
+        'gender': ('Пол', 'gender'),
+        'relationships': ('Родство в семье', 'relationships'),
+        'education': ('Уровень образования', 'education'),
+        'marital_status': ('Семейное положение', 'marital_status'),
+        'activity': ('Статус занятости', 'activity'),
+        'household_sizes': ('Размер домохозяйства', 'household_sizes')
+    }
+    if metric not in metric_rows:
+        return {'error': 'Укажите метрику D008: age_structure, settlement, gender, relationships, education, marital_status, activity или household_sizes.'}
+
+    requested_years = arguments.get('years')
+    if not isinstance(requested_years, list) or not requested_years:
+        selected_year = str(arguments.get('year') or '').strip()
+        requested_years = [selected_year] if selected_year in {'2022', '2023', '2024'} else ['2022', '2023', '2024']
+    years = list(dict.fromkeys(str(year) for year in requested_years if str(year) in {'2022', '2023', '2024'}))
+    if not years:
+        return {'error': 'Для динамики D008 выберите 2022, 2023 и/или 2024 год.'}
+
+    allowed_filters = {
+        'age_group': {'0-14', '15-24', '25-39', '40-59', '60+'},
+        'gender': {'1', '2'}, 'settlement': {'1', '2'},
+        'relationship': set(D008_RELATIONSHIPS), 'education': set(D008_EDUCATION),
+        'marital_status': set(D008_MARITAL_STATUS), 'activity': set(D008_ACTIVITY)
+    }
+    supplied_filters = arguments.get('filters') if isinstance(arguments.get('filters'), dict) else {}
+    filter_labels = {
+        'gender': {'1': 'Мужчины', '2': 'Женщины'},
+        'settlement': {'1': 'Город', '2': 'Село'},
+        'relationship': D008_RELATIONSHIPS, 'education': D008_EDUCATION,
+        'marital_status': D008_MARITAL_STATUS, 'activity': D008_ACTIVITY,
+        'age_group': {'0-14': '0–14 лет', '15-24': '15–24 года', '25-39': '25–39 лет', '40-59': '40–59 лет', '60+': '60 лет и старше'}
+    }
+    filter_aliases = {
+        'gender': {'мужчина': '1', 'мужчины': '1', 'мужской': '1', 'женщина': '2', 'женщины': '2', 'женский': '2'},
+        'settlement': {'городское': '1', 'город': '1', 'сельское': '2', 'село': '2'}
+    }
+    filters = {}
+    for name, raw_value in supplied_filters.items():
+        if name not in allowed_filters or raw_value in (None, ''):
+            continue
+        value = str(raw_value).strip()
+        if value not in allowed_filters[name]:
+            value = next((code for code, label in filter_labels.get(name, {}).items() if label.casefold() == value.casefold()), value)
+            value = filter_aliases.get(name, {}).get(value.casefold(), value)
+        if value in allowed_filters[name]:
+            filters[name] = value
+    value_key = arguments.get('value', 'count')
+    if value_key not in {'count', 'share'}:
+        return {'error': 'Для D008 выберите абсолютное число count или долю share.'}
+
+    _, data_key = metric_rows[metric]
+    client = app.test_client()
+    yearly = []
+    for year in years:
+        response = client.get('/api/d008/data', query_string={'year': year, **filters})
+        data = response.get_json(silent=True) or {}
+        if response.status_code != 200:
+            return {'error': data.get('error', f'Не удалось получить D008 за {year}.')}
+        yearly.append({
+            'year': year,
+            'people': data.get('people', 0),
+            'answered': (data.get('answered') or {}).get(data_key, 0),
+            'average_age': data.get('average_age'),
+            'average_household_size': data.get('average_household_size'),
+            'rows': data.get(data_key, [])
+        })
+    return {
+        'dataset': 'd008', 'metric': metric, 'value': value_key,
+        'filters': filters, 'years': yearly
+    }
 
 
 @app.route('/api/ai-chat', methods=['POST'])
@@ -1685,6 +1830,45 @@ def build_dataset_chart(arguments):
             })
         elif dataset == 'd006':
             response = client.get('/api/d006/data', query_string={'year': year})
+        elif dataset == 'd008':
+            d008_result = query_d008({
+                'metric': metric,
+                'years': arguments.get('years'),
+                'year': arguments.get('year'),
+                'value': value_key,
+                'filters': arguments.get('filters')
+            })
+            if d008_result.get('error'):
+                return d008_result
+            yearly = d008_result['years']
+            category_labels = {}
+            for yearly_item in yearly:
+                for row in yearly_item['rows']:
+                    category_labels[str(row.get('code', row.get('label', '')))] = str(row.get('label', ''))
+            selected_keys = list(category_labels)
+            if len(selected_keys) > 14:
+                selected_keys = selected_keys[:14]
+            chart_series = [{
+                'name': category_labels[key],
+                'type': 'line',
+                'data': [next((row.get(value_key) for row in year_item['rows'] if str(row.get('code', row.get('label', ''))) == key), 0) for year_item in yearly]
+            } for key in selected_keys]
+            if not chart_series:
+                return {'error': 'Для выбранных фильтров нет данных D008 для графика.'}
+            metric_titles = {
+                'age_structure': 'Возрастная структура', 'settlement': 'Город и село', 'gender': 'Распределение по полу',
+                'relationships': 'Родство в семье', 'education': 'Уровень образования', 'marital_status': 'Семейное положение',
+                'activity': 'Статус занятости', 'household_sizes': 'Размер домохозяйства'
+            }
+            filters = d008_result.get('filters') or {}
+            subtitle = f"D008 · {', '.join(item['year'] for item in yearly)} · {'доля, %' if value_key == 'share' else 'абсолютное число'}"
+            if filters:
+                subtitle += ' · фильтры: ' + ', '.join(f'{key}={value}' for key, value in filters.items())
+            return {
+                'dataset': 'd008', 'title': metric_titles.get(metric, 'Демография'), 'subtitle': subtitle,
+                'chart_type': 'line', 'labels': [item['year'] for item in yearly], 'series': chart_series,
+                'value_label': '%' if value_key == 'share' else ''
+            }
         else:
             response = client.get('/api/d008/data', query_string={'year': year})
 
@@ -1837,13 +2021,26 @@ def call_claude(contents, dataset_overview, dashboard_context, max_output_tokens
             }
         },
         {
+            'name': 'query_d008',
+            'description': 'Данные D008 отдельно по каждому году, с фильтрами; никогда не объединяй годы.',
+            'input_schema': {'type': 'object', 'properties': {
+                'metric': {'type': 'string', 'enum': ['age_structure', 'settlement', 'gender', 'relationships', 'education', 'marital_status', 'activity', 'household_sizes']},
+                'years': {'type': 'array', 'items': {'type': 'string', 'enum': ['2022', '2023', '2024']}},
+                'value': {'type': 'string', 'enum': ['count', 'share']},
+                'filters': {'type': 'object', 'properties': {
+                    'age_group': {'type': 'string'}, 'gender': {'type': 'string'}, 'settlement': {'type': 'string'},
+                    'relationship': {'type': 'string'}, 'education': {'type': 'string'}, 'marital_status': {'type': 'string'}, 'activity': {'type': 'string'}
+                }}
+            }, 'required': ['metric']}
+        },
+        {
             'name': 'build_dataset_chart',
             'description': (
                 'Построить реальный график только по имеющимся данным. Используй исключительно когда пользователь '
                 'прямо просит график/диаграмму. dataset: demographics, d002, d004, d006, d008. '
                 'Если пользователь ссылается на текущий набор, используй activeDataset и datasetFilters из контекста. '
                 'Метрики D006: city_rural, home_types, ownership, land_access, amenities, durable_goods. '
-                'Метрики D008: age_structure, settlement, gender, relationships, education, marital_status, activity, household_sizes. '
+                'Метрики D008: age_structure, settlement, gender, relationships, education, marital_status, activity, household_sizes. Для D008 всегда строй линейную динамику по years (2022/2023/2024), не объединяй года; передавай filters из контекста и value=count/share. '
                 'Для D002 укажи question (идентификатор GR... или часть названия); value=count или share, form=subject/ocenka. '
                 'Для D004 строится сравнение территорий; value=households, records или amount, quarter может быть all, module — номер раздела. '
                 'Для demographics задай точный indicator, group_by=province/year/province_year и при необходимости start_year/end_year. '
@@ -1856,6 +2053,11 @@ def call_claude(contents, dataset_overview, dashboard_context, max_output_tokens
                     'metric': {'type': 'string'},
                     'chart_type': {'type': 'string', 'enum': ['bar', 'line', 'pie']},
                     'year': {'type': 'string'},
+                    'years': {'type': 'array', 'items': {'type': 'string', 'enum': ['2022', '2023', '2024']}},
+                    'filters': {'type': 'object', 'properties': {
+                        'age_group': {'type': 'string'}, 'gender': {'type': 'string'}, 'settlement': {'type': 'string'},
+                        'relationship': {'type': 'string'}, 'education': {'type': 'string'}, 'marital_status': {'type': 'string'}, 'activity': {'type': 'string'}
+                    }},
                     'value': {'type': 'string', 'enum': ['count', 'share', 'households', 'amount', 'records']},
                     'question': {'type': 'string'},
                     'form': {'type': 'string', 'enum': ['subject', 'ocenka']},
@@ -1947,9 +2149,26 @@ def call_claude(contents, dataset_overview, dashboard_context, max_output_tokens
                     tool_result = dataset_overview
                 elif name == 'query_demographics' and isinstance(arguments, dict):
                     tool_result = query_demographics(arguments)
+                elif name == 'query_d008' and isinstance(arguments, dict):
+                    d008_arguments = dict(arguments)
+                    if dashboard_context.get('activeDataset') == 'd008':
+                        selected = dashboard_context.get('datasetFilters') or {}
+                        supplied = d008_arguments.get('filters') if isinstance(d008_arguments.get('filters'), dict) else {}
+                        d008_arguments['filters'] = {**{key: value for key, value in selected.items() if value}, **supplied}
+                        d008_arguments.setdefault('years', selected.get('years'))
+                        d008_arguments.setdefault('value', selected.get('value_mode', 'count'))
+                    tool_result = query_d008(d008_arguments)
                 elif name == 'build_dataset_chart' and isinstance(arguments, dict):
-                    tool_result = build_dataset_chart(arguments)
-                    if 'values' in tool_result and 'labels' in tool_result:
+                    chart_arguments = dict(arguments)
+                    if chart_arguments.get('dataset') == 'd008' and dashboard_context.get('activeDataset') == 'd008':
+                        selected = dashboard_context.get('datasetFilters') or {}
+                        supplied = chart_arguments.get('filters') if isinstance(chart_arguments.get('filters'), dict) else {}
+                        chart_arguments['filters'] = {**{key: value for key, value in selected.items() if value}, **supplied}
+                        chart_arguments.setdefault('years', selected.get('years'))
+                        chart_arguments.setdefault('value', selected.get('value_mode', 'count'))
+                        chart_arguments['chart_type'] = 'line'
+                    tool_result = build_dataset_chart(chart_arguments)
+                    if ('values' in tool_result or 'series' in tool_result) and 'labels' in tool_result:
                         chart_result = tool_result
                 else:
                     tool_result = {'error': 'Запрошена неизвестная функция или переданы неверные параметры.'}

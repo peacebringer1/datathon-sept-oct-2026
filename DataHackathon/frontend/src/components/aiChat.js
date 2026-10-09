@@ -107,6 +107,16 @@ function getDashboardContext() {
     } else if (activeDataset === 'd004') {
       datasetFilters.quarter = document.getElementById('d004QuarterSelect')?.value || '';
       datasetFilters.module = document.getElementById('d004ModuleSelect')?.value || '';
+    } else if (activeDataset === 'd008') {
+      datasetFilters.years = [...document.querySelectorAll('input[name="d008Year"]:checked')].map((input) => input.value);
+      datasetFilters.age_group = document.getElementById('d008FilterAge')?.value || '';
+      datasetFilters.gender = document.getElementById('d008FilterGender')?.value || '';
+      datasetFilters.settlement = document.getElementById('d008FilterSettlement')?.value || '';
+      datasetFilters.relationship = document.getElementById('d008FilterRelationship')?.value || '';
+      datasetFilters.education = document.getElementById('d008FilterEducation')?.value || '';
+      datasetFilters.marital_status = document.getElementById('d008FilterMarital')?.value || '';
+      datasetFilters.activity = document.getElementById('d008FilterActivity')?.value || '';
+      datasetFilters.value_mode = document.getElementById('d008ValueMode')?.value || 'count';
     }
     context.datasetFilters = datasetFilters;
   }
@@ -121,13 +131,16 @@ function getDashboardContext() {
 }
 
 function appendChartMessage(chartData) {
+  const hasSeries = Array.isArray(chartData?.series) && chartData.series.length > 0
   if (
     !chartData || !['bar', 'line', 'pie'].includes(chartData.chart_type)
-    || !Array.isArray(chartData.labels) || !Array.isArray(chartData.values)
+    || !Array.isArray(chartData.labels)
+    || (!hasSeries && !Array.isArray(chartData.values))
     || chartData.labels.length === 0 || chartData.labels.length > 30
-    || chartData.labels.length !== chartData.values.length
+    || (!hasSeries && chartData.labels.length !== chartData.values.length)
     || chartData.labels.some((label) => typeof label !== 'string')
-    || chartData.values.some((value) => !Number.isFinite(Number(value)))
+    || (!hasSeries && chartData.values.some((value) => !Number.isFinite(Number(value))))
+    || (hasSeries && chartData.series.some((series) => !series || typeof series.name !== 'string' || !Array.isArray(series.data) || series.data.length !== chartData.labels.length || series.data.some((value) => value != null && !Number.isFinite(Number(value)))))
   ) {
     throw new Error('ИИ вернул график в неподдерживаемом формате.');
   }
@@ -153,7 +166,16 @@ function appendChartMessage(chartData) {
   const darkTheme = document.body.classList.contains('dark-theme');
   const chart = window.echarts.init(chartElement, darkTheme ? 'dark' : undefined);
   const labels = chartData.labels;
-  const values = chartData.values.map(Number);
+  const values = Array.isArray(chartData.values) ? chartData.values.map(Number) : [];
+  const series = hasSeries ? chartData.series.map((item) => ({
+    name: item.name,
+    type: item.type || chartData.chart_type,
+    data: item.data.map((value) => value == null ? null : Number(value)),
+    smooth: chartData.chart_type === 'line',
+    showSymbol: chartData.chart_type === 'line',
+    connectNulls: false,
+    barMaxWidth: 40
+  })) : null;
   const suffix = typeof chartData.value_label === 'string' ? chartData.value_label : '';
   const escapeTooltipText = (value) => String(value)
     .replaceAll('&', '&amp;')
@@ -163,15 +185,16 @@ function appendChartMessage(chartData) {
     .replaceAll("'", '&#39;');
   const option = {
     animationDuration: 500,
-    color: ['#17b981', '#50b9d2', '#46cbb0', '#7fdef5', '#7ef5ad'],
+    color: ['#dc3545', '#f47721', '#f5c542', '#a8c93a', '#238b45', '#8b9298'],
     tooltip: {
       trigger: chartData.chart_type === 'pie' ? 'item' : 'axis',
       formatter: chartData.chart_type === 'pie'
         ? (item) => `${escapeTooltipText(item.name)}<br><strong>${Number(item.value).toLocaleString('ru-RU')}${escapeTooltipText(suffix)}</strong> · ${item.percent}%`
         : (items) => {
-          const item = Array.isArray(items) ? items[0] : items;
-          if (!item) return '';
-          return `${escapeTooltipText(item.axisValue)}<br><strong>${Number(item.value).toLocaleString('ru-RU')}${escapeTooltipText(suffix)}</strong>`;
+          const points = Array.isArray(items) ? items : [items];
+          const first = points[0];
+          if (!first) return '';
+          return `${escapeTooltipText(first.axisValue)}<br>${points.map((item) => `${item.marker}${escapeTooltipText(item.seriesName || '')}: <strong>${Number(item.value).toLocaleString('ru-RU')}${escapeTooltipText(suffix)}</strong>`).join('<br>')}`;
         }
     },
     toolbox: { right: 8, feature: { saveAsImage: { title: 'Сохранить график', pixelRatio: 2 } } },
@@ -184,14 +207,14 @@ function appendChartMessage(chartData) {
         label: { formatter: '{b}: {d}%' },
         emphasis: { scale: true }
       }]
-      : [{
+      : (hasSeries ? series : [{
         type: chartData.chart_type,
         data: values,
         smooth: chartData.chart_type === 'line',
         showSymbol: chartData.chart_type === 'line',
         barMaxWidth: 40,
         label: { show: values.length <= 12, position: 'top', formatter: ({ value }) => `${Number(value).toLocaleString('ru-RU')}${suffix}` }
-      }]
+      }])
   };
   if (chartData.chart_type !== 'pie') {
     option.xAxis = { type: 'category', data: labels, axisLabel: { interval: 0, rotate: labels.length > 6 ? 30 : 0, hideOverlap: true } };

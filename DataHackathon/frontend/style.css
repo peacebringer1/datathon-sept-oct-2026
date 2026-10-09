@@ -1311,6 +1311,121 @@ body.dark-theme .d002-question-card {
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
 }
 
+.d008-filter-panel {
+    display: grid;
+    gap: 18px;
+}
+
+.d008-filter-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.d008-filter-heading h2 {
+    margin: 0 0 5px;
+    color: var(--text-primary);
+    font-size: clamp(1.15rem, 2vw, 1.45rem);
+}
+
+.d008-filter-heading p:last-child,
+.d008-filter-note {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.d008-filter-heading button {
+    min-height: 42px;
+    padding: 8px 14px;
+    border: 1px solid var(--border-color);
+    border-radius: 11px;
+    background: var(--bg-input);
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.d008-year-filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    border: 0;
+}
+
+.d008-year-filter legend {
+    margin-bottom: 8px;
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 750;
+}
+
+.d008-year-filter label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 40px;
+    padding: 7px 14px;
+    border: 1px solid var(--border-color);
+    border-radius: 11px;
+    background: var(--bg-input);
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.d008-year-filter input { accent-color: #3e9b59; }
+
+.d008-year-filter label:has(input:checked) {
+    border-color: rgba(62, 155, 89, .55);
+    background: rgba(62, 155, 89, .1);
+}
+
+.d008-year-filter label:has(input:disabled) {
+    opacity: .45;
+}
+
+.d008-filter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(205px, 1fr));
+    gap: 12px;
+}
+
+.d008-filter-grid label {
+    display: grid;
+    gap: 6px;
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.d008-filter-grid select {
+    width: 100%;
+    min-height: 42px;
+    padding: 7px 34px 7px 11px;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    background: var(--bg-input);
+    color: var(--text-primary);
+    font-size: 14px;
+}
+
+.d008-filter-note { padding-top: 12px; border-top: 1px solid var(--border-color); }
+
+.d008-trend-grid .d006-chart,
+.d008-trend-grid .d006-chart-tall { height: 390px; }
+
+@media (max-width: 760px) {
+    .d008-filter-heading { align-items: stretch; flex-direction: column; }
+    .d008-filter-heading button { width: 100%; }
+    .d008-filter-grid { grid-template-columns: 1fr; }
+    .d008-trend-grid .d006-chart,
+    .d008-trend-grid .d006-chart-tall { height: 360px; }
+}
+
 .d006-intro-panel {
     padding: clamp(20px, 3vw, 34px);
     background: linear-gradient(125deg, rgba(134, 185, 63, 0.15), rgba(184, 214, 160, 0.16) 65%, var(--card-bg) 100%);
