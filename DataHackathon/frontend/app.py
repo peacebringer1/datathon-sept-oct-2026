@@ -412,6 +412,8 @@ def d002_data():
         return jsonify({'error': f'Данные D002 за {year} не найдены ни в data/sinte, ни в database.sqlite.'}), 404
 
     questions = [str(column) for column in frame.columns if re.match(r'^GR', str(column), flags=re.IGNORECASE)]
+    if request.args.get('preview') == '1':
+        questions = questions[:1]
     if not questions:
         return jsonify({'error': 'В таблице D002 не найдены вопросы анкеты.'}), 500
     question_items = []
@@ -621,8 +623,13 @@ def d006_data():
             for code, count in counts.items() if code and code in labels
         ]
 
-    city_rural = distribution('K', {'1': 'Город', '2': 'Село'})
     home_types = distribution('TIP_J', D006_HOME_TYPES)
+    if request.args.get('preview') == '1':
+        return jsonify({
+            'dataset': 'd006', 'year': year, 'source': source,
+            'respondents': respondents, 'home_types': home_types
+        })
+    city_rural = distribution('K', {'1': 'Город', '2': 'Село'})
     ownership = distribution('VLAD1', D006_OWNERSHIP)
     land_access = distribution('ZEM', {'1': 'Есть доступ', '2': 'Нет доступа'})
     amenities = []
@@ -739,6 +746,11 @@ def d008_data():
         ]
 
     settlement = distribution('K', {'1': 'Город', '2': 'Село'})
+    if request.args.get('preview') == '1':
+        return jsonify({
+            'dataset': 'd008', 'year': year, 'source': source,
+            'people': people_count, 'settlement': settlement
+        })
     gender = distribution('POL', {'1': 'Мужчины', '2': 'Женщины'})
     relationships = distribution('RODSTVO', D008_RELATIONSHIPS)
     education = distribution('UROV', D008_EDUCATION)

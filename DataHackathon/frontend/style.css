@@ -1469,7 +1469,11 @@ body.dark-theme .d006-chart-panel {
 }
 
 #d004MapChart {
-    height: 440px;
+    height: clamp(480px, 56vw, 640px);
+    min-height: 460px;
+    margin-top: 10px;
+    border-radius: 16px;
+    background: color-mix(in srgb, var(--accent-color) 4%, var(--card-bg));
 }
 
 .dataset-explainer {
@@ -6086,25 +6090,106 @@ body {
 }
 
 :root body .home-category-card {
-    --home-accent: #17b981;
-    --home-tint: rgba(23, 185, 129, .14);
-    border-color: rgba(24, 29, 31, .08);
+    --home-accent: #d94343;
+    --home-tint: rgba(217, 67, 67, .11);
+    position: relative;
+    min-height: 330px;
+    padding: 23px 20px 17px;
+    border-color: color-mix(in srgb, var(--home-accent) 20%, var(--border-color));
+    border-radius: 21px;
     box-shadow: 0 10px 28px rgba(24, 29, 31, .055);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--home-accent) 3%, var(--card-bg)), var(--card-bg) 36%);
+}
+
+:root body .home-category-card::before {
+    position: absolute;
+    top: 0;
+    right: 18px;
+    left: 18px;
+    height: 3px;
+    border-radius: 0 0 4px 4px;
+    background: var(--home-accent);
+    content: '';
 }
 
 :root body .home-card-living {
-    --home-accent: #46cbb0;
-    --home-tint: rgba(70, 203, 176, .15);
+    --home-accent: #f28c28;
+    --home-tint: rgba(242, 140, 40, .13);
 }
 
 :root body .home-card-housing {
-    --home-accent: #50b9d2;
-    --home-tint: rgba(80, 185, 210, .15);
+    --home-accent: #f2c94c;
+    --home-tint: rgba(242, 201, 76, .17);
 }
 
 :root body .home-card-social {
-    --home-accent: #36b98b;
-    --home-tint: rgba(54, 185, 139, .15);
+    --home-accent: #3e9b59;
+    --home-tint: rgba(62, 155, 89, .13);
+}
+
+:root body .home-mini-chart {
+    position: relative;
+    height: 114px;
+    margin-top: 13px;
+    border: 1px solid var(--border-color);
+    border-radius: 15px;
+    background: var(--bg-input);
+}
+
+:root body .home-mini-chart.is-loading::after,
+:root body .home-mini-chart.has-error::after {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    border-radius: inherit;
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 650;
+    pointer-events: none;
+}
+
+:root body .home-mini-chart.is-loading::after {
+    background: linear-gradient(100deg, transparent 20%, rgba(139, 146, 152, .11) 45%, transparent 70%), var(--bg-input);
+    background-size: 220% 100%;
+    animation: home-chart-loading 1.3s linear infinite;
+    content: 'Загружаем данные…';
+}
+
+:root body .home-mini-chart.has-error::after {
+    background: var(--bg-input);
+    content: attr(data-message);
+}
+
+@keyframes home-chart-loading {
+    to { background-position: -220% 0, 0 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    :root body .home-mini-chart.is-loading::after { animation: none; }
+}
+
+:root body .home-card-title {
+    margin-top: 15px;
+    font-size: 18px;
+}
+
+:root body .home-card-description {
+    min-height: 40px;
+    margin-top: 5px;
+}
+
+:root body .home-card-foot {
+    padding-top: 12px;
+}
+
+:root body .home-card-foot > span:first-child {
+    color: var(--home-accent);
+    font-size: 11px;
+}
+
+:root body .home-card-foot > span:last-child {
+    font-size: 12px;
 }
 
 :root body .home-card-icon {
@@ -6177,6 +6262,11 @@ body {
     border-color: var(--border-color);
     background: var(--card-bg);
     box-shadow: 0 10px 30px rgba(0, 0, 0, .17);
+}
+
+:root body.dark-theme .home-mini-chart {
+    border-color: var(--border-color);
+    background: #141b18;
 }
 
 :root body.dark-theme .home-category-card:hover {
