@@ -224,16 +224,6 @@
               </div>
             </div>
 
-<<<<<<< HEAD
-            <div class="tabs">
-              <button class="tab-btn active" onclick="switchTab('year')">По областям</button>
-              <button class="tab-btn" onclick="switchTab('summary')">Итоговый</button>
-              <button class="tab-btn" onclick="switchTab('summary')">Аналитика</button>
-              <nav class="program-switcher" aria-label="Переключение между программами">
-                <button type="button" class="program-switcher-button active" data-program="dashboard"
-                  aria-pressed="true" onclick="switchMainSection('dashboard', this)">
-                  Демография
-=======
             <div id="customCardPrompt" class="center-add-prompt" onclick="openAddChartModal()">
               <div class="add-circle-icon">+</div>
               <span>Создать свой график</span>
@@ -245,7 +235,7 @@
 
 
 
-          
+
 
           <div id="mapChartSection" class="chart-section-block map-section-spacing">
             <div class="widget-controls">
@@ -259,7 +249,8 @@
               </div>
             </div>
             <div class="map-container-wrapper" id="mapWrapper">
-              <p class="map-interaction-hint">Красный — меньше, зелёный — больше, серый — нет данных. Приближайте карту колёсиком мыши и перемещайте её перетаскиванием.</p>
+              <p class="map-interaction-hint">Красный — меньше, зелёный — больше, серый — нет данных. Приближайте карту
+                колёсиком мыши и перемещайте её перетаскиванием.</p>
               <div id="kazakhstanMapChart" class="chart-container map-h500"></div>
             </div>
           </div>
@@ -284,1005 +275,1033 @@
               <div class="table-toolbar-left">
                 <button class="toggle-table-btn" onclick="toggleTableVisibility()">
                   <span id="toggleTableIcon">▶</span> <span id="toggleTableText">Показать таблицу</span>
->>>>>>> 0e1219a0aab1a083c724645ae4b95b70d88aa586
                 </button>
                 <button type="button" class="program-switcher-button" data-program="data-analyzer" aria-pressed="false"
                   onclick="switchMainSection('data-analyzer', this)">
                   Анализ данных
                 </button>
-              </nav>
-            </div>
+                </nav>
+              </div>
 
-            <div id="yearChartSection" class="chart-section-block">
-              <div id="activeDatasetStatus" class="active-dataset-status" role="status" aria-live="polite" hidden></div>
-              <div class="widget-controls">
-                <div class="control-group">
-                  <label>Общий показатель:</label>
-                  <select id="regionIndicatorSelect" onchange="onRegionFilterChange()"></select>
+              <div id="yearChartSection" class="chart-section-block">
+                <div id="activeDatasetStatus" class="active-dataset-status" role="status" aria-live="polite" hidden>
                 </div>
-                <div class="control-group">
-                  <label>Общий год:</label>
-                  <select id="regionYearSelect" onchange="onRegionFilterChange()"></select>
+                <div class="widget-controls">
+                  <div class="control-group">
+                    <label>Общий показатель:</label>
+                    <select id="regionIndicatorSelect" onchange="onRegionFilterChange()"></select>
+                  </div>
+                  <div class="control-group">
+                    <label>Общий год:</label>
+                    <select id="regionYearSelect" onchange="onRegionFilterChange()"></select>
+                  </div>
+                </div>
+
+                <div class="charts-grid-4">
+
+                  <!-- Карточка 1 -->
+                  <div class="sub-chart-card">
+                    <div class="card-header-controls">
+                      <div class="left-local-controls">
+                        <select class="mini-select" id="card1Indicator" onchange="onCardFilterChange(1)"></select>
+                        <select class="mini-select" id="card1Year" onchange="onCardFilterChange(1)"></select>
+                        <button class="custom-analytics-btn" onclick="openAnalyticsFromCard(this)"
+                          title="Открыть детальный анализ графика">📊</button>
+                      </div>
+                    </div>
+                    <div id="chartTypeBar" class="chart-box-h330"></div>
+                  </div>
+
+                  <!-- Карточка 2 -->
+                  <div class="sub-chart-card">
+                    <div class="card-header-controls">
+                      <div class="left-local-controls">
+                        <select class="mini-select" id="card2Indicator" onchange="onCardFilterChange(2)"></select>
+                        <select class="mini-select" id="card2Year" onchange="onCardFilterChange(2)"></select>
+                        <button class="custom-analytics-btn" onclick="openAnalyticsFromCard(this)"
+                          title="Открыть детальный анализ графика">📊</button>
+                      </div>
+                    </div>
+                    <div id="chartTypeLine" class="chart-box-h330"></div>
+                  </div>
+
+                  <!-- Карточка 3 -->
+                  <div class="sub-chart-card">
+                    <div class="card-header-controls">
+                      <div class="left-local-controls">
+                        <select class="mini-select" id="card3Indicator" onchange="onCardFilterChange(3)"></select>
+                        <select class="mini-select" id="card3Year" onchange="onCardFilterChange(3)"></select>
+                        <button class="custom-analytics-btn" onclick="openAnalyticsFromCard(this)"
+                          title="Открыть детальный анализ графика">📊</button>
+                      </div>
+                    </div>
+                    <div id="chartTypePie" class="chart-box-h330"></div>
+                  </div>
+
+                  <!-- Карточка 4 -->
+                  <div class="sub-chart-card">
+                    <div class="card-header-controls">
+                      <div class="left-local-controls">
+                        <select class="mini-select" id="card4Indicator" onchange="onCardFilterChange(4)"></select>
+                        <select class="mini-select" id="card4Year" onchange="onCardFilterChange(4)"></select>
+                        <button class="custom-analytics-btn" onclick="openAnalyticsFromCard(this)"
+                          title="Открыть детальный анализ графика">📊</button>
+                      </div>
+                    </div>
+                    <div id="chartTypeHBar" class="chart-box-h330"></div>
+                  </div>
+
+                  <!-- Модальное окно настройки пользовательского графика -->
+                  <div id="addChartModal" class="modal-backdrop">
+                    <div class="modal-card">
+                      <h3>Настройка своего графика</h3>
+
+                      <div class="modal-field">
+                        <label>Выберите показатель:</label>
+                        <select id="modalIndicatorSelect"></select>
+                      </div>
+
+                      <div class="modal-field">
+                        <label>Выберите год:</label>
+                        <select id="modalYearSelect"></select>
+                      </div>
+
+                      <div class="modal-field-last">
+                        <label>Тип визуализации:</label>
+                        <select id="modalChartType">
+                          <option value="bar">Столбчатая диаграмма (Bar)</option>
+                          <option value="line">Линейный график (Line)</option>
+                          <option value="pie">Круговая диаграмма (Pie)</option>
+                        </select>
+                      </div>
+
+                      <div class="modal-buttons">
+                        <button class="btn-secondary" onclick="closeAddChartModal()">Отмена</button>
+                        <button class="btn-primary" onclick="saveCustomCard()">Создать график</button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <div class="charts-grid-4">
-
-                <!-- Карточка 1 -->
-                <div class="sub-chart-card">
-                  <div class="card-header-controls">
-                    <div class="left-local-controls">
-                      <select class="mini-select" id="card1Indicator" onchange="onCardFilterChange(1)"></select>
-                      <select class="mini-select" id="card1Year" onchange="onCardFilterChange(1)"></select>
-                      <button class="custom-analytics-btn" onclick="openAnalyticsFromCard(this)"
-                        title="Открыть детальный анализ графика">📊</button>
+              <div class="wrapper-wishlist">
+                <div class="wishlist-header-flex">
+                  <div class="wishlist-title">
+                    <div>
+                      <h2>Новости и тренды</h2>
+                      <p>Коротко о заметных изменениях в данных Казахстана</p>
                     </div>
                   </div>
-                  <div id="chartTypeBar" class="chart-box-h330"></div>
                 </div>
 
-                <!-- Карточка 2 -->
-                <div class="sub-chart-card">
-                  <div class="card-header-controls">
-                    <div class="left-local-controls">
-                      <select class="mini-select" id="card2Indicator" onchange="onCardFilterChange(2)"></select>
-                      <select class="mini-select" id="card2Year" onchange="onCardFilterChange(2)"></select>
-                      <button class="custom-analytics-btn" onclick="openAnalyticsFromCard(this)"
-                        title="Открыть детальный анализ графика">📊</button>
+                <!-- Внешняя обертка, выстраивающая элементы в ряд: Кнопка слева -> Лента -> Кнопка справа -->
+                <div class="wishlist-wrapper-outer">
+                  <button class="wishlist-nav-btn" type="button" aria-label="Предыдущая новость"
+                    onclick="scrollWishlist('left')">←</button>
+
+                  <div class="wishlist-track-container">
+                    <div class="wishlist-track" id="wishlistTrack">
+
+                      <!-- Карточка 1: Взлет -->
+                      <article class="wishlist-card">
+                        <div class="wishlist-card-top">
+                          <span class="trend-badge up">Рост +14.2%</span>
+                          <span class="wishlist-category"><span aria-hidden="true">◈</span> Экономика</span>
+                        </div>
+                        <h3>Инвестиции в основной капитал</h3>
+                        <p>Зафиксирован значительный прирост инвестиционной активности в регионах за последний отчетный
+                          период.</p>
+                        <div class="wishlist-card-footer"><span>Экономический обзор</span><span
+                            aria-hidden="true">↗</span></div>
+                      </article>
+
+                      <!-- Карточка 2: Падение -->
+                      <article class="wishlist-card">
+                        <div class="wishlist-card-top">
+                          <span class="trend-badge down">Снижение -3.5%</span>
+                          <span class="wishlist-category"><span aria-hidden="true">◎</span> Население</span>
+                        </div>
+                        <h3>Демографическая динамика миграции</h3>
+                        <p>Отмечается локальное уменьшение коэффициента внешней миграции в отдельных промышленных
+                          центрах.
+                        </p>
+                        <div class="wishlist-card-footer"><span>Демографический обзор</span><span
+                            aria-hidden="true">↘</span></div>
+                      </article>
+
+                      <!-- Карточка 3: Взлет -->
+                      <article class="wishlist-card">
+                        <div class="wishlist-card-top">
+                          <span class="trend-badge up">Рост +22.8%</span>
+                          <span class="wishlist-category"><span aria-hidden="true">▧</span> Образование</span>
+                        </div>
+                        <h3>Цифровизация учебных заведений</h3>
+                        <p>Существенное расширение высокоскоростного интернет-покрытия и внедрение интерактивных
+                          платформ.
+                        </p>
+                        <div class="wishlist-card-footer"><span>Образовательный обзор</span><span
+                            aria-hidden="true">↗</span></div>
+                      </article>
+
+                      <!-- Карточка 4: Стабильность / Тренд -->
+                      <article class="wishlist-card">
+                        <div class="wishlist-card-top">
+                          <span class="trend-badge up">Рост +8.1%</span>
+                          <span class="wishlist-category"><span aria-hidden="true">❋</span> Сельское хозяйство</span>
+                        </div>
+                        <h3>Объёмы выпуска продукции АПК</h3>
+                        <p>Успешное внедрение автоматизированного полива и субсидирования повысило общую урожайность.
+                        </p>
+                        <div class="wishlist-card-footer"><span>Обзор АПК</span><span aria-hidden="true">↗</span></div>
+                      </article>
+
                     </div>
                   </div>
-                  <div id="chartTypeLine" class="chart-box-h330"></div>
-                </div>
 
-                <!-- Карточка 3 -->
-                <div class="sub-chart-card">
-                  <div class="card-header-controls">
-                    <div class="left-local-controls">
-                      <select class="mini-select" id="card3Indicator" onchange="onCardFilterChange(3)"></select>
-                      <select class="mini-select" id="card3Year" onchange="onCardFilterChange(3)"></select>
-                      <button class="custom-analytics-btn" onclick="openAnalyticsFromCard(this)"
-                        title="Открыть детальный анализ графика">📊</button>
-                    </div>
+                  <button class="wishlist-nav-btn" type="button" aria-label="Следующая новость"
+                    onclick="scrollWishlist('right')">→</button>
+                </div>
+              </div>
+
+              <!-- Отдельный див с пользовательским графиком -->
+              <div class="sub-chart-card custom-add-card wrapper-create" id="customCardContainer">
+                <div class="card-header-controls" id="customCardHeader">
+                  <div class="left-local-controls">
+                    <select class="mini-select" id="card6Indicator" onchange="onCardFilterChange(6)"></select>
+                    <select class="mini-select" id="card6Year" onchange="onCardFilterChange(6)"></select>
+                    <button class="custom-analytics-btn" onclick="openAnalyticsFromCard(this)"
+                      title="Открыть детальный анализ графика">📊</button>
+                    <button class="custom-analytics-btn btn-danger-custom" onclick="resetCustomCard()"
+                      title="Сбросить график">✕</button>
                   </div>
-                  <div id="chartTypePie" class="chart-box-h330"></div>
                 </div>
 
-                <!-- Карточка 4 -->
-                <div class="sub-chart-card">
-                  <div class="card-header-controls">
-                    <div class="left-local-controls">
-                      <select class="mini-select" id="card4Indicator" onchange="onCardFilterChange(4)"></select>
-                      <select class="mini-select" id="card4Year" onchange="onCardFilterChange(4)"></select>
-                      <button class="custom-analytics-btn" onclick="openAnalyticsFromCard(this)"
-                        title="Открыть детальный анализ графика">📊</button>
-                    </div>
+                <div id="customCardPrompt" class="center-add-prompt" onclick="openAddChartModal()">
+                  <div class="add-circle-icon">+</div>
+                  <span>Создать свой график</span>
+                </div>
+
+                <div id="chartTypeCustom" class="chart-box-h330" style="display: none;"></div>
+              </div>
+
+
+
+
+
+
+              <div id="mapChartSection" class="chart-section-block map-section-spacing">
+                <div class="widget-controls">
+                  <div class="control-group">
+                    <label>Показатель карты:</label>
+                    <select id="mapIndicatorSelect" onchange="onMapFilterChange()"></select>
                   </div>
-                  <div id="chartTypeHBar" class="chart-box-h330"></div>
+                  <div class="control-group">
+                    <label>Год карты:</label>
+                    <select id="mapYearSelect" onchange="onMapFilterChange()"></select>
+                  </div>
+                </div>
+                <div class="map-container-wrapper" id="mapWrapper">
+                  <div id="kazakhstanMapChart" class="chart-container map-h500"></div>
+                </div>
+              </div>
+
+              <div id="summaryChartWrapper" class="chart-section-block hidden summary-wrapper-spacing">
+                <div class="widget-controls">
+                  <div class="control-group">
+                    <label>Показатель:</label>
+                    <select id="summaryIndicatorSelect" onchange="onSummaryFilterChange()"></select>
+                  </div>
                 </div>
 
-                <!-- Модальное окно настройки пользовательского графика -->
-                <div id="addChartModal" class="modal-backdrop">
-                  <div class="modal-card">
-                    <h3>Настройка своего графика</h3>
-
-                    <div class="modal-field">
-                      <label>Выберите показатель:</label>
-                      <select id="modalIndicatorSelect"></select>
-                    </div>
-
-                    <div class="modal-field">
-                      <label>Выберите год:</label>
-                      <select id="modalYearSelect"></select>
-                    </div>
-
-                    <div class="modal-field-last">
-                      <label>Тип визуализации:</label>
-                      <select id="modalChartType">
-                        <option value="bar">Столбчатая диаграмма (Bar)</option>
-                        <option value="line">Линейный график (Line)</option>
-                        <option value="pie">Круговая диаграмма (Pie)</option>
-                      </select>
-                    </div>
-
-                    <div class="modal-buttons">
-                      <button class="btn-secondary" onclick="closeAddChartModal()">Отмена</button>
-                      <button class="btn-primary" onclick="saveCustomCard()">Создать график</button>
-                    </div>
+                <div class="summary-charts-container">
+                  <div class="chart-card summary-card-box">
+                    <div id="summaryChart" class="summary-chart-inner"></div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            <div class="wrapper-wishlist">
-              <div class="wishlist-header-flex">
-                <div class="wishlist-title">
+              <div class="table-section table-section-spacing">
+                <div class="table-toolbar">
+                  <div class="table-toolbar-left">
+                    <button class="toggle-table-btn" onclick="toggleTableVisibility()">
+                      <span id="toggleTableIcon">▶</span> <span id="toggleTableText">Показать таблицу</span>
+                    </button>
+                    <span id="counter">Записей в базе: 0</span>
+                  </div>
+                  <div class="table-toolbar-right">
+                    <input type="text" id="searchInput" placeholder="Поиск по регионам..." oninput="filterTable()">
+                    <button onclick="exportTableToCSV()" class="tab-btn csv-btn">CSV</button>
+                    <button onclick="exportTableToExcel()" class="tab-btn excel-btn">Excel</button>
+                  </div>
+                </div>
+
+                <div id="tableContentWrapper" class="table-content-wrapper collapsed">
+                  <div class="table-wrapper">
+                    <table>
+                      <thead id="tableHead"></thead>
+                      <tbody id="tableBody"></tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+            </div><!-- /legacyMainDashboardContent -->
+          </div><!-- /mainDashboardContent -->
+
+
+          <section id="datasetViewSection" class="dataset-view-section" style="display: none;">
+            <header class="dataset-page-header">
+              <p id="datasetPageBreadcrumb" class="dataset-page-breadcrumb">Данные</p>
+              <h1 id="datasetPageTitle">Раздел данных</h1>
+              <p id="datasetPageDescription"></p>
+            </header>
+
+            <div id="d002Dashboard" hidden>
+              <div class="dataset-filter-panel">
+                <div class="dataset-year-tabs" role="tablist" aria-label="Период данных"><button type="button"
+                    role="tab" aria-selected="false" data-dataset="d002" data-year-mode="single">По
+                    годам</button><button type="button" role="tab" aria-selected="true" data-dataset="d002"
+                    data-year-mode="all">Итоги за все годы</button></div>
+                <label>Год обследования
+                  <select id="d002YearSelect" aria-label="Год обследования D002"></select>
+                </label>
+                <label>Раздел анкеты
+                  <select id="d002FormSelect" aria-label="Раздел анкеты D002"></select>
+                </label>
+                <label>Найти вопрос
+                  <input id="d002QuestionSearch" type="search" placeholder="Например: здоровье"
+                    aria-label="Поиск по вопросам D002">
+                </label>
+              </div>
+
+              <p id="d002Status" class="dataset-status" role="status" aria-live="polite">Загрузка параметров D002…</p>
+
+              <div class="dataset-stat-grid">
+                <article class="dataset-stat-card"><span>Участников обследования</span><strong
+                    id="d002RespondentsStat">—</strong></article>
+                <article class="dataset-stat-card"><span>Вопросов в разделе</span><strong
+                    id="d002QuestionCountStat">—</strong></article>
+                <article class="dataset-stat-card"><span>Территорий</span><strong id="d002TerritoriesStat">—</strong>
+                </article>
+              </div>
+
+              <article class="dataset-panel d002-question-viewer">
+                <div class="d002-question-navigation">
+                  <button id="d002PreviousQuestion" class="d002-question-arrow" type="button"
+                    aria-label="Предыдущий вопрос">←</button>
+                  <span id="d002QuestionPosition" class="d002-question-position">Вопрос 0 из 0</span>
+                  <button id="d002NextQuestion" class="d002-question-arrow" type="button"
+                    aria-label="Следующий вопрос">→</button>
+                </div>
+                <div class="d002-current-question-heading">
+                  <p class="d002-gallery-eyebrow">ВОПРОС АНКЕТЫ</p>
+                  <h2 id="d002CurrentQuestionTitle">Загрузка вопроса…</h2>
+                  <span id="d002CurrentQuestionCode" class="d002-question-code"></span>
+                  <p id="d002ChartCaption" class="dataset-panel-caption"></p>
+                </div>
+                <div id="d002NoResults" class="d002-empty-state" hidden>По этому запросу вопросы не найдены. Попробуйте
+                  изменить поиск.</div>
+                <div id="d002QuestionChart" class="d002-single-question-chart" role="img"
+                  aria-label="Распределение ответов на вопрос"></div>
+                <section id="d002QuestionInfo" class="d002-question-info" aria-live="polite">
+                  <div class="d002-question-info-heading"><span class="project-eyebrow">ПОЯСНЕНИЕ К ВОПРОСУ</span>
+                    <h3 id="d002QuestionInfoTitle"></h3>
+                  </div>
+                  <div class="d002-question-info-stats">
+                    <article><span>Ответили</span><strong id="d002AnsweredCount">—</strong></article>
+                    <article><span>Без ответа</span><strong id="d002MissingCount">—</strong></article>
+                    <article><span>Доля ответивших</span><strong id="d002AnswerRate">—</strong></article>
+                  </div>
+                  <p id="d002QuestionNote" class="d002-question-note"></p>
+                </section>
+              </article>
+
+              <article id="d002MapPanel" class="dataset-panel d002-map-panel" hidden>
+                <div class="d002-map-heading">
                   <div>
-                    <h2>Новости и тренды</h2>
-                    <p>Коротко о заметных изменениях в данных Казахстана</p>
+                    <p class="d002-gallery-eyebrow">ГЕОГРАФИЯ ОТВЕТОВ</p>
+                    <h2>Как отвечали в разных регионах</h2>
+                    <p id="d002MapCaption" class="dataset-panel-caption">Каждый круг показывает соотношение ответов в
+                      области. Наведите курсор на сектор, чтобы увидеть число и долю.</p>
                   </div>
                 </div>
-              </div>
+                <p id="d002MapStatus" class="dataset-status" role="status" aria-live="polite"></p>
+                <div id="d002MapChart" class="d002-map-chart" role="img"
+                  aria-label="Карта с круговыми диаграммами ответов по регионам Казахстана"></div>
+                <section class="d004-region-details d002-region-details" aria-live="polite">
+                  <h3 id="d002RegionTitle">Выберите область на карте</h3>
+                  <p id="d002RegionDescription">Размеры секторов показывают распределение ответов участников выбранной
+                    области.</p>
+                  <div id="d002RegionStats" class="d002-region-stats" hidden></div>
+                </section>
+              </article>
 
-              <!-- Внешняя обертка, выстраивающая элементы в ряд: Кнопка слева -> Лента -> Кнопка справа -->
-              <div class="wishlist-wrapper-outer">
-                <button class="wishlist-nav-btn" type="button" aria-label="Предыдущая новость"
-                  onclick="scrollWishlist('left')">←</button>
+              <article class="dataset-panel dataset-explainer">
+                <h3>Что это за обследование</h3>
+                <p id="d002FormDescription"></p>
+                <p>Форма D-002 «Качество жизни населения» проводится раз в год. В ней участвует один член домохозяйства
+                  в
+                  возрасте от 15 лет.</p>
+                <p>График показывает распределение ответов на выбранный вопрос. Переключайте вопросы стрелками, а
+                  наведением на сектор смотрите число и долю ответов.</p>
+                <p><strong>Обратите внимание:</strong> CSV и таблицы D002 в базе — синтетические учебные данные,
+                  созданные
+                  по структуре настоящей анкеты. Они не являются официальными результатами обследования и не описывают
+                  реальных людей.</p>
+              </article>
 
-                <div class="wishlist-track-container">
-                  <div class="wishlist-track" id="wishlistTrack">
-
-                    <!-- Карточка 1: Взлет -->
-                    <article class="wishlist-card">
-                      <div class="wishlist-card-top">
-                        <span class="trend-badge up">Рост +14.2%</span>
-                        <span class="wishlist-category"><span aria-hidden="true">◈</span> Экономика</span>
-                      </div>
-                      <h3>Инвестиции в основной капитал</h3>
-                      <p>Зафиксирован значительный прирост инвестиционной активности в регионах за последний отчетный
-                        период.</p>
-                      <div class="wishlist-card-footer"><span>Экономический обзор</span><span
-                          aria-hidden="true">↗</span></div>
-                    </article>
-
-                    <!-- Карточка 2: Падение -->
-                    <article class="wishlist-card">
-                      <div class="wishlist-card-top">
-                        <span class="trend-badge down">Снижение -3.5%</span>
-                        <span class="wishlist-category"><span aria-hidden="true">◎</span> Население</span>
-                      </div>
-                      <h3>Демографическая динамика миграции</h3>
-                      <p>Отмечается локальное уменьшение коэффициента внешней миграции в отдельных промышленных центрах.
-                      </p>
-                      <div class="wishlist-card-footer"><span>Демографический обзор</span><span
-                          aria-hidden="true">↘</span></div>
-                    </article>
-
-                    <!-- Карточка 3: Взлет -->
-                    <article class="wishlist-card">
-                      <div class="wishlist-card-top">
-                        <span class="trend-badge up">Рост +22.8%</span>
-                        <span class="wishlist-category"><span aria-hidden="true">▧</span> Образование</span>
-                      </div>
-                      <h3>Цифровизация учебных заведений</h3>
-                      <p>Существенное расширение высокоскоростного интернет-покрытия и внедрение интерактивных платформ.
-                      </p>
-                      <div class="wishlist-card-footer"><span>Образовательный обзор</span><span
-                          aria-hidden="true">↗</span></div>
-                    </article>
-
-                    <!-- Карточка 4: Стабильность / Тренд -->
-                    <article class="wishlist-card">
-                      <div class="wishlist-card-top">
-                        <span class="trend-badge up">Рост +8.1%</span>
-                        <span class="wishlist-category"><span aria-hidden="true">❋</span> Сельское хозяйство</span>
-                      </div>
-                      <h3>Объёмы выпуска продукции АПК</h3>
-                      <p>Успешное внедрение автоматизированного полива и субсидирования повысило общую урожайность.</p>
-                      <div class="wishlist-card-footer"><span>Обзор АПК</span><span aria-hidden="true">↗</span></div>
-                    </article>
-
-                  </div>
-                </div>
-
-                <button class="wishlist-nav-btn" type="button" aria-label="Следующая новость"
-                  onclick="scrollWishlist('right')">→</button>
-              </div>
             </div>
 
-            <!-- Отдельный див с пользовательским графиком -->
-            <div class="sub-chart-card custom-add-card wrapper-create" id="customCardContainer">
-              <div class="card-header-controls" id="customCardHeader">
-                <div class="left-local-controls">
-                  <select class="mini-select" id="card6Indicator" onchange="onCardFilterChange(6)"></select>
-                  <select class="mini-select" id="card6Year" onchange="onCardFilterChange(6)"></select>
-                  <button class="custom-analytics-btn" onclick="openAnalyticsFromCard(this)"
-                    title="Открыть детальный анализ графика">📊</button>
-                  <button class="custom-analytics-btn btn-danger-custom" onclick="resetCustomCard()"
-                    title="Сбросить график">✕</button>
-                </div>
+            <div id="d004Dashboard" hidden>
+              <div class="dataset-filter-panel">
+                <div class="dataset-year-tabs" role="tablist" aria-label="Период данных"><button type="button"
+                    role="tab" aria-selected="false" data-dataset="d004" data-year-mode="single">По
+                    годам</button><button type="button" role="tab" aria-selected="true" data-dataset="d004"
+                    data-year-mode="all">Итоги за все годы</button></div>
+                <label>Год
+                  <select id="d004YearSelect" aria-label="Год обследования"></select>
+                </label>
+                <label>Квартал
+                  <select id="d004QuarterSelect" aria-label="Квартал обследования"></select>
+                </label>
+                <label>Раздел анкеты
+                  <select id="d004ModuleSelect" aria-label="Раздел анкеты"></select>
+                </label>
               </div>
 
-              <div id="customCardPrompt" class="center-add-prompt" onclick="openAddChartModal()">
-                <div class="add-circle-icon">+</div>
-                <span>Создать свой график</span>
+              <p id="d004Status" class="dataset-status" role="status" aria-live="polite">Загрузка параметров D004…</p>
+
+              <div class="dataset-stat-grid">
+                <article class="dataset-stat-card"><span>Строк в файле</span><strong id="d004RowsStat">—</strong>
+                </article>
+                <article class="dataset-stat-card"><span>Домохозяйств</span><strong id="d004HouseholdsStat">—</strong>
+                </article>
+                <article class="dataset-stat-card"><span>Территорий с данными</span><strong
+                    id="d004TerritoriesStat">—</strong></article>
               </div>
 
-              <div id="chartTypeCustom" class="chart-box-h330" style="display: none;"></div>
-            </div>
-
-
-
-
-
-
-            <div id="mapChartSection" class="chart-section-block map-section-spacing">
-              <div class="widget-controls">
-                <div class="control-group">
-                  <label>Показатель карты:</label>
-                  <select id="mapIndicatorSelect" onchange="onMapFilterChange()"></select>
+              <article class="dataset-panel">
+                <h2>Количество записей по коду территории</h2>
+                <p id="d004ChartCaption" class="dataset-panel-caption">График строится по данным выбранного файла.</p>
+                <div id="d004TerritoryChart" class="dataset-chart" role="img"
+                  aria-label="Столбчатая диаграмма записей по территориям"></div>
+                <div class="dataset-explainer" aria-live="polite">
+                  <h3>Как читать эти данные</h3>
+                  <p>Здесь собраны данные о бюджете домохозяйств по кварталам: выбранный раздел анкеты, год и квартал
+                    указаны выше.</p>
+                  <p id="d004DescriptionMetric">График сравнивает выбранный показатель между территориями.</p>
+                  <p>Одна строка — одна запись в выбранном разделе. В одном домохозяйстве может быть несколько записей,
+                    поэтому количество строк не равно количеству семей или людей.</p>
+                  <p><strong>Важно:</strong> это учебный синтетический набор, созданный по структуре обследования. Он
+                    помогает знакомиться с данными и работой приложения, но цифры не являются официальной статистикой и
+                    не
+                    описывают реальные ответы конкретных семей.</p>
+                  <p>В некоторых разделах указана стоимость записи. Сумма стоимости складывает значения всех строк и не
+                    показывает средний расход семьи. Значения-коды (например, категории товаров и услуг)
+                    расшифровываются
+                    в справочниках D004 за соответствующий год.</p>
                 </div>
-                <div class="control-group">
-                  <label>Год карты:</label>
-                  <select id="mapYearSelect" onchange="onMapFilterChange()"></select>
-                </div>
-              </div>
-              <div class="map-container-wrapper" id="mapWrapper">
-                <div id="kazakhstanMapChart" class="chart-container map-h500"></div>
-              </div>
-            </div>
+              </article>
 
-            <div id="summaryChartWrapper" class="chart-section-block hidden summary-wrapper-spacing">
-              <div class="widget-controls">
-                <div class="control-group">
-                  <label>Показатель:</label>
-                  <select id="summaryIndicatorSelect" onchange="onSummaryFilterChange()"></select>
-                </div>
-              </div>
-
-              <div class="summary-charts-container">
-                <div class="chart-card summary-card-box">
-                  <div id="summaryChart" class="summary-chart-inner"></div>
-                </div>
-              </div>
-            </div>
-
-            <div class="table-section table-section-spacing">
-              <div class="table-toolbar">
-                <div class="table-toolbar-left">
-                  <button class="toggle-table-btn" onclick="toggleTableVisibility()">
-                    <span id="toggleTableIcon">▶</span> <span id="toggleTableText">Показать таблицу</span>
-                  </button>
-                  <span id="counter">Записей в базе: 0</span>
-                </div>
-                <div class="table-toolbar-right">
-                  <input type="text" id="searchInput" placeholder="Поиск по регионам..." oninput="filterTable()">
-                  <button onclick="exportTableToCSV()" class="tab-btn csv-btn">CSV</button>
-                  <button onclick="exportTableToExcel()" class="tab-btn excel-btn">Excel</button>
-                </div>
-              </div>
-
-              <div id="tableContentWrapper" class="table-content-wrapper collapsed">
-                <div class="table-wrapper">
-                  <table>
-                    <thead id="tableHead"></thead>
-                    <tbody id="tableBody"></tbody>
+              <article class="dataset-panel">
+                <h2>Сводка по территориям</h2>
+                <p class="dataset-panel-caption">Количество строк и уникальных домохозяйств в выбранном периоде.</p>
+                <div class="dataset-table-scroll">
+                  <table class="dataset-table">
+                    <thead>
+                      <tr>
+                        <th>Код TE</th>
+                        <th>Территория</th>
+                        <th>Записи</th>
+                        <th>Домохозяйства</th>
+                        <th>Сумма STOIMK</th>
+                      </tr>
+                    </thead>
+                    <tbody id="d004SummaryBody"></tbody>
                   </table>
                 </div>
-              </div>
-            </div>
+              </article>
 
-          </div><!-- /legacyMainDashboardContent -->
-        </div><!-- /mainDashboardContent -->
+              <article class="dataset-panel">
+                <h2>Карта показателя по регионам</h2>
+                <p id="d004MapCaption" class="dataset-panel-caption">Карта окрашивает регионы по выбранному показателю.
+                </p>
+                <div class="d004-map-controls">
+                  <label for="d004MapMetric">Показывать на карте</label>
+                  <select id="d004MapMetric">
+                    <option value="records">Количество записей</option>
+                    <option value="households">Количество домохозяйств</option>
+                    <option value="amount">Сумма стоимости</option>
+                  </select>
+                  <button id="d004MapReset" type="button">Сбросить масштаб и выбор</button>
+                </div>
+                <div id="d004MapChart" class="dataset-chart" role="img"
+                  aria-label="Карта Казахстана по показателю D004">
+                </div>
+                <section id="d004RegionDetails" class="d004-region-details" aria-live="polite"
+                  aria-label="Описание выбранного региона">
+                  <h3 id="d004RegionTitle">Выберите область на карте</h3>
+                  <p id="d004RegionHelp">Нажмите на область или город, чтобы посмотреть данные. Цвет показывает
+                    выбранный
+                    выше показатель.</p>
+                  <dl id="d004RegionStats" hidden></dl>
+                </section>
+              </article>
 
-
-        <section id="datasetViewSection" class="dataset-view-section" style="display: none;">
-          <header class="dataset-page-header">
-            <p id="datasetPageBreadcrumb" class="dataset-page-breadcrumb">Данные</p>
-            <h1 id="datasetPageTitle">Раздел данных</h1>
-            <p id="datasetPageDescription"></p>
-          </header>
-
-          <div id="d002Dashboard" hidden>
-            <div class="dataset-filter-panel">
-              <div class="dataset-year-tabs" role="tablist" aria-label="Период данных"><button type="button" role="tab" aria-selected="false" data-dataset="d002" data-year-mode="single">По годам</button><button type="button" role="tab" aria-selected="true" data-dataset="d002" data-year-mode="all">Итоги за все годы</button></div>
-              <label>Год обследования
-                <select id="d002YearSelect" aria-label="Год обследования D002"></select>
-              </label>
-              <label>Раздел анкеты
-                <select id="d002FormSelect" aria-label="Раздел анкеты D002"></select>
-              </label>
-              <label>Найти вопрос
-                <input id="d002QuestionSearch" type="search" placeholder="Например: здоровье"
-                  aria-label="Поиск по вопросам D002">
-              </label>
-            </div>
-
-            <p id="d002Status" class="dataset-status" role="status" aria-live="polite">Загрузка параметров D002…</p>
-
-            <div class="dataset-stat-grid">
-              <article class="dataset-stat-card"><span>Участников обследования</span><strong
-                  id="d002RespondentsStat">—</strong></article>
-              <article class="dataset-stat-card"><span>Вопросов в разделе</span><strong
-                  id="d002QuestionCountStat">—</strong></article>
-              <article class="dataset-stat-card"><span>Территорий</span><strong id="d002TerritoriesStat">—</strong>
+              <article class="dataset-panel">
+                <div class="dataset-table-heading">
+                  <div>
+                    <h2>Записи выбранного раздела</h2>
+                    <p id="d004TableCaption" class="dataset-panel-caption"></p>
+                  </div>
+                  <div class="dataset-pagination">
+                    <button id="d004PrevPage" type="button">Назад</button>
+                    <span id="d004PageLabel">Страница 1</span>
+                    <button id="d004NextPage" type="button">Далее</button>
+                  </div>
+                </div>
+                <div class="dataset-table-scroll">
+                  <table class="dataset-table">
+                    <thead id="d004TableHead"></thead>
+                    <tbody id="d004TableBody"></tbody>
+                  </table>
+                </div>
               </article>
             </div>
 
-            <article class="dataset-panel d002-question-viewer">
-              <div class="d002-question-navigation">
-                <button id="d002PreviousQuestion" class="d002-question-arrow" type="button"
-                  aria-label="Предыдущий вопрос">←</button>
-                <span id="d002QuestionPosition" class="d002-question-position">Вопрос 0 из 0</span>
-                <button id="d002NextQuestion" class="d002-question-arrow" type="button"
-                  aria-label="Следующий вопрос">→</button>
+            <div id="d006Dashboard" hidden>
+              <div class="dataset-filter-panel d006-filter-panel">
+                <div class="dataset-year-tabs" role="tablist" aria-label="Период данных"><button type="button"
+                    role="tab" aria-selected="false" data-dataset="d006" data-year-mode="single">По
+                    годам</button><button type="button" role="tab" aria-selected="true" data-dataset="d006"
+                    data-year-mode="all">Итоги за все годы</button></div>
+                <label>Год обследования
+                  <select id="d006YearSelect" aria-label="Год обследования D006"></select>
+                </label>
               </div>
-              <div class="d002-current-question-heading">
-                <p class="d002-gallery-eyebrow">ВОПРОС АНКЕТЫ</p>
-                <h2 id="d002CurrentQuestionTitle">Загрузка вопроса…</h2>
-                <span id="d002CurrentQuestionCode" class="d002-question-code"></span>
-                <p id="d002ChartCaption" class="dataset-panel-caption"></p>
+              <p id="d006Status" class="dataset-status" role="status" aria-live="polite">Загрузка параметров D006…</p>
+
+              <div class="dataset-stat-grid d006-stat-grid">
+                <article class="dataset-stat-card"><span>Обследовано домохозяйств</span><strong
+                    id="d006RespondentsStat">—</strong></article>
+                <article class="dataset-stat-card"><span>Территорий</span><strong id="d006TerritoriesStat">—</strong>
+                </article>
+                <article class="dataset-stat-card"><span>Средняя общая площадь</span><strong
+                    id="d006TotalAreaStat">—</strong></article>
+                <article class="dataset-stat-card"><span>Средняя жилая площадь</span><strong
+                    id="d006LivingAreaStat">—</strong></article>
+                <article class="dataset-stat-card"><span>Среднее число комнат</span><strong
+                    id="d006RoomsStat">—</strong>
+                </article>
               </div>
-              <div id="d002NoResults" class="d002-empty-state" hidden>По этому запросу вопросы не найдены. Попробуйте
-                изменить поиск.</div>
-              <div id="d002QuestionChart" class="d002-single-question-chart" role="img"
-                aria-label="Распределение ответов на вопрос"></div>
-              <section id="d002QuestionInfo" class="d002-question-info" aria-live="polite">
-                <div class="d002-question-info-heading"><span class="project-eyebrow">ПОЯСНЕНИЕ К ВОПРОСУ</span>
-                  <h3 id="d002QuestionInfoTitle"></h3>
-                </div>
-                <div class="d002-question-info-stats">
-                  <article><span>Ответили</span><strong id="d002AnsweredCount">—</strong></article>
-                  <article><span>Без ответа</span><strong id="d002MissingCount">—</strong></article>
-                  <article><span>Доля ответивших</span><strong id="d002AnswerRate">—</strong></article>
-                </div>
-                <p id="d002QuestionNote" class="d002-question-note"></p>
-              </section>
-            </article>
 
-            <article id="d002MapPanel" class="dataset-panel d002-map-panel" hidden>
-              <div class="d002-map-heading">
-                <div>
-                  <p class="d002-gallery-eyebrow">ГЕОГРАФИЯ ОТВЕТОВ</p>
-                  <h2>Как отвечали в разных регионах</h2>
-                  <p id="d002MapCaption" class="dataset-panel-caption">Каждый круг показывает соотношение ответов в
-                    области. Наведите курсор на сектор, чтобы увидеть число и долю.</p>
-                </div>
+              <article class="dataset-panel d006-intro-panel">
+                <p class="d006-eyebrow">D-006 · Жилищные условия</p>
+                <h2>Как устроен жилищный быт домохозяйств</h2>
+                <p>Ежегодный опрос домохозяйств о жилье, его площади и комнатах, коммунальных удобствах, доступе к земле
+                  и
+                  товарах длительного пользования. Данные описывают условия проживания и имущество семьи.</p>
+                <p class="d006-intro-note">Круговые диаграммы показывают долю домохозяйств в каждой категории. В блоке
+                  удобств отображается доля ответивших «да», а в списке товаров — суммарное количество указанных
+                  предметов.</p>
+              </article>
+
+              <div class="d006-chart-grid">
+                <article class="dataset-panel d006-chart-panel">
+                  <div class="d006-chart-heading">
+                    <div>
+                      <p class="d006-eyebrow">Основное жильё</p>
+                      <h2>Тип жилья</h2>
+                    </div><span class="d006-chart-unit">доля домохозяйств</span>
+                  </div>
+                  <div id="d006HomeTypeChart" class="dataset-chart d006-chart" role="img"
+                    aria-label="Распределение домохозяйств по типу основного жилья"></div>
+                </article>
+                <article class="dataset-panel d006-chart-panel">
+                  <div class="d006-chart-heading">
+                    <div>
+                      <p class="d006-eyebrow">Право проживания</p>
+                      <h2>Кому принадлежит жильё</h2>
+                    </div><span class="d006-chart-unit">доля домохозяйств</span>
+                  </div>
+                  <div id="d006OwnershipChart" class="dataset-chart d006-chart" role="img"
+                    aria-label="Распределение по форме владения или аренды жилья"></div>
+                </article>
+                <article class="dataset-panel d006-chart-panel">
+                  <div class="d006-chart-heading">
+                    <div>
+                      <p class="d006-eyebrow">Место проживания</p>
+                      <h2>Город и село</h2>
+                    </div><span class="d006-chart-unit">доля домохозяйств</span>
+                  </div>
+                  <div id="d006SettlementChart" class="dataset-chart d006-chart" role="img"
+                    aria-label="Распределение домохозяйств по типу населённого пункта"></div>
+                </article>
+                <article class="dataset-panel d006-chart-panel">
+                  <div class="d006-chart-heading">
+                    <div>
+                      <p class="d006-eyebrow">Земельные участки</p>
+                      <h2>Доступ к сельхозземле</h2>
+                    </div><span class="d006-chart-unit">доля домохозяйств</span>
+                  </div>
+                  <div id="d006LandChart" class="dataset-chart d006-chart" role="img"
+                    aria-label="Доступ домохозяйств к сельскохозяйственной земле"></div>
+                </article>
+                <article class="dataset-panel d006-chart-panel d006-chart-panel-wide">
+                  <div class="d006-chart-heading">
+                    <div>
+                      <p class="d006-eyebrow">Удобства в жилье</p>
+                      <h2>Что есть в доме</h2>
+                    </div><span class="d006-chart-unit">ответ «да», %</span>
+                  </div>
+                  <div id="d006AmenitiesChart" class="dataset-chart d006-chart-tall" role="img"
+                    aria-label="Доля жилья с различными удобствами"></div>
+                </article>
+                <article class="dataset-panel d006-chart-panel d006-chart-panel-wide">
+                  <div class="d006-chart-heading">
+                    <div>
+                      <p class="d006-eyebrow">Имущество домохозяйства</p>
+                      <h2>Товары длительного пользования</h2>
+                    </div><span class="d006-chart-unit">общее количество предметов</span>
+                  </div>
+                  <div id="d006GoodsChart" class="dataset-chart d006-chart-tall" role="img"
+                    aria-label="Суммарное количество товаров длительного пользования в домохозяйствах"></div>
+                </article>
               </div>
-              <p id="d002MapStatus" class="dataset-status" role="status" aria-live="polite"></p>
-              <div id="d002MapChart" class="d002-map-chart" role="img"
-                aria-label="Карта с круговыми диаграммами ответов по регионам Казахстана"></div>
-              <section class="d004-region-details d002-region-details" aria-live="polite">
-                <h3 id="d002RegionTitle">Выберите область на карте</h3>
-                <p id="d002RegionDescription">Размеры секторов показывают распределение ответов участников выбранной
-                  области.</p>
-                <div id="d002RegionStats" class="d002-region-stats" hidden></div>
-              </section>
-            </article>
-
-            <article class="dataset-panel dataset-explainer">
-              <h3>Что это за обследование</h3>
-              <p id="d002FormDescription"></p>
-              <p>Форма D-002 «Качество жизни населения» проводится раз в год. В ней участвует один член домохозяйства в
-                возрасте от 15 лет.</p>
-              <p>График показывает распределение ответов на выбранный вопрос. Переключайте вопросы стрелками, а
-                наведением на сектор смотрите число и долю ответов.</p>
-              <p><strong>Обратите внимание:</strong> CSV и таблицы D002 в базе — синтетические учебные данные, созданные
-                по структуре настоящей анкеты. Они не являются официальными результатами обследования и не описывают
-                реальных людей.</p>
-            </article>
-
-          </div>
-
-          <div id="d004Dashboard" hidden>
-            <div class="dataset-filter-panel">
-              <div class="dataset-year-tabs" role="tablist" aria-label="Период данных"><button type="button" role="tab" aria-selected="false" data-dataset="d004" data-year-mode="single">По годам</button><button type="button" role="tab" aria-selected="true" data-dataset="d004" data-year-mode="all">Итоги за все годы</button></div>
-              <label>Год
-                <select id="d004YearSelect" aria-label="Год обследования"></select>
-              </label>
-              <label>Квартал
-                <select id="d004QuarterSelect" aria-label="Квартал обследования"></select>
-              </label>
-              <label>Раздел анкеты
-                <select id="d004ModuleSelect" aria-label="Раздел анкеты"></select>
-              </label>
+              <p id="d006SourceNote" class="d006-source-note"></p>
             </div>
 
-            <p id="d004Status" class="dataset-status" role="status" aria-live="polite">Загрузка параметров D004…</p>
+            <div id="d008Dashboard" hidden>
+              <div class="dataset-filter-panel d006-filter-panel">
+                <div class="dataset-year-tabs" role="tablist" aria-label="Период данных"><button type="button"
+                    role="tab" aria-selected="false" data-dataset="d008" data-year-mode="single">По
+                    годам</button><button type="button" role="tab" aria-selected="true" data-dataset="d008"
+                    data-year-mode="all">Итоги за все годы</button></div>
+                <label>Год обследования
+                  <select id="d008YearSelect" aria-label="Год обследования D008"></select>
+                </label>
+              </div>
+              <p id="d008Status" class="dataset-status" role="status" aria-live="polite">Загрузка параметров D008…</p>
 
-            <div class="dataset-stat-grid">
-              <article class="dataset-stat-card"><span>Строк в файле</span><strong id="d004RowsStat">—</strong>
+              <div class="dataset-stat-grid d008-stat-grid">
+                <article class="dataset-stat-card"><span>Членов домохозяйств в данных</span><strong
+                    id="d008PeopleStat">—</strong></article>
+                <article class="dataset-stat-card"><span>Домохозяйств</span><strong id="d008HouseholdsStat">—</strong>
+                </article>
+                <article class="dataset-stat-card"><span>Средний размер семьи</span><strong
+                    id="d008HouseholdSizeStat">—</strong></article>
+                <article class="dataset-stat-card"><span>Средний возраст</span><strong
+                    id="d008AverageAgeStat">—</strong>
+                </article>
+                <article class="dataset-stat-card"><span>Доля детей младше 15 лет</span><strong
+                    id="d008ChildrenStat">—</strong></article>
+                <article class="dataset-stat-card"><span>Территорий</span><strong id="d008TerritoriesStat">—</strong>
+                </article>
+              </div>
+
+              <article class="dataset-panel d006-intro-panel">
+                <p class="d006-eyebrow">D-008 · Состав домохозяйства</p>
+                <h2>Кто входит в домохозяйства</h2>
+                <p>Контрольная карточка перечисляет членов выбранных для обследования домохозяйств и их
+                  социально-демографические характеристики: родство, пол, возраст, семейное положение, образование и
+                  основную занятость. Карточка обновляется в течение года.</p>
+                <p class="d006-intro-note">Каждая строка набора соответствует человеку. Показатели описывают участников
+                  обследования, а не всё население страны. Файлы в проекте — синтетические учебные данные, а не
+                  официальные результаты.</p>
               </article>
-              <article class="dataset-stat-card"><span>Домохозяйств</span><strong id="d004HouseholdsStat">—</strong>
-              </article>
-              <article class="dataset-stat-card"><span>Территорий с данными</span><strong
-                  id="d004TerritoriesStat">—</strong></article>
+
+              <div class="d006-chart-grid">
+                <article class="dataset-panel d006-chart-panel">
+                  <div class="d006-chart-heading">
+                    <div>
+                      <p class="d006-eyebrow">Распределение участников</p>
+                      <h2>Город и село</h2>
+                    </div><span class="d006-chart-unit">доля людей</span>
+                  </div>
+                  <div id="d008SettlementChart" class="dataset-chart d006-chart" role="img"
+                    aria-label="Распределение участников обследования по городу и селу"></div>
+                </article>
+                <article class="dataset-panel d006-chart-panel">
+                  <div class="d006-chart-heading">
+                    <div>
+                      <p class="d006-eyebrow">Распределение участников</p>
+                      <h2>Пол</h2>
+                    </div><span class="d006-chart-unit">доля людей</span>
+                  </div>
+                  <div id="d008GenderChart" class="dataset-chart d006-chart" role="img"
+                    aria-label="Распределение участников обследования по полу"></div>
+                </article>
+                <article class="dataset-panel d006-chart-panel">
+                  <div class="d006-chart-heading">
+                    <div>
+                      <p class="d006-eyebrow">Структура семьи</p>
+                      <h2>Кем участники приходятся главе</h2>
+                    </div><span class="d006-chart-unit">доля людей</span>
+                  </div>
+                  <div id="d008RelationshipChart" class="dataset-chart d006-chart" role="img"
+                    aria-label="Распределение участников по родству с главой домохозяйства"></div>
+                </article>
+                <article class="dataset-panel d006-chart-panel">
+                  <div class="d006-chart-heading">
+                    <div>
+                      <p class="d006-eyebrow">Уровень образования</p>
+                      <h2>Образование участников</h2>
+                    </div><span class="d006-chart-unit">доля ответивших</span>
+                  </div>
+                  <div id="d008EducationChart" class="dataset-chart d006-chart" role="img"
+                    aria-label="Распределение участников по уровню образования"></div>
+                </article>
+                <article class="dataset-panel d006-chart-panel">
+                  <div class="d006-chart-heading">
+                    <div>
+                      <p class="d006-eyebrow">Семейное положение</p>
+                      <h2>Семейное положение участников</h2>
+                    </div><span class="d006-chart-unit">доля ответивших</span>
+                  </div>
+                  <div id="d008MaritalChart" class="dataset-chart d006-chart" role="img"
+                    aria-label="Распределение участников по семейному положению"></div>
+                </article>
+                <article class="dataset-panel d006-chart-panel">
+                  <div class="d006-chart-heading">
+                    <div>
+                      <p class="d006-eyebrow">Основная деятельность</p>
+                      <h2>Статус занятости</h2>
+                    </div><span class="d006-chart-unit">доля ответивших 15+</span>
+                  </div>
+                  <div id="d008ActivityChart" class="dataset-chart d006-chart-tall" role="img"
+                    aria-label="Распределение участников старше 15 лет по основной деятельности"></div>
+                </article>
+                <article class="dataset-panel d006-chart-panel">
+                  <div class="d006-chart-heading">
+                    <div>
+                      <p class="d006-eyebrow">Возрастной состав</p>
+                      <h2>Возрастные группы</h2>
+                    </div><span class="d006-chart-unit">доля людей</span>
+                  </div>
+                  <p id="d008AgeNoData" class="dataset-panel-caption" hidden>В файле за 2021 год нет года рождения,
+                    поэтому возрастные показатели для него не рассчитываются.</p>
+                  <div id="d008AgeChart" class="dataset-chart d006-chart" role="img"
+                    aria-label="Распределение участников по возрастным группам"></div>
+                </article>
+                <article class="dataset-panel d006-chart-panel d006-chart-panel-wide">
+                  <div class="d006-chart-heading">
+                    <div>
+                      <p class="d006-eyebrow">Размер домохозяйства</p>
+                      <h2>Сколько человек живёт вместе</h2>
+                    </div><span class="d006-chart-unit">число домохозяйств</span>
+                  </div>
+                  <div id="d008HouseholdSizeChart" class="dataset-chart d006-chart-tall" role="img"
+                    aria-label="Распределение домохозяйств по числу членов семьи"></div>
+                </article>
+              </div>
+              <p id="d008SourceNote" class="d006-source-note"></p>
             </div>
 
-            <article class="dataset-panel">
-              <h2>Количество записей по коду территории</h2>
-              <p id="d004ChartCaption" class="dataset-panel-caption">График строится по данным выбранного файла.</p>
-              <div id="d004TerritoryChart" class="dataset-chart" role="img"
-                aria-label="Столбчатая диаграмма записей по территориям"></div>
-              <div class="dataset-explainer" aria-live="polite">
-                <h3>Как читать эти данные</h3>
-                <p>Здесь собраны данные о бюджете домохозяйств по кварталам: выбранный раздел анкеты, год и квартал
-                  указаны выше.</p>
-                <p id="d004DescriptionMetric">График сравнивает выбранный показатель между территориями.</p>
-                <p>Одна строка — одна запись в выбранном разделе. В одном домохозяйстве может быть несколько записей,
-                  поэтому количество строк не равно количеству семей или людей.</p>
-                <p><strong>Важно:</strong> это учебный синтетический набор, созданный по структуре обследования. Он
-                  помогает знакомиться с данными и работой приложения, но цифры не являются официальной статистикой и не
-                  описывают реальные ответы конкретных семей.</p>
-                <p>В некоторых разделах указана стоимость записи. Сумма стоимости складывает значения всех строк и не
-                  показывает средний расход семьи. Значения-коды (например, категории товаров и услуг) расшифровываются
-                  в справочниках D004 за соответствующий год.</p>
-              </div>
-            </article>
+            <div id="datasetPlaceholder" class="dataset-panel" hidden></div>
+          </section>
 
-            <article class="dataset-panel">
-              <h2>Сводка по территориям</h2>
-              <p class="dataset-panel-caption">Количество строк и уникальных домохозяйств в выбранном периоде.</p>
-              <div class="dataset-table-scroll">
-                <table class="dataset-table">
-                  <thead>
-                    <tr>
-                      <th>Код TE</th>
-                      <th>Территория</th>
-                      <th>Записи</th>
-                      <th>Домохозяйства</th>
-                      <th>Сумма STOIMK</th>
-                    </tr>
-                  </thead>
-                  <tbody id="d004SummaryBody"></tbody>
-                </table>
-              </div>
-            </article>
 
-            <article class="dataset-panel">
-              <h2>Карта показателя по регионам</h2>
-              <p id="d004MapCaption" class="dataset-panel-caption">Карта окрашивает регионы по выбранному показателю.
+          <!-- Динамическая страница: Домохозяйство -->
+          <div id="householdSection" class="chart-section-block" style="display: none;">
+            <div class="app-header">
+              <h2>Анализ сектора «Домохозяйство»</h2>
+              <p>Многофакторная оценка ключевых параметров домохозяйств по шкале от 1 до 10 с помощью радарных диаграмм.
               </p>
-              <div class="d004-map-controls">
-                <label for="d004MapMetric">Показывать на карте</label>
-                <select id="d004MapMetric">
-                  <option value="records">Количество записей</option>
-                  <option value="households">Количество домохозяйств</option>
-                  <option value="amount">Сумма стоимости</option>
-                </select>
-                <button id="d004MapReset" type="button">Сбросить масштаб и выбор</button>
-              </div>
-              <div id="d004MapChart" class="dataset-chart" role="img" aria-label="Карта Казахстана по показателю D004">
-              </div>
-              <section id="d004RegionDetails" class="d004-region-details" aria-live="polite"
-                aria-label="Описание выбранного региона">
-                <h3 id="d004RegionTitle">Выберите область на карте</h3>
-                <p id="d004RegionHelp">Нажмите на область или город, чтобы посмотреть данные. Цвет показывает выбранный
-                  выше показатель.</p>
-                <dl id="d004RegionStats" hidden></dl>
-              </section>
-            </article>
+            </div>
 
-            <article class="dataset-panel">
-              <div class="dataset-table-heading">
-                <div>
-                  <h2>Записи выбранного раздела</h2>
-                  <p id="d004TableCaption" class="dataset-panel-caption"></p>
-                </div>
-                <div class="dataset-pagination">
-                  <button id="d004PrevPage" type="button">Назад</button>
-                  <span id="d004PageLabel">Страница 1</span>
-                  <button id="d004NextPage" type="button">Далее</button>
+            <div class="household-radar-grid">
+              <!-- Блок 1 -->
+              <div class="household-radar-card">
+                <h4>1. Первый вопрос. Итоговые оценки</h4>
+                <div id="householdRadarQuestion1" class="radar-box"></div>
+                <div class="household-description-card">
+                  Оценка домохозяйств по ключевым критериям комфорта и материального обеспечения (шкала 1–10). Анализ
+                  показывает высокую стабильность в городской среде и необходимость модернизации инфраструктуры в
+                  отдельных регионах.
                 </div>
               </div>
-              <div class="dataset-table-scroll">
-                <table class="dataset-table">
-                  <thead id="d004TableHead"></thead>
-                  <tbody id="d004TableBody"></tbody>
-                </table>
+
+              <!-- Блок 2 -->
+              <div class="household-radar-card">
+                <h4>2. Второй вопрос. Итоговые оценки</h4>
+                <div id="householdRadarQuestion2" class="radar-box"></div>
+                <div class="household-description-card">
+                  Детальный срез распределения семейного бюджета по баллам от 1 до 10. Соотношение обязательных трат
+                  (питание, ЖКХ) и инвестиций в развитие показывает уровень финансовой устойчивости населения.
+                </div>
               </div>
-            </article>
-          </div>
 
-          <div id="d006Dashboard" hidden>
-            <div class="dataset-filter-panel d006-filter-panel">
-              <div class="dataset-year-tabs" role="tablist" aria-label="Период данных"><button type="button" role="tab" aria-selected="false" data-dataset="d006" data-year-mode="single">По годам</button><button type="button" role="tab" aria-selected="true" data-dataset="d006" data-year-mode="all">Итоги за все годы</button></div>
-              <label>Год обследования
-                <select id="d006YearSelect" aria-label="Год обследования D006"></select>
-              </label>
-            </div>
-            <p id="d006Status" class="dataset-status" role="status" aria-live="polite">Загрузка параметров D006…</p>
-
-            <div class="dataset-stat-grid d006-stat-grid">
-              <article class="dataset-stat-card"><span>Обследовано домохозяйств</span><strong
-                  id="d006RespondentsStat">—</strong></article>
-              <article class="dataset-stat-card"><span>Территорий</span><strong id="d006TerritoriesStat">—</strong>
-              </article>
-              <article class="dataset-stat-card"><span>Средняя общая площадь</span><strong
-                  id="d006TotalAreaStat">—</strong></article>
-              <article class="dataset-stat-card"><span>Средняя жилая площадь</span><strong
-                  id="d006LivingAreaStat">—</strong></article>
-              <article class="dataset-stat-card"><span>Среднее число комнат</span><strong id="d006RoomsStat">—</strong>
-              </article>
-            </div>
-
-            <article class="dataset-panel d006-intro-panel">
-              <p class="d006-eyebrow">D-006 · Жилищные условия</p>
-              <h2>Как устроен жилищный быт домохозяйств</h2>
-              <p>Ежегодный опрос домохозяйств о жилье, его площади и комнатах, коммунальных удобствах, доступе к земле и
-                товарах длительного пользования. Данные описывают условия проживания и имущество семьи.</p>
-              <p class="d006-intro-note">Круговые диаграммы показывают долю домохозяйств в каждой категории. В блоке
-                удобств отображается доля ответивших «да», а в списке товаров — суммарное количество указанных
-                предметов.</p>
-            </article>
-
-            <div class="d006-chart-grid">
-              <article class="dataset-panel d006-chart-panel">
-                <div class="d006-chart-heading">
-                  <div>
-                    <p class="d006-eyebrow">Основное жильё</p>
-                    <h2>Тип жилья</h2>
-                  </div><span class="d006-chart-unit">доля домохозяйств</span>
+              <!-- Блок 3 -->
+              <div class="household-radar-card">
+                <h4>3. Третий вопрос. Итоговые оценки</h4>
+                <div id="householdRadarQuestion3" class="radar-box"></div>
+                <div class="household-description-card">
+                  Изучение уровня проникновения цифровых услуг, интернета и смарт-устройств по 10-балльной шкале.
+                  Отмечается рост вовлеченности во всех возрастных категориях.
                 </div>
-                <div id="d006HomeTypeChart" class="dataset-chart d006-chart" role="img"
-                  aria-label="Распределение домохозяйств по типу основного жилья"></div>
-              </article>
-              <article class="dataset-panel d006-chart-panel">
-                <div class="d006-chart-heading">
-                  <div>
-                    <p class="d006-eyebrow">Право проживания</p>
-                    <h2>Кому принадлежит жильё</h2>
-                  </div><span class="d006-chart-unit">доля домохозяйств</span>
-                </div>
-                <div id="d006OwnershipChart" class="dataset-chart d006-chart" role="img"
-                  aria-label="Распределение по форме владения или аренды жилья"></div>
-              </article>
-              <article class="dataset-panel d006-chart-panel">
-                <div class="d006-chart-heading">
-                  <div>
-                    <p class="d006-eyebrow">Место проживания</p>
-                    <h2>Город и село</h2>
-                  </div><span class="d006-chart-unit">доля домохозяйств</span>
-                </div>
-                <div id="d006SettlementChart" class="dataset-chart d006-chart" role="img"
-                  aria-label="Распределение домохозяйств по типу населённого пункта"></div>
-              </article>
-              <article class="dataset-panel d006-chart-panel">
-                <div class="d006-chart-heading">
-                  <div>
-                    <p class="d006-eyebrow">Земельные участки</p>
-                    <h2>Доступ к сельхозземле</h2>
-                  </div><span class="d006-chart-unit">доля домохозяйств</span>
-                </div>
-                <div id="d006LandChart" class="dataset-chart d006-chart" role="img"
-                  aria-label="Доступ домохозяйств к сельскохозяйственной земле"></div>
-              </article>
-              <article class="dataset-panel d006-chart-panel d006-chart-panel-wide">
-                <div class="d006-chart-heading">
-                  <div>
-                    <p class="d006-eyebrow">Удобства в жилье</p>
-                    <h2>Что есть в доме</h2>
-                  </div><span class="d006-chart-unit">ответ «да», %</span>
-                </div>
-                <div id="d006AmenitiesChart" class="dataset-chart d006-chart-tall" role="img"
-                  aria-label="Доля жилья с различными удобствами"></div>
-              </article>
-              <article class="dataset-panel d006-chart-panel d006-chart-panel-wide">
-                <div class="d006-chart-heading">
-                  <div>
-                    <p class="d006-eyebrow">Имущество домохозяйства</p>
-                    <h2>Товары длительного пользования</h2>
-                  </div><span class="d006-chart-unit">общее количество предметов</span>
-                </div>
-                <div id="d006GoodsChart" class="dataset-chart d006-chart-tall" role="img"
-                  aria-label="Суммарное количество товаров длительного пользования в домохозяйствах"></div>
-              </article>
-            </div>
-            <p id="d006SourceNote" class="d006-source-note"></p>
-          </div>
-
-          <div id="d008Dashboard" hidden>
-            <div class="dataset-filter-panel d006-filter-panel">
-              <div class="dataset-year-tabs" role="tablist" aria-label="Период данных"><button type="button" role="tab" aria-selected="false" data-dataset="d008" data-year-mode="single">По годам</button><button type="button" role="tab" aria-selected="true" data-dataset="d008" data-year-mode="all">Итоги за все годы</button></div>
-              <label>Год обследования
-                <select id="d008YearSelect" aria-label="Год обследования D008"></select>
-              </label>
-            </div>
-            <p id="d008Status" class="dataset-status" role="status" aria-live="polite">Загрузка параметров D008…</p>
-
-            <div class="dataset-stat-grid d008-stat-grid">
-              <article class="dataset-stat-card"><span>Членов домохозяйств в данных</span><strong
-                  id="d008PeopleStat">—</strong></article>
-              <article class="dataset-stat-card"><span>Домохозяйств</span><strong id="d008HouseholdsStat">—</strong>
-              </article>
-              <article class="dataset-stat-card"><span>Средний размер семьи</span><strong
-                  id="d008HouseholdSizeStat">—</strong></article>
-              <article class="dataset-stat-card"><span>Средний возраст</span><strong id="d008AverageAgeStat">—</strong>
-              </article>
-              <article class="dataset-stat-card"><span>Доля детей младше 15 лет</span><strong
-                  id="d008ChildrenStat">—</strong></article>
-              <article class="dataset-stat-card"><span>Территорий</span><strong id="d008TerritoriesStat">—</strong>
-              </article>
-            </div>
-
-            <article class="dataset-panel d006-intro-panel">
-              <p class="d006-eyebrow">D-008 · Состав домохозяйства</p>
-              <h2>Кто входит в домохозяйства</h2>
-              <p>Контрольная карточка перечисляет членов выбранных для обследования домохозяйств и их
-                социально-демографические характеристики: родство, пол, возраст, семейное положение, образование и
-                основную занятость. Карточка обновляется в течение года.</p>
-              <p class="d006-intro-note">Каждая строка набора соответствует человеку. Показатели описывают участников
-                обследования, а не всё население страны. Файлы в проекте — синтетические учебные данные, а не
-                официальные результаты.</p>
-            </article>
-
-            <div class="d006-chart-grid">
-              <article class="dataset-panel d006-chart-panel">
-                <div class="d006-chart-heading">
-                  <div>
-                    <p class="d006-eyebrow">Распределение участников</p>
-                    <h2>Город и село</h2>
-                  </div><span class="d006-chart-unit">доля людей</span>
-                </div>
-                <div id="d008SettlementChart" class="dataset-chart d006-chart" role="img"
-                  aria-label="Распределение участников обследования по городу и селу"></div>
-              </article>
-              <article class="dataset-panel d006-chart-panel">
-                <div class="d006-chart-heading">
-                  <div>
-                    <p class="d006-eyebrow">Распределение участников</p>
-                    <h2>Пол</h2>
-                  </div><span class="d006-chart-unit">доля людей</span>
-                </div>
-                <div id="d008GenderChart" class="dataset-chart d006-chart" role="img"
-                  aria-label="Распределение участников обследования по полу"></div>
-              </article>
-              <article class="dataset-panel d006-chart-panel">
-                <div class="d006-chart-heading">
-                  <div>
-                    <p class="d006-eyebrow">Структура семьи</p>
-                    <h2>Кем участники приходятся главе</h2>
-                  </div><span class="d006-chart-unit">доля людей</span>
-                </div>
-                <div id="d008RelationshipChart" class="dataset-chart d006-chart" role="img"
-                  aria-label="Распределение участников по родству с главой домохозяйства"></div>
-              </article>
-              <article class="dataset-panel d006-chart-panel">
-                <div class="d006-chart-heading">
-                  <div>
-                    <p class="d006-eyebrow">Уровень образования</p>
-                    <h2>Образование участников</h2>
-                  </div><span class="d006-chart-unit">доля ответивших</span>
-                </div>
-                <div id="d008EducationChart" class="dataset-chart d006-chart" role="img"
-                  aria-label="Распределение участников по уровню образования"></div>
-              </article>
-              <article class="dataset-panel d006-chart-panel">
-                <div class="d006-chart-heading">
-                  <div>
-                    <p class="d006-eyebrow">Семейное положение</p>
-                    <h2>Семейное положение участников</h2>
-                  </div><span class="d006-chart-unit">доля ответивших</span>
-                </div>
-                <div id="d008MaritalChart" class="dataset-chart d006-chart" role="img"
-                  aria-label="Распределение участников по семейному положению"></div>
-              </article>
-              <article class="dataset-panel d006-chart-panel">
-                <div class="d006-chart-heading">
-                  <div>
-                    <p class="d006-eyebrow">Основная деятельность</p>
-                    <h2>Статус занятости</h2>
-                  </div><span class="d006-chart-unit">доля ответивших 15+</span>
-                </div>
-                <div id="d008ActivityChart" class="dataset-chart d006-chart-tall" role="img"
-                  aria-label="Распределение участников старше 15 лет по основной деятельности"></div>
-              </article>
-              <article class="dataset-panel d006-chart-panel">
-                <div class="d006-chart-heading">
-                  <div>
-                    <p class="d006-eyebrow">Возрастной состав</p>
-                    <h2>Возрастные группы</h2>
-                  </div><span class="d006-chart-unit">доля людей</span>
-                </div>
-                <p id="d008AgeNoData" class="dataset-panel-caption" hidden>В файле за 2021 год нет года рождения,
-                  поэтому возрастные показатели для него не рассчитываются.</p>
-                <div id="d008AgeChart" class="dataset-chart d006-chart" role="img"
-                  aria-label="Распределение участников по возрастным группам"></div>
-              </article>
-              <article class="dataset-panel d006-chart-panel d006-chart-panel-wide">
-                <div class="d006-chart-heading">
-                  <div>
-                    <p class="d006-eyebrow">Размер домохозяйства</p>
-                    <h2>Сколько человек живёт вместе</h2>
-                  </div><span class="d006-chart-unit">число домохозяйств</span>
-                </div>
-                <div id="d008HouseholdSizeChart" class="dataset-chart d006-chart-tall" role="img"
-                  aria-label="Распределение домохозяйств по числу членов семьи"></div>
-              </article>
-            </div>
-            <p id="d008SourceNote" class="d006-source-note"></p>
-          </div>
-
-          <div id="datasetPlaceholder" class="dataset-panel" hidden></div>
-        </section>
-
-
-        <!-- Динамическая страница: Домохозяйство -->
-        <div id="householdSection" class="chart-section-block" style="display: none;">
-          <div class="app-header">
-            <h2>Анализ сектора «Домохозяйство»</h2>
-            <p>Многофакторная оценка ключевых параметров домохозяйств по шкале от 1 до 10 с помощью радарных диаграмм.
-            </p>
-          </div>
-
-          <div class="household-radar-grid">
-            <!-- Блок 1 -->
-            <div class="household-radar-card">
-              <h4>1. Первый вопрос. Итоговые оценки</h4>
-              <div id="householdRadarQuestion1" class="radar-box"></div>
-              <div class="household-description-card">
-                Оценка домохозяйств по ключевым критериям комфорта и материального обеспечения (шкала 1–10). Анализ
-                показывает высокую стабильность в городской среде и необходимость модернизации инфраструктуры в
-                отдельных регионах.
               </div>
-            </div>
 
-            <!-- Блок 2 -->
-            <div class="household-radar-card">
-              <h4>2. Второй вопрос. Итоговые оценки</h4>
-              <div id="householdRadarQuestion2" class="radar-box"></div>
-              <div class="household-description-card">
-                Детальный срез распределения семейного бюджета по баллам от 1 до 10. Соотношение обязательных трат
-                (питание, ЖКХ) и инвестиций в развитие показывает уровень финансовой устойчивости населения.
+              <!-- Блок 4 -->
+              <div class="household-radar-card">
+                <h4>4. Четвертый вопрос. Итоговые оценки</h4>
+                <div id="householdRadarQuestion4" class="radar-box"></div>
+                <div class="household-description-card">
+                  Анализ площади жилья, степени износа коммуникаций и доступности ипотечных программ по шкале 1–10.
+                  Показывает динамику улучшения жилищного фонда по регионам страны.
+                </div>
               </div>
-            </div>
 
-            <!-- Блок 3 -->
-            <div class="household-radar-card">
-              <h4>3. Третий вопрос. Итоговые оценки</h4>
-              <div id="householdRadarQuestion3" class="radar-box"></div>
-              <div class="household-description-card">
-                Изучение уровня проникновения цифровых услуг, интернета и смарт-устройств по 10-балльной шкале.
-                Отмечается рост вовлеченности во всех возрастных категориях.
-              </div>
-            </div>
-
-            <!-- Блок 4 -->
-            <div class="household-radar-card">
-              <h4>4. Четвертый вопрос. Итоговые оценки</h4>
-              <div id="householdRadarQuestion4" class="radar-box"></div>
-              <div class="household-description-card">
-                Анализ площади жилья, степени износа коммуникаций и доступности ипотечных программ по шкале 1–10.
-                Показывает динамику улучшения жилищного фонда по регионам страны.
-              </div>
-            </div>
-
-            <!-- Блок 5 -->
-            <div class="household-radar-card">
-              <h4>5. Пятый вопрос. Итоговые оценки</h4>
-              <div id="householdRadarQuestion5" class="radar-box"></div>
-              <div class="household-description-card">
-                Оценка уровня занятости, стресса и здоровья членов домохозяйств по 10-балльной шкале. Отражает
-                адаптивность населения к изменениям рынка труда.
+              <!-- Блок 5 -->
+              <div class="household-radar-card">
+                <h4>5. Пятый вопрос. Итоговые оценки</h4>
+                <div id="householdRadarQuestion5" class="radar-box"></div>
+                <div class="household-description-card">
+                  Оценка уровня занятости, стресса и здоровья членов домохозяйств по 10-балльной шкале. Отражает
+                  адаптивность населения к изменениям рынка труда.
+                </div>
               </div>
             </div>
           </div>
+
+
+          <!-- Секция детального просмотра -->
+          <div id="detailedViewSection" class="detailed-section">
+            <div class="detailed-header">
+              <button id="backToDashBtn" class="back-btn">← Назад к дашборду</button>
+              <h2 id="detailedChartTitle">Название показателя</h2>
+            </div>
+
+            <div class="detailed-chart-container">
+              <div id="realDetailedChart"></div>
+            </div>
+
+            <div class="detailed-analytics-container">
+              <h3>🤖 ИИ Аналитика</h3>
+              <div id="aiAnalyticsDescription">
+                ⏳ Загрузка анализа...
+              </div>
+            </div>
+          </div>
+
+          <section id="dataAnalyzerSection" class="data-analyzer-section" style="display: none;">
+            <div id="dataAnalyzerNotice" class="data-analyzer-notice" role="status" aria-live="polite" hidden>
+              <span id="dataAnalyzerNoticeText">Подключаем страницу анализа данных…</span>
+              <button id="retryDataAnalyzerBtn" type="button" class="data-analyzer-retry" hidden>Повторить</button>
+            </div>
+            <iframe id="dataAnalyzerFrame" title="Анализ и очистка данных"
+              sandbox="allow-scripts allow-forms allow-same-origin allow-downloads">
+            </iframe>
+          </section>
+
+          <section id="populationHypothesesSection" class="project-page hypotheses-page" style="display: none;"
+            aria-labelledby="hypothesesTitle">
+            <header class="project-page-hero hypotheses-hero">
+              <div class="project-page-hero-copy">
+                <p class="project-eyebrow">ИССЛЕДОВАТЕЛЬСКИЙ РАЗДЕЛ · 4 НАБОРА ДАННЫХ</p>
+                <h1 id="hypothesesTitle">Гипотезы о населении и условиях жизни</h1>
+                <p>Идеи, которые можно проверить на данных D002, D004, D006 и D008. Каждая карточка объясняет, что
+                  сравнивать и где открыть исходные показатели.</p>
+              </div>
+              <div class="hypotheses-hero-mark" aria-hidden="true"><span>?</span><i></i><i></i></div>
+            </header>
+            <div class="hypotheses-toolbar">
+              <div><span class="project-eyebrow">ПЛАН ИССЛЕДОВАНИЯ</span>
+                <h2>Что проверим?</h2>
+              </div>
+              <div class="hypothesis-filters" role="group" aria-label="Фильтр гипотез по датасету">
+                <button type="button" class="hypothesis-filter-btn active" data-hypothesis-filter="all"
+                  aria-pressed="true">Все гипотезы</button>
+                <button type="button" class="hypothesis-filter-btn" data-hypothesis-filter="d008"
+                  aria-pressed="false">D008</button>
+                <button type="button" class="hypothesis-filter-btn" data-hypothesis-filter="d004"
+                  aria-pressed="false">D004</button>
+                <button type="button" class="hypothesis-filter-btn" data-hypothesis-filter="d006"
+                  aria-pressed="false">D006</button>
+                <button type="button" class="hypothesis-filter-btn" data-hypothesis-filter="d002"
+                  aria-pressed="false">D002</button>
+              </div>
+            </div>
+            <div class="hypothesis-grid">
+              <article class="hypothesis-card" data-hypothesis-card="d008">
+                <div class="hypothesis-card-top"><span class="hypothesis-number">01</span><span
+                    class="hypothesis-dataset">D008 · Состав участников</span></div>
+                <h3>Возрастной состав участников обследования различается между городом и селом.</h3>
+                <p class="hypothesis-question">Проверка: сопоставить доли возрастных групп в городской и сельской
+                  выборках
+                  отдельно по годам.</p>
+                <div class="hypothesis-tags"><span>Возраст</span><span>Тип поселения</span><span>Год</span></div>
+                <button class="hypothesis-open" type="button" data-open-dataset="d008">Открыть D008 <span
+                    aria-hidden="true">↗</span></button>
+              </article>
+              <article class="hypothesis-card" data-hypothesis-card="d004">
+                <div class="hypothesis-card-top"><span class="hypothesis-number">02</span><span
+                    class="hypothesis-dataset">D004 · Уровень жизни</span></div>
+                <h3>Структура расходов домохозяйств различается по территориям и кварталам.</h3>
+                <p class="hypothesis-question">Проверка: сравнить распределение записей и выбранных стоимостных
+                  показателей по территориям и периодам, учитывая размер выборки.</p>
+                <div class="hypothesis-tags"><span>Территория</span><span>Квартал</span><span>Расходы</span></div>
+                <button class="hypothesis-open" type="button" data-open-dataset="d004">Открыть D004 <span
+                    aria-hidden="true">↗</span></button>
+              </article>
+              <article class="hypothesis-card" data-hypothesis-card="d006">
+                <div class="hypothesis-card-top"><span class="hypothesis-number">03</span><span
+                    class="hypothesis-dataset">D006 · Жильё и быт</span></div>
+                <h3>Доступ к бытовым удобствам и характеристики жилья отличаются между городскими и сельскими
+                  домохозяйствами.</h3>
+                <p class="hypothesis-question">Проверка: сравнить доли ответов о типе жилья, удобствах и доступе к земле
+                  в
+                  двух типах поселения.</p>
+                <div class="hypothesis-tags"><span>Жилищные условия</span><span>Удобства</span><span>Город / село</span>
+                </div>
+                <button class="hypothesis-open" type="button" data-open-dataset="d006">Открыть D006 <span
+                    aria-hidden="true">↗</span></button>
+              </article>
+              <article class="hypothesis-card" data-hypothesis-card="d002">
+                <div class="hypothesis-card-top"><span class="hypothesis-number">04</span><span
+                    class="hypothesis-dataset">D002 · Социальные оценки</span></div>
+                <h3>Оценки удовлетворённости жизнью и материального положения меняются от территории к территории.</h3>
+                <p class="hypothesis-question">Проверка: сравнить распределения ответов по регионам и годам; при
+                  интерпретации учитывать формулировки вопросов и число ответивших.</p>
+                <div class="hypothesis-tags"><span>Оценка жизни</span><span>Материальное
+                    положение</span><span>Регион</span></div>
+                <button class="hypothesis-open" type="button" data-open-dataset="d002">Открыть D002 <span
+                    aria-hidden="true">↗</span></button>
+              </article>
+            </div>
+            <aside class="hypotheses-note"><span aria-hidden="true">ⓘ</span>
+              <p><strong>Это гипотезы, а не готовые выводы.</strong> Перед публикацией результатов проверьте полноту
+                данных, определения показателей и сопоставимость периодов. Для синтетических учебных файлов результаты
+                описывают только демонстрационные данные.</p>
+            </aside>
+          </section>
+
+          <section id="aboutProjectSection" class="project-page about-page" style="display: none;"
+            aria-labelledby="aboutProjectTitle">
+            <header class="project-page-hero about-hero">
+              <div class="project-page-hero-copy">
+                <p class="project-eyebrow">ОТКРЫТЫЕ ДАННЫЕ · КОМАНДНАЯ РАБОТА</p>
+                <h1 id="aboutProjectTitle">О проекте</h1>
+                <p>Интерактивное приложение знакомит с данными о населении, домохозяйствах и оценках качества жизни в
+                  Казахстане.</p>
+              </div>
+              <div class="home-hero-art about-hero-art" aria-hidden="true">
+                <span class="home-orbit home-orbit-one"></span><span class="home-orbit home-orbit-two"></span>
+                <span class="home-art-sun"></span><span class="home-art-line home-art-line-one"></span>
+                <span class="home-art-line home-art-line-two"></span><span
+                  class="home-art-line home-art-line-three"></span>
+                <span class="home-art-label">DATA · KZ</span>
+              </div>
+            </header>
+            <section class="about-project-intro">
+              <div><span class="project-eyebrow">ЗАДАЧА ПРОЕКТА</span>
+                <h2>Сложные таблицы — понятным языком</h2>
+              </div>
+              <p>Мы собираем датасеты в одном приложении, показываем ключевые показатели на графиках и добавляем
+                пояснения, чтобы результаты было проще исследовать и обсуждать.</p>
+            </section>
+            <section class="about-team-section" aria-labelledby="aboutTeamTitle">
+              <p class="about-chart-note">Радар показывает условный профиль по описанию роли и не является оценкой
+                навыков
+                участников.</p>
+              <div class="about-team-grid">
+                <article class="about-team-card" tabindex="0"
+                  aria-label="Мусин Абукадыр. Нажмите, чтобы увидеть профиль вклада">
+                  <div class="about-team-card-inner">
+                    <div class="about-team-face about-team-front"><span class="about-team-index">01</span>
+                      <div class="about-avatar">01</div>
+                      <h3>Участник команды</h3>
+                      <p>Мусин Абукадыр</p><span class="about-team-role">Исследование датасетов</span><span
+                        class="about-flip-hint" aria-hidden="true">Посмотреть профиль <b>↗</b></span>
+                    </div>
+                    <div class="about-team-face about-team-back"><span class="about-back-name">Мусин Абукадыр</span>
+                      <div class="about-member-chart" data-member-chart="data" role="img" aria-label="Профиль вклада">
+                      </div><span class="about-flip-hint">Нажмите, чтобы вернуться <b>↶</b></span>
+                    </div>
+                  </div>
+                </article>
+                <article class="about-team-card" tabindex="0"
+                  aria-label="Пупков Максим. Нажмите, чтобы увидеть профиль вклада">
+                  <div class="about-team-card-inner">
+                    <div class="about-team-face about-team-front"><span class="about-team-index">02</span>
+                      <div class="about-avatar">02</div>
+                      <h3>Участник команды</h3>
+                      <p>Пупков Максим</p><span class="about-team-role">Исследование данных и разработка
+                        функционала</span><span class="about-flip-hint" aria-hidden="true">Посмотреть профиль
+                        <b>↗</b></span>
+                    </div>
+                    <div class="about-team-face about-team-back"><span class="about-back-name">Пупков Максим</span>
+                      <div class="about-member-chart" data-member-chart="engineering" role="img"
+                        aria-label="Профиль вклада"></div><span class="about-flip-hint">Нажмите, чтобы вернуться
+                        <b>↶</b></span>
+                    </div>
+                  </div>
+                </article>
+                <article class="about-team-card" tabindex="0"
+                  aria-label="Штеркель Даниил. Нажмите, чтобы увидеть профиль вклада">
+                  <div class="about-team-card-inner">
+                    <div class="about-team-face about-team-front"><span class="about-team-index">03</span>
+                      <div class="about-avatar">03</div>
+                      <h3>Участник команды</h3>
+                      <p>Штеркель Даниил</p><span class="about-team-role">Разработка и дизайн приложения</span><span
+                        class="about-flip-hint" aria-hidden="true">Посмотреть профиль <b>↗</b></span>
+                    </div>
+                    <div class="about-team-face about-team-back"><span class="about-back-name">Штеркель Даниил</span>
+                      <div class="about-member-chart" data-member-chart="product" role="img"
+                        aria-label="Профиль вклада">
+                      </div><span class="about-flip-hint">Нажмите, чтобы вернуться <b>↶</b></span>
+                    </div>
+                  </div>
+                </article>
+                <article class="about-team-card" tabindex="0"
+                  aria-label="Баянова Айдана. Нажмите, чтобы увидеть профиль вклада">
+                  <div class="about-team-card-inner">
+                    <div class="about-team-face about-team-front"><span class="about-team-index">04</span>
+                      <div class="about-avatar">04</div>
+                      <h3>Участник команды</h3>
+                      <p>Баянова Айдана</p><span class="about-team-role">Разработка и дизайн ИИ-ассистента</span><span
+                        class="about-flip-hint" aria-hidden="true">Посмотреть профиль <b>↗</b></span>
+                    </div>
+                    <div class="about-team-face about-team-back"><span class="about-back-name">Баянова Айдана</span>
+                      <div class="about-member-chart" data-member-chart="assistant" role="img"
+                        aria-label="Профиль вклада"></div><span class="about-flip-hint">Нажмите, чтобы вернуться
+                        <b>↶</b></span>
+                    </div>
+                  </div>
+                </article>
+                <article class="about-team-card" tabindex="0"
+                  aria-label="Силищев Никита. Нажмите, чтобы увидеть профиль вклада">
+                  <div class="about-team-card-inner">
+                    <div class="about-team-face about-team-front"><span class="about-team-index">05</span>
+                      <div class="about-avatar">05</div>
+                      <h3>Участник команды</h3>
+                      <p>Силищев Никита</p><span class="about-team-role">Документации и презентации</span><span
+                        class="about-flip-hint" aria-hidden="true">Посмотреть профиль <b>↗</b></span>
+                    </div>
+                    <div class="about-team-face about-team-back"><span class="about-back-name">Силищев Никита</span>
+                      <div class="about-member-chart" data-member-chart="communication" role="img"
+                        aria-label="Профиль вклада"></div><span class="about-flip-hint">Нажмите, чтобы вернуться
+                        <b>↶</b></span>
+                    </div>
+                  </div>
+                </article>
+              </div>
+            </section>
+            <section class="about-university-card">
+              <!--<div class="about-university-brand"><img src="img/saginov-university-logo.svg" alt="Saginov Technical University, основан в 1953 году"></div>-->
+              <div><span class="project-eyebrow">ОБРАЗОВАТЕЛЬНАЯ СРЕДА</span>
+                <h2>Лучший технический вуз в стране</h2>
+                <h3 id="aboutUniversityName" class="about-university-name">Карагандинский Технический университет имени
+                  Абылкаса Сагинова</h3>
+                <p>Карагандинский технический университет имени Абылкаса Сагинова — образовательная и исследовательская
+                  среда команды проекта. Здесь инженерные знания и цифровые технологии помогают превращать данные в
+                  понятные решения.</p>
+              </div>
+            </section>
+            <footer class="about-footer"><span>Создано командой из пяти участников</span><span>Казахстан · данные,
+                аналитика, технологии</span></footer>
+          </section>
+
         </div>
-
-
-        <!-- Секция детального просмотра -->
-        <div id="detailedViewSection" class="detailed-section">
-          <div class="detailed-header">
-            <button id="backToDashBtn" class="back-btn">← Назад к дашборду</button>
-            <h2 id="detailedChartTitle">Название показателя</h2>
-          </div>
-
-          <div class="detailed-chart-container">
-            <div id="realDetailedChart"></div>
-          </div>
-
-          <div class="detailed-analytics-container">
-            <h3>🤖 ИИ Аналитика</h3>
-            <div id="aiAnalyticsDescription">
-              ⏳ Загрузка анализа...
-            </div>
-          </div>
-        </div>
-
-        <section id="dataAnalyzerSection" class="data-analyzer-section" style="display: none;">
-          <div id="dataAnalyzerNotice" class="data-analyzer-notice" role="status" aria-live="polite" hidden>
-            <span id="dataAnalyzerNoticeText">Подключаем страницу анализа данных…</span>
-            <button id="retryDataAnalyzerBtn" type="button" class="data-analyzer-retry" hidden>Повторить</button>
-          </div>
-          <iframe id="dataAnalyzerFrame" title="Анализ и очистка данных"
-            sandbox="allow-scripts allow-forms allow-same-origin allow-downloads">
-          </iframe>
-        </section>
-
-        <section id="populationHypothesesSection" class="project-page hypotheses-page" style="display: none;"
-          aria-labelledby="hypothesesTitle">
-          <header class="project-page-hero hypotheses-hero">
-            <div class="project-page-hero-copy">
-              <p class="project-eyebrow">ИССЛЕДОВАТЕЛЬСКИЙ РАЗДЕЛ · 4 НАБОРА ДАННЫХ</p>
-              <h1 id="hypothesesTitle">Гипотезы о населении и условиях жизни</h1>
-              <p>Идеи, которые можно проверить на данных D002, D004, D006 и D008. Каждая карточка объясняет, что
-                сравнивать и где открыть исходные показатели.</p>
-            </div>
-            <div class="hypotheses-hero-mark" aria-hidden="true"><span>?</span><i></i><i></i></div>
-          </header>
-          <div class="hypotheses-toolbar">
-            <div><span class="project-eyebrow">ПЛАН ИССЛЕДОВАНИЯ</span>
-              <h2>Что проверим?</h2>
-            </div>
-            <div class="hypothesis-filters" role="group" aria-label="Фильтр гипотез по датасету">
-              <button type="button" class="hypothesis-filter-btn active" data-hypothesis-filter="all"
-                aria-pressed="true">Все гипотезы</button>
-              <button type="button" class="hypothesis-filter-btn" data-hypothesis-filter="d008"
-                aria-pressed="false">D008</button>
-              <button type="button" class="hypothesis-filter-btn" data-hypothesis-filter="d004"
-                aria-pressed="false">D004</button>
-              <button type="button" class="hypothesis-filter-btn" data-hypothesis-filter="d006"
-                aria-pressed="false">D006</button>
-              <button type="button" class="hypothesis-filter-btn" data-hypothesis-filter="d002"
-                aria-pressed="false">D002</button>
-            </div>
-          </div>
-          <div class="hypothesis-grid">
-            <article class="hypothesis-card" data-hypothesis-card="d008">
-              <div class="hypothesis-card-top"><span class="hypothesis-number">01</span><span
-                  class="hypothesis-dataset">D008 · Состав участников</span></div>
-              <h3>Возрастной состав участников обследования различается между городом и селом.</h3>
-              <p class="hypothesis-question">Проверка: сопоставить доли возрастных групп в городской и сельской выборках
-                отдельно по годам.</p>
-              <div class="hypothesis-tags"><span>Возраст</span><span>Тип поселения</span><span>Год</span></div>
-              <button class="hypothesis-open" type="button" data-open-dataset="d008">Открыть D008 <span
-                  aria-hidden="true">↗</span></button>
-            </article>
-            <article class="hypothesis-card" data-hypothesis-card="d004">
-              <div class="hypothesis-card-top"><span class="hypothesis-number">02</span><span
-                  class="hypothesis-dataset">D004 · Уровень жизни</span></div>
-              <h3>Структура расходов домохозяйств различается по территориям и кварталам.</h3>
-              <p class="hypothesis-question">Проверка: сравнить распределение записей и выбранных стоимостных
-                показателей по территориям и периодам, учитывая размер выборки.</p>
-              <div class="hypothesis-tags"><span>Территория</span><span>Квартал</span><span>Расходы</span></div>
-              <button class="hypothesis-open" type="button" data-open-dataset="d004">Открыть D004 <span
-                  aria-hidden="true">↗</span></button>
-            </article>
-            <article class="hypothesis-card" data-hypothesis-card="d006">
-              <div class="hypothesis-card-top"><span class="hypothesis-number">03</span><span
-                  class="hypothesis-dataset">D006 · Жильё и быт</span></div>
-              <h3>Доступ к бытовым удобствам и характеристики жилья отличаются между городскими и сельскими
-                домохозяйствами.</h3>
-              <p class="hypothesis-question">Проверка: сравнить доли ответов о типе жилья, удобствах и доступе к земле в
-                двух типах поселения.</p>
-              <div class="hypothesis-tags"><span>Жилищные условия</span><span>Удобства</span><span>Город / село</span>
-              </div>
-              <button class="hypothesis-open" type="button" data-open-dataset="d006">Открыть D006 <span
-                  aria-hidden="true">↗</span></button>
-            </article>
-            <article class="hypothesis-card" data-hypothesis-card="d002">
-              <div class="hypothesis-card-top"><span class="hypothesis-number">04</span><span
-                  class="hypothesis-dataset">D002 · Социальные оценки</span></div>
-              <h3>Оценки удовлетворённости жизнью и материального положения меняются от территории к территории.</h3>
-              <p class="hypothesis-question">Проверка: сравнить распределения ответов по регионам и годам; при
-                интерпретации учитывать формулировки вопросов и число ответивших.</p>
-              <div class="hypothesis-tags"><span>Оценка жизни</span><span>Материальное
-                  положение</span><span>Регион</span></div>
-              <button class="hypothesis-open" type="button" data-open-dataset="d002">Открыть D002 <span
-                  aria-hidden="true">↗</span></button>
-            </article>
-          </div>
-          <aside class="hypotheses-note"><span aria-hidden="true">ⓘ</span>
-            <p><strong>Это гипотезы, а не готовые выводы.</strong> Перед публикацией результатов проверьте полноту
-              данных, определения показателей и сопоставимость периодов. Для синтетических учебных файлов результаты
-              описывают только демонстрационные данные.</p>
-          </aside>
-        </section>
-
-        <section id="aboutProjectSection" class="project-page about-page" style="display: none;"
-          aria-labelledby="aboutProjectTitle">
-          <header class="project-page-hero about-hero">
-            <div class="project-page-hero-copy">
-              <p class="project-eyebrow">ОТКРЫТЫЕ ДАННЫЕ · КОМАНДНАЯ РАБОТА</p>
-              <h1 id="aboutProjectTitle">О проекте</h1>
-              <p>Интерактивное приложение знакомит с данными о населении, домохозяйствах и оценках качества жизни в
-                Казахстане.</p>
-            </div>
-            <div class="home-hero-art about-hero-art" aria-hidden="true">
-              <span class="home-orbit home-orbit-one"></span><span class="home-orbit home-orbit-two"></span>
-              <span class="home-art-sun"></span><span class="home-art-line home-art-line-one"></span>
-              <span class="home-art-line home-art-line-two"></span><span
-                class="home-art-line home-art-line-three"></span>
-              <span class="home-art-label">DATA · KZ</span>
-            </div>
-          </header>
-          <section class="about-project-intro">
-            <div><span class="project-eyebrow">ЗАДАЧА ПРОЕКТА</span>
-              <h2>Сложные таблицы — понятным языком</h2>
-            </div>
-            <p>Мы собираем датасеты в одном приложении, показываем ключевые показатели на графиках и добавляем
-              пояснения, чтобы результаты было проще исследовать и обсуждать.</p>
-          </section>
-          <section class="about-team-section" aria-labelledby="aboutTeamTitle">
-            <p class="about-chart-note">Радар показывает условный профиль по описанию роли и не является оценкой навыков
-              участников.</p>
-            <div class="about-team-grid">
-              <article class="about-team-card" tabindex="0"
-                aria-label="Мусин Абукадыр. Нажмите, чтобы увидеть профиль вклада">
-                <div class="about-team-card-inner">
-                  <div class="about-team-face about-team-front"><span class="about-team-index">01</span>
-                    <div class="about-avatar">01</div>
-                    <h3>Участник команды</h3>
-                    <p>Мусин Абукадыр</p><span class="about-team-role">Исследование датасетов</span><span
-                      class="about-flip-hint" aria-hidden="true">Посмотреть профиль <b>↗</b></span>
-                  </div>
-                  <div class="about-team-face about-team-back"><span class="about-back-name">Мусин Абукадыр</span>
-                    <div class="about-member-chart" data-member-chart="data" role="img" aria-label="Профиль вклада">
-                    </div><span class="about-flip-hint">Нажмите, чтобы вернуться <b>↶</b></span>
-                  </div>
-                </div>
-              </article>
-              <article class="about-team-card" tabindex="0"
-                aria-label="Пупков Максим. Нажмите, чтобы увидеть профиль вклада">
-                <div class="about-team-card-inner">
-                  <div class="about-team-face about-team-front"><span class="about-team-index">02</span>
-                    <div class="about-avatar">02</div>
-                    <h3>Участник команды</h3>
-                    <p>Пупков Максим</p><span class="about-team-role">Исследование данных и разработка
-                      функционала</span><span class="about-flip-hint" aria-hidden="true">Посмотреть профиль
-                      <b>↗</b></span>
-                  </div>
-                  <div class="about-team-face about-team-back"><span class="about-back-name">Пупков Максим</span>
-                    <div class="about-member-chart" data-member-chart="engineering" role="img"
-                      aria-label="Профиль вклада"></div><span class="about-flip-hint">Нажмите, чтобы вернуться
-                      <b>↶</b></span>
-                  </div>
-                </div>
-              </article>
-              <article class="about-team-card" tabindex="0"
-                aria-label="Штеркель Даниил. Нажмите, чтобы увидеть профиль вклада">
-                <div class="about-team-card-inner">
-                  <div class="about-team-face about-team-front"><span class="about-team-index">03</span>
-                    <div class="about-avatar">03</div>
-                    <h3>Участник команды</h3>
-                    <p>Штеркель Даниил</p><span class="about-team-role">Разработка и дизайн приложения</span><span
-                      class="about-flip-hint" aria-hidden="true">Посмотреть профиль <b>↗</b></span>
-                  </div>
-                  <div class="about-team-face about-team-back"><span class="about-back-name">Штеркель Даниил</span>
-                    <div class="about-member-chart" data-member-chart="product" role="img" aria-label="Профиль вклада">
-                    </div><span class="about-flip-hint">Нажмите, чтобы вернуться <b>↶</b></span>
-                  </div>
-                </div>
-              </article>
-              <article class="about-team-card" tabindex="0"
-                aria-label="Баянова Айдана. Нажмите, чтобы увидеть профиль вклада">
-                <div class="about-team-card-inner">
-                  <div class="about-team-face about-team-front"><span class="about-team-index">04</span>
-                    <div class="about-avatar">04</div>
-                    <h3>Участник команды</h3>
-                    <p>Баянова Айдана</p><span class="about-team-role">Разработка и дизайн ИИ-ассистента</span><span
-                      class="about-flip-hint" aria-hidden="true">Посмотреть профиль <b>↗</b></span>
-                  </div>
-                  <div class="about-team-face about-team-back"><span class="about-back-name">Баянова Айдана</span>
-                    <div class="about-member-chart" data-member-chart="assistant" role="img"
-                      aria-label="Профиль вклада"></div><span class="about-flip-hint">Нажмите, чтобы вернуться
-                      <b>↶</b></span>
-                  </div>
-                </div>
-              </article>
-              <article class="about-team-card" tabindex="0"
-                aria-label="Силищев Никита. Нажмите, чтобы увидеть профиль вклада">
-                <div class="about-team-card-inner">
-                  <div class="about-team-face about-team-front"><span class="about-team-index">05</span>
-                    <div class="about-avatar">05</div>
-                    <h3>Участник команды</h3>
-                    <p>Силищев Никита</p><span class="about-team-role">Документации и презентации</span><span
-                      class="about-flip-hint" aria-hidden="true">Посмотреть профиль <b>↗</b></span>
-                  </div>
-                  <div class="about-team-face about-team-back"><span class="about-back-name">Силищев Никита</span>
-                    <div class="about-member-chart" data-member-chart="communication" role="img"
-                      aria-label="Профиль вклада"></div><span class="about-flip-hint">Нажмите, чтобы вернуться
-                      <b>↶</b></span>
-                  </div>
-                </div>
-              </article>
-            </div>
-          </section>
-          <section class="about-university-card">
-            <!--<div class="about-university-brand"><img src="img/saginov-university-logo.svg" alt="Saginov Technical University, основан в 1953 году"></div>-->
-            <div><span class="project-eyebrow">ОБРАЗОВАТЕЛЬНАЯ СРЕДА</span>
-              <h2>Лучший технический вуз в стране</h2>
-              <h3 id="aboutUniversityName" class="about-university-name">Карагандинский Технический университет имени
-                Абылкаса Сагинова</h3>
-              <p>Карагандинский технический университет имени Абылкаса Сагинова — образовательная и исследовательская
-                среда команды проекта. Здесь инженерные знания и цифровые технологии помогают превращать данные в
-                понятные решения.</p>
-            </div>
-          </section>
-          <footer class="about-footer"><span>Создано командой из пяти участников</span><span>Казахстан · данные,
-              аналитика, технологии</span></footer>
-        </section>
-
-      </div>
     </main>
 
   </div>
