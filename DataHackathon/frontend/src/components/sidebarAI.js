@@ -4,6 +4,7 @@ export function initAISidebar() {
     const sidebar = document.getElementById('aiPopupSidebar');
     const appLayout = document.querySelector('.app-layout');
     const closeBtn = sidebar?.querySelector('.close-chat-btn');
+    const expandBtn = sidebar?.querySelector('.expand-chat-btn');
     const input = document.getElementById('chatInput');
     const assistantButton = document.getElementById('aiToggleBtn');
     const assistantVideo = assistantButton?.querySelector('video');
@@ -16,15 +17,38 @@ export function initAISidebar() {
     window.toggleAIChat = function() {
         const isOpen = sidebar.classList.toggle('open');
         appLayout.classList.toggle('ai-sidebar-open', isOpen);
+        if (!isOpen) setExpanded(false);
         if (isOpen) input?.focus();
     };
+
+    function setExpanded(expanded) {
+        sidebar.classList.toggle('is-fullscreen', expanded);
+        if (!expandBtn) return;
+        expandBtn.setAttribute('aria-pressed', String(expanded));
+        expandBtn.setAttribute('aria-label', expanded
+            ? 'Свернуть ИИ-панель до боковой'
+            : 'Развернуть ИИ-панель на весь экран');
+        expandBtn.title = expanded ? 'Вернуть боковой вид' : 'Развернуть на весь экран';
+        expandBtn.textContent = expanded ? '↙' : '⛶';
+    }
+
+    expandBtn?.addEventListener('click', () => {
+        setExpanded(!sidebar.classList.contains('is-fullscreen'));
+    });
 
     if (closeBtn) {
         closeBtn.addEventListener('click', () => {
             sidebar.classList.remove('open');
+            setExpanded(false);
             appLayout.classList.remove('ai-sidebar-open');
         });
     }
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && sidebar.classList.contains('is-fullscreen')) {
+            setExpanded(false);
+        }
+    });
 
     if (assistantVideo && notification && notificationText) {
         const messages = [

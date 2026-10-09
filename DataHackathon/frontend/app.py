@@ -1306,8 +1306,10 @@ AI_TOOLS = [{
 AI_SYSTEM_INSTRUCTION = '''Ты аналитический помощник дашборда статистики Казахстана.
 Отвечай на русском языке, ясно и по существу. Для фактов, чисел, сравнений, рейтингов и трендов из базы обязательно вызывай query_demographics; не придумывай значения и не делай выводы по памяти.
 Если не знаешь точное название показателя или региона, сначала вызови get_dataset_overview. Учитывай, что база содержит агрегированные записи demographics: indicator, year, province, value. Объясняй, какие фильтры и годы использованы. Если запрос нельзя подтвердить данными, прямо скажи об этом.
+Если пользователь прямо просит построить, показать или визуализировать график, вызови build_dataset_chart. Для наборов D002, D004, D006 и D008 выбирай только метрики из описания инструмента. Для D002 укажи идентификатор вопроса анкеты; если его невозможно определить из запроса, попроси уточнить вопрос, не выбирая его наугад. Для таблицы demographics обязательно укажи точный показатель и группировку. Не представляй график как готовый, если инструмент вернул ошибку. В текстовом ответе кратко укажи источник данных, период и что показано.
+Не делай выводов о причинно-следственных связях только на основе графика. Отделяй наблюдаемые факты от гипотез.
 Оформляй ответ простым текстом: не используй Markdown-заголовки с #, выделение через * или ** и кодовые блоки. Не добавляй нумерацию разделов, если она не нужна; вместо маркеров Markdown используй короткие абзацы или тире.
-Контекст выбранных фильтров дашборда и история сообщений помогают понять вопрос, но не заменяют проверку базы.'''
+Если пользователь ссылается на «текущий/открытый набор», ориентируйся на activeDataset и datasetFilters из контекста; явные фильтры пользователя важнее выбранных на странице. Контекст и история помогают понять вопрос, но не заменяют проверку базы.'''
 
 
 def _escape_like(value):
@@ -1453,8 +1455,8 @@ def ai_chat():
 
     try:
         dataset_overview = get_dataset_overview()
-        answer = call_claude(contents, dataset_overview, dashboard_context)
-        return jsonify({'answer': answer})
+        result = call_claude(contents, dataset_overview, dashboard_context, include_chart=True)
+        return jsonify(result)
     except ClaudeAPIError as error:
         upstream = {}
         if error.status is not None:
@@ -1605,7 +1607,176 @@ def chart_analysis():
         return jsonify({'error': f'Не удалось подготовить анализ графика: {error}'}), 503
 
 
-def call_claude(contents, dataset_overview, dashboard_context, max_output_tokens=1200):
+def build_dataset_chart(arguments):
+    """Return a bounded chart payload computed from the app's existing data APIs."""
+    dataset = arguments.get('dataset')
+    metric = arguments.get('metric')
+    chart_type = arguments.get('chart_type')
+    if dataset not in {'demographics', 'd002', 'd004', 'd006', 'd008'}:
+        return {'error': 'Выберите один из поддерживаемых наборов: demographics, D002, D004, D006 или D008.'}
+    if chart_type not in {'bar', 'line', 'pie'}:
+        return {'error': 'Поддерживаются столбчатый, линейный и круговой графики.'}
+
+    client = app.test_client()
+    year = str(arguments.get('year') or '2024').strip()
+    title = ''
+    subtitle = ''
+    rows = []
+    value_key = arguments.get('value', 'count')
+    if value_key not in {'count', 'share', 'households', 'amount', 'records'}:
+        return {'error': 'Недопустимый способ подсчёта значений.'}
+
+    if dataset == 'demographics':
+        indicator = arguments.get('indicator')
+        if not isinstance(indicator, str) or not indicator.strip():
+            return {'error': 'Для графика demographics укажите точное название показателя.'}
+        group_by = arguments.get('group_by', 'province')
+        if group_by not in {'year', 'province', 'province_year'}:
+            return {'error': 'Для demographics выберите группировку year, province или province_year.'}
+        query = {
+            'indicator': indicator.strip()[:120],
+            'group_by': group_by,
+            'limit': 30
+        }
+        for field in ('start_year', 'end_year'):
+            if arguments.get(field) is not None:
+                query[field] = arguments[field]
+        result = query_demographics(query)
+        if result.get('error'):
+            return result
+        data_rows = result.get('rows') or []
+        if group_by == 'year':
+            labels = [str(row.get('year', '')) for row in data_rows]
+        elif group_by == 'province':
+            labels = [str(row.get('province', '')) for row in data_rows]
+        else:
+            labels = [f"{row.get('province', '')} · {row.get('year', '')}" for row in data_rows]
+        values = [row.get('total') for row in data_rows]
+        title = indicator.strip()[:100]
+        period = ''
+        if query.get('start_year') or query.get('end_year'):
+            period = f"{query.get('start_year', 'все годы')}–{query.get('end_year', 'настоящее время')}"
+        subtitle = f"demographics · {period or 'все доступные годы'}"
+    else:
+        if dataset == 'd002':
+            form = arguments.get('form', 'subject')
+            if form not in D002_FORMS:
+                return {'error': 'Для D002 доступны разделы subject и ocenka.'}
+            response = client.get('/api/d002/data', query_string={'year': year, 'form': form})
+        elif dataset == 'd004':
+            quarter = arguments.get('quarter', 'all')
+            module = arguments.get('module', 1)
+            if quarter not in {'1kv', '2kv', '3kv', '4kv', 'all'}:
+                return {'error': 'Для D004 выберите квартал 1kv–4kv или all.'}
+            response = client.get('/api/d004/data', query_string={
+                'year': year, 'quarter': quarter, 'module': module, 'page': 1, 'page_size': 10
+            })
+        elif dataset == 'd006':
+            response = client.get('/api/d006/data', query_string={'year': year})
+        else:
+            response = client.get('/api/d008/data', query_string={'year': year})
+
+        data = response.get_json(silent=True) or {}
+        if response.status_code != 200:
+            return {'error': data.get('error', f'Не удалось получить данные {dataset.upper()} за {year}.')}
+
+        if dataset == 'd002':
+            question = arguments.get('question')
+            if not isinstance(question, str) or not question.strip():
+                return {
+                    'error': 'Для графика D002 нужно указать идентификатор или название вопроса.',
+                    'available_questions': [{'id': item['id'], 'label': item['label']}
+                                            for item in data.get('questions', [])[:30]]
+                }
+            match = next((item for item in data.get('questions', [])
+                          if question.casefold() == str(item.get('id', '')).casefold()
+                          or question.casefold() in str(item.get('label', '')).casefold()), None)
+            if not match:
+                return {
+                    'error': f'Вопрос D002 «{question}» не найден.',
+                    'available_questions': [{'id': item['id'], 'label': item['label']}
+                                            for item in data.get('questions', [])[:30]]
+                }
+            rows = match.get('distribution', [])
+            title = match.get('label', 'Распределение ответов')
+            value_key = 'share' if value_key == 'share' else 'count'
+            subtitle = f"D002 · {data.get('form_label', form)} · {year} · {value_key}"
+        elif dataset == 'd004':
+            rows = data.get('territory_summary', [])
+            field_titles = {
+                'records': 'Количество записей',
+                'households': 'Количество домохозяйств',
+                'amount': 'Сумма расходов'
+            }
+            if value_key not in field_titles:
+                value_key = 'households'
+            title = field_titles[value_key]
+            subtitle = f"D004 · {data.get('module_label', '')} · {data.get('year', year)} · {data.get('quarter', '')}"
+        elif dataset == 'd006':
+            metric_rows = {
+                'city_rural': ('Город и село', data.get('city_rural')),
+                'home_types': ('Тип жилья', data.get('home_types')),
+                'ownership': ('Форма владения жильём', data.get('ownership')),
+                'land_access': ('Доступ к земле', data.get('land_access')),
+                'amenities': ('Бытовые удобства', data.get('amenities')),
+                'durable_goods': ('Товары длительного пользования', data.get('durable_goods'))
+            }
+            selected = metric_rows.get(metric)
+            if not selected:
+                return {'error': 'Для D006 укажите метрику: city_rural, home_types, ownership, land_access, amenities или durable_goods.'}
+            title, rows = selected
+            if metric == 'durable_goods':
+                value_key = 'count'
+            else:
+                value_key = 'share' if value_key == 'share' else 'count'
+            subtitle = f"D006 · {year} · {value_key}"
+        else:
+            metric_rows = {
+                'age_structure': ('Возрастная структура', data.get('age_structure')),
+                'settlement': ('Город и село', data.get('settlement')),
+                'gender': ('Распределение по полу', data.get('gender')),
+                'relationships': ('Родство в домохозяйстве', data.get('relationships')),
+                'education': ('Уровень образования', data.get('education')),
+                'marital_status': ('Семейное положение', data.get('marital_status')),
+                'activity': ('Основная деятельность', data.get('activity')),
+                'household_sizes': ('Размер домохозяйства', data.get('household_sizes'))
+            }
+            selected = metric_rows.get(metric)
+            if not selected:
+                return {'error': 'Для D008 укажите одну из доступных метрик: age_structure, settlement, gender, relationships, education, marital_status, activity или household_sizes.'}
+            title, rows = selected
+            value_key = 'share' if value_key == 'share' else 'count'
+            subtitle = f"D008 · {year} · {value_key}"
+
+        labels = [str(item.get('label', item.get('territory', ''))) for item in (rows or [])]
+        values = [item.get(value_key) for item in (rows or [])]
+
+    points = []
+    for label, value in zip(labels, values):
+        try:
+            numeric_value = float(value)
+        except (TypeError, ValueError, OverflowError):
+            continue
+        if label and math.isfinite(numeric_value):
+            points.append({'label': label[:100], 'value': numeric_value})
+    if not points:
+        return {'error': 'Для выбранных фильтров нет числовых данных для графика.'}
+
+    points = points[:30]
+    if dataset == 'd004':
+        points.sort(key=lambda item: item['value'], reverse=True)
+    return {
+        'dataset': dataset,
+        'title': title[:120],
+        'subtitle': subtitle[:200],
+        'chart_type': chart_type,
+        'labels': [item['label'] for item in points],
+        'values': [item['value'] for item in points],
+        'value_label': '%' if value_key == 'share' else ''
+    }
+
+
+def call_claude(contents, dataset_overview, dashboard_context, max_output_tokens=1200, include_chart=False):
     api_key = CLAUDE_API_KEY
     if not api_key:
         raise RuntimeError('Не задан CLAUDE_API_KEY. Добавьте ключ Claude в настройках приложения.')
@@ -1652,9 +1823,43 @@ def call_claude(contents, dataset_overview, dashboard_context, max_output_tokens
                     'limit': {'type': 'integer', 'description': 'Максимум строк результата, от 1 до 200.'}
                 }
             }
+        },
+        {
+            'name': 'build_dataset_chart',
+            'description': (
+                'Построить реальный график только по имеющимся данным. Используй исключительно когда пользователь '
+                'прямо просит график/диаграмму. dataset: demographics, d002, d004, d006, d008. '
+                'Если пользователь ссылается на текущий набор, используй activeDataset и datasetFilters из контекста. '
+                'Метрики D006: city_rural, home_types, ownership, land_access, amenities, durable_goods. '
+                'Метрики D008: age_structure, settlement, gender, relationships, education, marital_status, activity, household_sizes. '
+                'Для D002 укажи question (идентификатор GR... или часть названия); value=count или share, form=subject/ocenka. '
+                'Для D004 строится сравнение территорий; value=households, records или amount, quarter может быть all, module — номер раздела. '
+                'Для demographics задай точный indicator, group_by=province/year/province_year и при необходимости start_year/end_year. '
+                'chart_type: bar/line/pie. Не выдумывай недостающие фильтры.'
+            ),
+            'input_schema': {
+                'type': 'object',
+                'properties': {
+                    'dataset': {'type': 'string', 'enum': ['demographics', 'd002', 'd004', 'd006', 'd008']},
+                    'metric': {'type': 'string'},
+                    'chart_type': {'type': 'string', 'enum': ['bar', 'line', 'pie']},
+                    'year': {'type': 'string'},
+                    'value': {'type': 'string', 'enum': ['count', 'share', 'households', 'amount', 'records']},
+                    'question': {'type': 'string'},
+                    'form': {'type': 'string', 'enum': ['subject', 'ocenka']},
+                    'quarter': {'type': 'string', 'enum': ['1kv', '2kv', '3kv', '4kv', 'all']},
+                    'module': {'type': 'integer'},
+                    'indicator': {'type': 'string'},
+                    'group_by': {'type': 'string', 'enum': ['province', 'year', 'province_year']},
+                    'start_year': {'type': 'integer'},
+                    'end_year': {'type': 'integer'}
+                },
+                'required': ['dataset', 'chart_type']
+            }
         }
     ]
 
+    chart_result = None
     for _ in range(4):
         body = {
             'model': CLAUDE_MODEL,
@@ -1717,7 +1922,7 @@ def call_claude(contents, dataset_overview, dashboard_context, max_output_tokens
                 if block.get('type') == 'text' and block.get('text')
             )
             if answer:
-                return answer
+                return {'answer': answer, 'chart': chart_result} if include_chart else answer
             raise RuntimeError('Claude вернул пустой ответ.')
 
         messages.append({'role': 'assistant', 'content': blocks})
@@ -1730,6 +1935,10 @@ def call_claude(contents, dataset_overview, dashboard_context, max_output_tokens
                     tool_result = dataset_overview
                 elif name == 'query_demographics' and isinstance(arguments, dict):
                     tool_result = query_demographics(arguments)
+                elif name == 'build_dataset_chart' and isinstance(arguments, dict):
+                    tool_result = build_dataset_chart(arguments)
+                    if 'values' in tool_result and 'labels' in tool_result:
+                        chart_result = tool_result
                 else:
                     tool_result = {'error': 'Запрошена неизвестная функция или переданы неверные параметры.'}
             except (AttributeError, TypeError, ValueError, sqlite3.Error):
