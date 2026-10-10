@@ -410,6 +410,11 @@ function renderD006Bars(id, items) {
   const limit = Number(element.closest('.d006-chart-panel')?.querySelector('[data-d006-filter="limit"]')?.value || 0);
   const sorted = [...items].sort((a, b) => Number(b.count) - Number(a.count));
   const visible = limit ? sorted.slice(0, limit) : sorted;
+  // Keep every category readable without ECharts dataZoom/scrollbars.
+  // Long lists (amenities and durable goods) grow with the number of rows.
+  if (metric === 'amenities' || metric === 'durable_goods') {
+    element.style.height = `${Math.max(680, visible.length * 28 + 120)}px`;
+  }
   const shareRamp = ['#d74747', '#f39437', '#f0cf4a', '#a8c94a', '#168849'];
   const shareColor = (share) => shareRamp[Math.min(4, Math.floor(Math.max(0, Math.min(100, Number(share) || 0)) / 20))];
   const unitLabel = metric === 'amenities' ? 'ответов «да»' : metric === 'durable_goods' ? 'предметов' : 'домохозяйств';

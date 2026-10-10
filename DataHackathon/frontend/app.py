@@ -716,7 +716,9 @@ def d006_data():
         'dataset': 'd006', 'year': year, 'source': source, 'respondents': respondents,
         'territories': territories, 'city_rural': city_rural, 'home_types': home_types,
         'ownership': ownership, 'land_access': land_access, 'amenities': amenities,
-        'durable_goods': goods[:15], 'average_total_area': mean_value('OB_PL'),
+        # Keep every source column: the frontend can filter the visible categories,
+        # but the API must not silently discard the remaining goods.
+        'durable_goods': goods, 'average_total_area': mean_value('OB_PL'),
         'territory_options': territory_options,
         'average_living_area': mean_value('J_PL'), 'average_rooms': mean_value('KOL_K')
     })
