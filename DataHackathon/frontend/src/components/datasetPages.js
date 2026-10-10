@@ -33,13 +33,13 @@ const PAGE_CONFIG = {
 
 let DATA_COLORS = ['#17b981', '#50b9d2', '#46cbb0', '#7fdef5', '#7ef5ad', '#13966d'];
 let MAP_SCALE = ['#7fdef5', '#50b9d2', '#46cbb0', '#17b981', '#13966d'];
-const D002_SATISFACTION_COLORS = {
+let D002_SATISFACTION_COLORS = {
   'Высокая удовлетворённость': '#7ef5ad',
   'Частичная удовлетворённость': '#50b9d2',
   'Низкая удовлетворённость': '#a78bfa',
   'Не применимо / затруднились ответить': '#687780'
 };
-const D002_CATEGORY_COLORS = ['#50b9d2', '#a78bfa', '#46cbb0', '#7c9cff', '#7ef5ad', '#6ee7f9', '#b8a6ff'];
+let D002_CATEGORY_COLORS = ['#50b9d2', '#a78bfa', '#46cbb0', '#7c9cff', '#7ef5ad', '#6ee7f9', '#b8a6ff'];
 
 function d002AnswerColor(label, index, satisfactionScale = false) {
   if (satisfactionScale && D002_SATISFACTION_COLORS[label]) return D002_SATISFACTION_COLORS[label];
@@ -48,15 +48,45 @@ function d002AnswerColor(label, index, satisfactionScale = false) {
 }
 window.addEventListener('app-style-preset-changed', (event) => {
   const palettes = {
-    classic: ['#a78bfa', '#7c9cff', '#6ee7f9', '#5be7c4', '#a3f7bd', '#b8a6ff'],
+    classic: ['#cf7f5f', '#a78bb5', '#c58eaa', '#e1a07f', '#9b82a6', '#765f80'],
     green: ['#17b981', '#50b9d2', '#46cbb0', '#7fdef5', '#7ef5ad', '#13966d']
   };
   const mapPalettes = {
-    classic: ['#a78bfa', '#7c9cff', '#6ee7f9', '#5be7c4', '#a3f7bd'],
+    classic: ['#f2c09c', '#e5a5a1', '#c99fba', '#a78bb5', '#806b88'],
     green: ['#7fdef5', '#50b9d2', '#46cbb0', '#17b981', '#13966d']
   };
   DATA_COLORS = palettes[event.detail?.preset] || palettes.green;
   MAP_SCALE = mapPalettes[event.detail?.preset] || mapPalettes.green;
+  D002_CATEGORY_COLORS = event.detail?.preset === 'classic'
+    ? ['#cf7f5f', '#a78bb5', '#c58eaa', '#e1a07f', '#9b82a6', '#d99a8d', '#765f80']
+    : ['#50b9d2', '#a78bfa', '#46cbb0', '#7c9cff', '#7ef5ad', '#6ee7f9', '#b8a6ff'];
+  D002_SATISFACTION_COLORS = event.detail?.preset === 'classic'
+    ? { 'Высокая удовлетворённость': '#a78bb5', 'Частичная удовлетворённость': '#f0a17e', 'Низкая удовлетворённость': '#b96767', 'Не применимо / затруднились ответить': '#8c828d' }
+    : { 'Высокая удовлетворённость': '#7ef5ad', 'Частичная удовлетворённость': '#50b9d2', 'Низкая удовлетворённость': '#a78bfa', 'Не применимо / затруднились ответить': '#687780' };
+  d002Charts?.forEach((chart) => {
+    const series = chart.getOption().series.map((item) => {
+      const data = (item.data || []).map((point) => point && typeof point === 'object' ? point : { value: point });
+      const satisfactionScale = data.some((point) => Object.hasOwn(D002_SATISFACTION_COLORS, point.name));
+      return {
+        ...item,
+        data: data.map((point, index) => ({
+          ...point,
+          itemStyle: { ...point.itemStyle, color: d002AnswerColor(point.name || point.label || '', index, satisfactionScale) }
+        }))
+      };
+    });
+    chart.setOption({ color: DATA_COLORS, series });
+  });
+  d008Charts?.forEach((chart) => {
+    chart.setOption({ color: DATA_COLORS });
+    chart.__redrawFlowConnections?.();
+  });
+  ['d002MapChart', 'd004MapChart'].forEach((id) => {
+    const chart = window.echarts?.getInstanceByDom(document.getElementById(id));
+    chart?.setOption({ visualMap: { inRange: { color: MAP_SCALE } } });
+  });
+  const activeQuestion = d002FilteredQuestions[d002QuestionIndex];
+  if (activeQuestion && !document.getElementById('d002MapPanel')?.hidden) void renderD002Map(activeQuestion);
 });
 
 async function fetchDatasetYearData(path, years, params = {}) {
@@ -278,7 +308,7 @@ async function renderD002Map(question) {
     if (revision !== d002MapRevision) return;
     const dark = document.body.classList.contains('dark-theme');
     const satisfactionScale = result.categories.some((category) => Object.hasOwn(D002_SATISFACTION_COLORS, category.label));
-    if (satisfactionScale) setText('d002MapStatus', 'Каждый круг — область. Мятный цвет означает высокую удовлетворённость, голубой — частичную, фиолетовый — низкую. Наведите курсор или нажмите на круг, чтобы увидеть точные числа.');
+    if (satisfactionScale) setText('d002MapStatus', 'Каждый круг — область. Цвета показывают высокий, частичный и низкий уровни удовлетворённости. Наведите курсор или нажмите на круг, чтобы увидеть точные числа.');
     d002Map.setOption({
       color: result.categories.map((category, index) => d002AnswerColor(category.label, index, satisfactionScale)),
       tooltip: {

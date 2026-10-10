@@ -3,7 +3,7 @@ const chartInstances = new Map();
 let chartColors = ['#17b981', '#50b9d2', '#46cbb0', '#7fdef5', '#7ef5ad', '#13966d'];
 window.addEventListener('app-style-preset-changed', (event) => {
   const palettes = {
-    classic: ['#a78bfa', '#7c9cff', '#6ee7f9', '#5be7c4', '#a3f7bd', '#b8a6ff'],
+    classic: ['#cf7f5f', '#a78bb5', '#c58eaa', '#e1a07f', '#9b82a6', '#765f80'],
     green: ['#17b981', '#50b9d2', '#46cbb0', '#7fdef5', '#7ef5ad', '#13966d']
   };
   chartColors = palettes[event.detail?.preset] || palettes.green;

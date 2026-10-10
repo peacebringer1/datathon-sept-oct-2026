@@ -11,6 +11,9 @@ export function initProjectPages() {
     document.querySelectorAll('[data-member-chart]').forEach((element) => {
       const chart = window.echarts.getInstanceByDom(element) || window.echarts.init(element, null, { renderer: 'svg' });
       const dark = document.body.classList.contains('dark-theme');
+      const palette = document.body.dataset.stylePreset === 'classic'
+        ? ['#cf7f5f', '#a78bb5', '#c58eaa', '#e1a07f', '#9b82a6', '#765f80']
+        : ['#17b981', '#50b9d2', '#46cbb0', '#7fdef5', '#7ef5ad', '#13966d'];
       chart.setOption({
         animation: false,
         radar: {
@@ -25,9 +28,9 @@ export function initProjectPages() {
           splitArea: { areaStyle: { color: dark ? ['rgba(201,170,206,.02)', 'rgba(201,170,206,.05)'] : ['rgba(201,170,206,.025)', 'rgba(201,170,206,.07)'] } }
         },
         series: [{ type: 'radar', symbol: 'circle', symbolSize: 3,
-          lineStyle: { color: '#17b981', width: 2 },
-          itemStyle: { color: '#50b9d2' },
-          areaStyle: { color: 'rgba(80,185,210,.22)' },
+          lineStyle: { color: palette[0], width: 2 },
+          itemStyle: { color: palette[1] },
+          areaStyle: { color: `${palette[1]}38` },
           data: [{ value: profiles[element.dataset.memberChart] || [5, 5, 5, 5, 5] }]
         }]
       }, true);
@@ -56,6 +59,7 @@ export function initProjectPages() {
     chartResizeFrame = requestAnimationFrame(resizeMemberCharts);
   }, { passive: true });
   window.addEventListener('app-theme-changed', renderMemberCharts);
+  window.addEventListener('app-style-preset-changed', renderMemberCharts);
   document.querySelectorAll('.about-team-card').forEach((card) => {
     card.addEventListener('click', () => {
       if (window.matchMedia('(hover: none)').matches) card.classList.toggle('is-flipped');

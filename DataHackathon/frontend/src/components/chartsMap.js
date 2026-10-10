@@ -498,7 +498,7 @@ export function updateChartThemeColors() {
 
 window.addEventListener('app-style-preset-changed', (event) => {
   const mapPalettes = {
-    classic: ['#a78bfa', '#7c9cff', '#6ee7f9', '#5be7c4', '#a3f7bd'],
+    classic: ['#f2c09c', '#e5a5a1', '#c99fba', '#a78bb5', '#806b88'],
     green: ['#7fdef5', '#50b9d2', '#46cbb0', '#17b981', '#13966d']
   };
   DATA_COLORS = window.appChartPalette || DATA_COLORS;
