@@ -228,7 +228,11 @@ function appendChartMessage(chartData) {
     smooth: chartData.chart_type === 'line',
     showSymbol: chartData.chart_type === 'line',
     connectNulls: false,
-    barMaxWidth: 40
+    barMaxWidth: 40,
+    label: chartData.chart_type === 'pie'
+      ? { show: true, formatter: '{b}: {c} ({d}%)', fontSize: 10 }
+      : { show: true, position: 'top', formatter: ({ value }) => value == null ? '' : `${Number(value).toLocaleString('ru-RU')}${suffix || ''}`, fontSize: 10 },
+    labelLayout: chartData.chart_type === 'pie' ? undefined : { hideOverlap: true }
   })) : null;
   const suffix = typeof chartData.value_label === 'string' ? chartData.value_label : '';
   const escapeTooltipText = (value) => String(value)
@@ -241,14 +245,14 @@ function appendChartMessage(chartData) {
     animationDuration: 500,
     color: ['#dc3545', '#f47721', '#f5c542', '#a8c93a', '#238b45', '#8b9298'],
     tooltip: {
-      trigger: chartData.chart_type === 'pie' ? 'item' : 'axis',
+      trigger: 'item',
       formatter: chartData.chart_type === 'pie'
         ? (item) => `${escapeTooltipText(item.name)}<br><strong>${Number(item.value).toLocaleString('ru-RU')}${escapeTooltipText(suffix)}</strong> · ${item.percent}%`
-        : (items) => {
-          const points = Array.isArray(items) ? items : [items];
-          const first = points[0];
-          if (!first) return '';
-          return `${escapeTooltipText(first.axisValue)}<br>${points.map((item) => `${item.marker}${escapeTooltipText(item.seriesName || '')}: <strong>${Number(item.value).toLocaleString('ru-RU')}${escapeTooltipText(suffix)}</strong>`).join('<br>')}`;
+        : (item) => {
+          if (!item) return '';
+          const category = item.name ? `${escapeTooltipText(item.name)}<br>` : '';
+          const seriesName = item.seriesName ? `${escapeTooltipText(item.seriesName)}: ` : '';
+          return `${category}${item.marker}${seriesName}<strong>${Number(item.value).toLocaleString('ru-RU')}${escapeTooltipText(suffix)}</strong>`;
         }
     },
     toolbox: { right: 8, feature: { saveAsImage: { title: 'Сохранить график', pixelRatio: 2 } } },
@@ -268,7 +272,8 @@ function appendChartMessage(chartData) {
         smooth: chartData.chart_type === 'line',
         showSymbol: chartData.chart_type === 'line',
         barMaxWidth: 40,
-        label: { show: values.length <= 12, position: 'top', formatter: ({ value }) => `${Number(value).toLocaleString('ru-RU')}${suffix}` }
+        label: { show: true, position: 'top', formatter: ({ value }) => `${Number(value).toLocaleString('ru-RU')}${suffix}` },
+        labelLayout: { hideOverlap: true }
       }])
   };
   if (chartData.chart_type !== 'pie') {

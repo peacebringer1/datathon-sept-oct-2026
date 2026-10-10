@@ -257,7 +257,7 @@ function renderGeneralCharts(rawData) {
 
     const chart = window.echarts.getInstanceByDom(chartElement) || window.echarts.init(chartElement);
     chart.setOption({
-        tooltip: { trigger: 'axis' },
+        tooltip: { trigger: 'item' },
         grid: { left: 48, right: 20, top: 24, bottom: 55, containLabel: true },
         xAxis: {
             type: 'category',
@@ -269,6 +269,8 @@ function renderGeneralCharts(rawData) {
             name: 'Возраст респондентов',
             type: 'bar',
             data: ages,
+            label: { show: true, position: 'top', formatter: ({ value }) => Number(value).toLocaleString('ru-RU'), fontSize: 10 },
+            labelLayout: { hideOverlap: true },
             itemStyle: { color: '#17b981', borderRadius: [4, 4, 0, 0] }
         }]
     }, true);

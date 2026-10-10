@@ -79,7 +79,7 @@ function chartFor(id, items, type = 'bar') {
       color: chartColors,
       tooltip,
       series: [{ type: 'pie', radius: ['45%', '78%'], center: ['50%', '52%'], avoidLabelOverlap: true,
-        itemStyle: { borderColor: '#fff', borderWidth: 2, borderRadius: 4 }, label: { show: false }, labelLine: { show: false },
+        itemStyle: { borderColor: '#fff', borderWidth: 2, borderRadius: 4 }, label: { show: true, position: 'outside', formatter: '{b}: {c}', fontSize: 9 }, labelLine: { show: true },
         emphasis: { scale: true, scaleSize: 5 }, data: cleaned.map((item) => ({ name: item.name, value: Number(item.value), suffix: item.suffix || '' })) }]
     };
   } else if (type === 'rose') {
@@ -87,7 +87,7 @@ function chartFor(id, items, type = 'bar') {
       color: chartColors,
       tooltip,
       series: [{ type: 'pie', roseType: 'area', radius: ['12%', '78%'], center: ['50%', '52%'],
-        itemStyle: { borderColor: '#fff', borderWidth: 2, borderRadius: 4 }, label: { show: false }, labelLine: { show: false },
+        itemStyle: { borderColor: '#fff', borderWidth: 2, borderRadius: 4 }, label: { show: true, position: 'outside', formatter: '{b}: {c}', fontSize: 9 }, labelLine: { show: true },
         emphasis: { scale: true, scaleSize: 4 }, data: cleaned.map((item) => ({ name: item.name, value: Number(item.value), suffix: item.suffix || '' })) }]
     };
   } else if (type === 'treemap') {
@@ -95,7 +95,7 @@ function chartFor(id, items, type = 'bar') {
       color: chartColors,
       tooltip,
       series: [{ type: 'treemap', roam: false, nodeClick: false, breadcrumb: { show: false }, visibleMin: 1,
-        label: { show: false }, upperLabel: { show: false }, itemStyle: { borderColor: '#fff', borderWidth: 2, gapWidth: 2 },
+        label: { show: true, formatter: ({ name, value }) => `${name}\n${Number(value).toLocaleString('ru-RU')}`, color: '#fff', fontSize: 10, overflow: 'truncate' }, upperLabel: { show: false }, itemStyle: { borderColor: '#fff', borderWidth: 2, gapWidth: 2 },
         data: cleaned.map((item, index) => ({ name: item.name, value: Number(item.value), itemStyle: { color: chartColors[index % chartColors.length] } })) }]
     };
   } else if (type === 'line') {
@@ -103,10 +103,12 @@ function chartFor(id, items, type = 'bar') {
       color: chartColors,
       animationDuration: 650,
       grid: { left: 4, right: 4, top: 10, bottom: 8, containLabel: false },
-      tooltip: { ...tooltip, trigger: 'axis', axisPointer: { type: 'line', lineStyle: { color: '#8b9298', type: 'dashed' } } },
+      tooltip: { ...tooltip, trigger: 'item' },
       xAxis: { type: 'category', data: cleaned.map((item) => item.name), boundaryGap: false, show: false },
       yAxis: { type: 'value', show: false, min: 0 },
       series: [{ type: 'line', smooth: .35, symbol: 'circle', symbolSize: 9,
+        label: { show: true, position: 'top', formatter: ({ name, value }) => `${name}: ${Number(value).toLocaleString('ru-RU')}`, fontSize: 9 },
+        labelLayout: { hideOverlap: true },
         lineStyle: { color: chartColors[4], width: 3 }, areaStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: 'rgba(126,245,173,.3)' }, { offset: .5, color: 'rgba(80,185,210,.12)' }, { offset: 1, color: 'rgba(23,185,129,.02)' }] } },
         data: cleaned.map((item, index) => ({ name: item.name, value: Number(item.value), suffix: item.suffix || '', itemStyle: { color: chartColors[index % chartColors.length], borderColor: '#fff', borderWidth: 2 } })) }]
     };
@@ -115,13 +117,15 @@ function chartFor(id, items, type = 'bar') {
       color: chartColors,
       animationDuration: 650,
       grid: { left: 3, right: 4, top: 5, bottom: 4, containLabel: false },
-      tooltip: { ...tooltip, trigger: 'axis', axisPointer: { type: 'shadow' } },
+      tooltip: { ...tooltip, trigger: 'item' },
       xAxis: { type: 'value', show: false, max: (value) => value.max || 1 },
       yAxis: { type: 'category', data: cleaned.map((item) => item.name), show: false, inverse: true },
       series: [{
         type: 'bar',
         data: cleaned.map((item, index) => ({ name: item.name, value: Number(item.value), suffix: item.suffix || '', itemStyle: { color: chartColors[index % chartColors.length], borderRadius: [0, 7, 7, 0] } })),
         barWidth: '48%',
+        label: { show: true, position: 'right', formatter: ({ name, value }) => `${name}: ${Number(value).toLocaleString('ru-RU')}`, fontSize: 9 },
+        labelLayout: { hideOverlap: true },
         showBackground: true,
         backgroundStyle: { color: 'rgba(139,146,152,.12)', borderRadius: 7 },
         itemStyle: { borderRadius: [0, 7, 7, 0] }

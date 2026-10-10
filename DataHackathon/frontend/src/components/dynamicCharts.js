@@ -26,7 +26,7 @@ export function renderBarAnimationChart(regions, values) {
         saveAsImage: { title: 'Сохранить картинку' }
       }
     },
-    tooltip: { trigger: 'axis' },
+    tooltip: { trigger: 'item' },
     xAxis: { 
       data: regions, 
       splitLine: { show: false },
@@ -38,6 +38,8 @@ export function renderBarAnimationChart(regions, values) {
         name: 'Текущий',
         type: 'bar',
         data: data1,
+        label: { show: true, position: 'top', formatter: ({ value }) => Number(value).toLocaleString('ru-RU'), fontSize: 10 },
+        labelLayout: { hideOverlap: true },
         emphasis: { focus: 'series' },
         animationDelay: (idx) => idx * 10
       },
@@ -45,6 +47,8 @@ export function renderBarAnimationChart(regions, values) {
         name: 'Прошлый',
         type: 'bar',
         data: data2,
+        label: { show: true, position: 'top', formatter: ({ value }) => Number(value).toLocaleString('ru-RU'), fontSize: 10 },
+        labelLayout: { hideOverlap: true },
         emphasis: { focus: 'series' },
         animationDelay: (idx) => idx * 10 + 100
       }
@@ -116,13 +120,15 @@ function buildChart(regions, values, type, domElement) {
     color: chartColors,
     title: { text: `Тип: ${type.toUpperCase()}`, textStyle: { fontSize: 13 } },
     toolbox: commonToolbox,
-    tooltip: { trigger: type === 'pie' ? 'item' : 'axis' },
+    tooltip: { trigger: 'item' },
   };
 
   if (type === 'pie') {
     option.series = [{
       type: 'pie',
       radius: ['35%', '65%'],
+      label: { show: true, formatter: '{b}: {c} ({d}%)', fontSize: 10 },
+      labelLayout: { hideOverlap: true },
       data: regions.map((reg, idx) => ({ name: reg, value: values[idx] }))
     }];
   } else {
@@ -132,7 +138,9 @@ function buildChart(regions, values, type, domElement) {
       data: values,
       type: type,
       smooth: type === 'line',
-      itemStyle: { color: '#17b981' }
+      itemStyle: { color: '#17b981' },
+      label: { show: true, position: 'top', formatter: ({ value }) => Number(value).toLocaleString('ru-RU'), fontSize: 10 },
+      labelLayout: { hideOverlap: true }
     }];
   }
 
