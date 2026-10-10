@@ -800,7 +800,10 @@ def d008_data():
         ages = int(year) - birth_year
         if 'MES_ROJD' in source_frame.columns:
             birth_month = pd.to_numeric(source_frame['MES_ROJD'], errors='coerce')
-            ages = ages - birth_month.gt(1).astype('int64')
+            # A participant born in the survey year is already present in the
+            # roster, so their age cannot be negative; keep them in age 0.
+            birthday_adjustment = birth_year.lt(int(year)) & birth_month.gt(1)
+            ages = ages - birthday_adjustment.astype('int64')
         return ages.where(ages.between(0, 120))
 
     all_ages = calculate_ages(full_frame)
