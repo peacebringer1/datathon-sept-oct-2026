@@ -11,8 +11,8 @@ export let summaryChartInstance = null;
 export let multiSummaryChartInstance = null; // Инстанс мульти-графика
 export let kzMapInstance = null;
 let cachedKZJson = null;
-let DATA_COLORS = ['#d94343', '#f28c28', '#f2c94c', '#a8cf45', '#3e9b59', '#8b9298'];
-let MAP_SCALE = ['#d94343', '#f28c28', '#f2c94c', '#a8cf45', '#3e9b59'];
+let DATA_COLORS = ['#17b981', '#50b9d2', '#46cbb0', '#7fdef5', '#7ef5ad', '#13966d'];
+let MAP_SCALE = ['#7fdef5', '#50b9d2', '#46cbb0', '#17b981', '#13966d'];
 
 const commonToolbox = {
   feature: {
@@ -96,7 +96,7 @@ export async function updateBarChart(apiBaseUrl, indicator, year) {
         animationDuration: 1000,
         title: { text: window.activeAnalyzerDatasetMode === 'distribution' ? 'Распределение ответов' : 'Распределение по регионам', left: 'center', textStyle: { fontSize: 13, color: getThemeColors().textColor } },
         toolbox: commonToolbox,
-        tooltip: { trigger: 'axis', formatter: (p) => `<b>${p[0].name}</b><br/>${indicator}: <b>${p[0].value.toLocaleString('ru-RU')}</b>` },
+        tooltip: { trigger: 'item', formatter: (point) => `<b>${point.name}</b><br/>${indicator}: <b>${Number(point.value).toLocaleString('ru-RU')}</b>` },
         grid: { top: '22%', bottom: '15%', left: '8%', right: '5%', containLabel: true },
         xAxis: { type: 'category', data: labels, axisLabel: { interval: 0, rotate: 35, fontSize: 13, color: getThemeColors().textColor } },
         yAxis: { type: 'value', axisLabel: { fontSize: 13, color: getThemeColors().textColor }, splitLine: { lineStyle: { color: '#f5f7f6' } } },
@@ -109,7 +109,9 @@ export async function updateBarChart(apiBaseUrl, indicator, year) {
             color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: DATA_COLORS[4] }, { offset: 1, color: DATA_COLORS[3] }]),
             borderRadius: [4, 4, 0, 0]
           },
-          barMaxWidth: 25
+          barMaxWidth: 25,
+          label: { show: true, position: 'top', color: getThemeColors().textColor, fontSize: 10, formatter: ({ value }) => Number(value).toLocaleString('ru-RU') },
+          labelLayout: { hideOverlap: true }
         }]
       });
       yearChartInstance.resize();
@@ -134,7 +136,7 @@ export async function updateLineChart(apiBaseUrl, indicator, year) {
         animationDuration: 1000,
         title: { text: window.activeAnalyzerDatasetMode === 'distribution' ? 'Частота ответов' : 'Динамика показателей', left: 'center', textStyle: { fontSize: 13, color: getThemeColors().textColor } },
         toolbox: commonToolbox,
-        tooltip: { trigger: 'axis' },
+        tooltip: { trigger: 'item' },
         grid: { top: '22%', bottom: '15%', left: '8%', right: '5%', containLabel: true },
         xAxis: { type: 'category', data: labels, axisLabel: { interval: 0, rotate: 35, fontSize: 13, color: getThemeColors().textColor } },
         yAxis: { type: 'value', axisLabel: { fontSize: 13, color: getThemeColors().textColor }, splitLine: { lineStyle: { color: '#f5f7f6' } } },
@@ -145,6 +147,8 @@ export async function updateLineChart(apiBaseUrl, indicator, year) {
           symbol: 'circle',
           symbolSize: 6,
           itemStyle: { color: '#4f9b7c' },
+          label: { show: true, position: 'top', color: getThemeColors().textColor, fontSize: 10, formatter: ({ value }) => Number(value).toLocaleString('ru-RU') },
+          labelLayout: { hideOverlap: true },
           areaStyle: {
             color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
               { offset: 0, color: 'rgba(62, 155, 89, 0.28)' },
@@ -183,8 +187,9 @@ export async function updatePieChart(apiBaseUrl, indicator, year) {
           type: 'pie',
           radius: ['35%', '60%'],
           center: ['65%', '55%'],
-          avoidLabelOverlap: false,
-          label: { show: false },
+          avoidLabelOverlap: true,
+          label: { show: true, position: 'outside', formatter: '{b}: {c} ({d}%)', fontSize: 10 },
+          labelLayout: { hideOverlap: true },
           data: pieData
         }]
       });
@@ -219,7 +224,7 @@ export async function updateHBarChart(apiBaseUrl, indicator, year) {
         animationDuration: 1000,
         title: { text: window.activeAnalyzerDatasetMode === 'distribution' ? 'Частота вариантов ответа' : 'Рейтинг регионов', left: 'center', textStyle: { fontSize: 13, color: getThemeColors().textColor } },
         toolbox: commonToolbox,
-        tooltip: { trigger: 'axis', formatter: (p) => `<b>${p[0].data[1]}</b><br/>${indicator}: <b>${p[0].data[0].toLocaleString('ru-RU')}</b>` },
+        tooltip: { trigger: 'item', formatter: (point) => `<b>${point.data[1]}</b><br/>${indicator}: <b>${Number(point.data[0]).toLocaleString('ru-RU')}</b>` },
         dataset: { source: sourceData },
         grid: { containLabel: true, top: '18%', bottom: '22%', left: '5%', right: '5%' },
         xAxis: { type: 'value', axisLabel: { fontSize: 13, color: getThemeColors().textColor }, splitLine: { lineStyle: { color: '#f5f7f6' } } },
@@ -240,6 +245,8 @@ export async function updateHBarChart(apiBaseUrl, indicator, year) {
         series: [{
           type: 'bar',
           encode: { x: 'value', y: 'region' },
+          label: { show: true, position: 'right', color: getThemeColors().textColor, fontSize: 10, formatter: ({ value, data }) => Number(data?.[0] ?? value).toLocaleString('ru-RU') },
+          labelLayout: { hideOverlap: true },
           itemStyle: { borderRadius: [0, 4, 4, 0] }
         }]
       });
@@ -265,7 +272,7 @@ export async function updateStackedAreaChart(apiBaseUrl, indicator, year) {
         animation: true,
         title: { text: `${indicator} (${year})`, left: 'center', textStyle: { fontSize: 13, color: getThemeColors().textColor } },
         toolbox: { feature: { magicType: { type: ['stack'] }, dataView: { readOnly: true }, saveAsImage: { pixelRatio: 2 } } },
-        tooltip: { trigger: 'axis' },
+        tooltip: { trigger: 'item' },
         grid: { top: '25%', bottom: '15%', left: '8%', right: '5%', containLabel: true },
         xAxis: { data: labels, splitLine: { show: false }, axisLabel: { interval: 0, rotate: 35, fontSize: 13, color: getThemeColors().textColor } },
         yAxis: { type: 'value', axisLabel: { fontSize: 13, color: getThemeColors().textColor }, splitLine: { lineStyle: { color: '#f5f7f6' } } },
@@ -276,6 +283,8 @@ export async function updateStackedAreaChart(apiBaseUrl, indicator, year) {
             data: values,
             itemStyle: { color: DATA_COLORS[4], borderRadius: [4, 4, 0, 0] },
             emphasis: { focus: 'series' },
+            label: { show: true, position: 'top', fontSize: 10, formatter: ({ value }) => Number(value).toLocaleString('ru-RU') },
+            labelLayout: { hideOverlap: true },
             animationDelay: function (idx) { return idx * 20; }
           }
         ],
@@ -314,20 +323,20 @@ export async function updateCustomChart(apiBaseUrl, indicator, year, chartType) 
 
       if (chartType === 'line') {
         option.title = { text: `Динамика: ${indicator}`, left: 'center', textStyle: { fontSize: 13, color: getThemeColors().textColor } };
-        option.tooltip = { trigger: 'axis' };
-        option.series = [{ data: values, type: 'line', smooth: true, itemStyle: { color: '#4f9b7c' }, areaStyle: { color: 'rgba(62, 155, 89, 0.18)' } }];
+        option.tooltip = { trigger: 'item' };
+        option.series = [{ data: values, type: 'line', smooth: true, itemStyle: { color: '#4f9b7c' }, label: { show: true, position: 'top', fontSize: 10, formatter: ({ value }) => Number(value).toLocaleString('ru-RU') }, labelLayout: { hideOverlap: true }, areaStyle: { color: 'rgba(62, 155, 89, 0.18)' } }];
       } else if (chartType === 'pie') {
         const pieData = labels.map((lbl, idx) => ({ name: lbl, value: values[idx] })).filter(item => item.value > 0);
         option.title = { text: `Доли: ${indicator}`, left: 'center', textStyle: { fontSize: 13, color: getThemeColors().textColor } };
         option.tooltip = { trigger: 'item', formatter: '{b}: <b>{c}</b> ({d}%)' };
         option.legend = { type: 'scroll', orient: 'vertical', left: 'left', top: '15%', textStyle: { fontSize: 13, color: getThemeColors().textColor } };
-        option.series = [{ type: 'pie', radius: ['35%', '60%'], center: ['65%', '55%'], data: pieData }];
+        option.series = [{ type: 'pie', radius: ['35%', '60%'], center: ['65%', '55%'], label: { show: true, formatter: '{b}: {c} ({d}%)', fontSize: 10 }, labelLayout: { hideOverlap: true }, data: pieData }];
         delete option.xAxis;
         delete option.yAxis;
       } else {
         option.title = { text: `Распределение: ${indicator}`, left: 'center', textStyle: { fontSize: 13, color: getThemeColors().textColor } };
-        option.tooltip = { trigger: 'axis', formatter: (p) => `<b>${p[0].name}</b><br/>${indicator}: <b>${p[0].value.toLocaleString('ru-RU')}</b>` };
-        option.series = [{ data: values, type: 'bar', itemStyle: { color: DATA_COLORS[4], borderRadius: [4, 4, 0, 0] } }];
+        option.tooltip = { trigger: 'item', formatter: (point) => `<b>${point.name}</b><br/>${indicator}: <b>${Number(point.value).toLocaleString('ru-RU')}</b>` };
+        option.series = [{ data: values, type: 'bar', label: { show: true, position: 'top', fontSize: 10, formatter: ({ value }) => Number(value).toLocaleString('ru-RU') }, labelLayout: { hideOverlap: true }, itemStyle: { color: DATA_COLORS[4], borderRadius: [4, 4, 0, 0] } }];
       }
 
       customChartInstance.setOption(option, true);
@@ -371,8 +380,8 @@ export async function updateSummaryChart(apiBaseUrl, indicator) {
       },
       toolbox: commonToolbox,
       tooltip: {
-        trigger: 'axis',
-        formatter: (p) => `<b>${p[0].name}</b><br/>${indicator}: <b>${p[0].value.toLocaleString('ru-RU')}</b>`
+        trigger: 'item',
+        formatter: (point) => `<b>${point.name}</b><br/>${indicator}: <b>${Number(point.value).toLocaleString('ru-RU')}</b>`
       },
       grid: {
         top: '22%',
@@ -396,6 +405,8 @@ export async function updateSummaryChart(apiBaseUrl, indicator) {
           data: values && values.length ? values : [120, 200, 150, 80, 70, 110, 130],
           type: 'bar',
           showBackground: true,
+          label: { show: true, position: 'top', color: getThemeColors().textColor, fontSize: 10, formatter: ({ value }) => Number(value).toLocaleString('ru-RU') },
+          labelLayout: { hideOverlap: true },
           backgroundStyle: {
             color: 'rgba(180, 180, 180, 0.2)',
             borderRadius: [4, 4, 0, 0]
@@ -487,8 +498,8 @@ export function updateChartThemeColors() {
 
 window.addEventListener('app-style-preset-changed', (event) => {
   const mapPalettes = {
-    classic: ['#a88db1', '#c9aace', '#ead7d0', '#f5c6a5', '#fbb085'],
-    green: ['#d94343', '#f28c28', '#f2c94c', '#a8cf45', '#3e9b59']
+    classic: ['#a78bfa', '#7c9cff', '#6ee7f9', '#5be7c4', '#a3f7bd'],
+    green: ['#7fdef5', '#50b9d2', '#46cbb0', '#17b981', '#13966d']
   };
   DATA_COLORS = window.appChartPalette || DATA_COLORS;
   MAP_SCALE = mapPalettes[event.detail?.preset] || mapPalettes.green;
@@ -516,10 +527,10 @@ export async function updateMultiSummaryChart(apiBaseUrl) {
   ];
 
   const palette = [
-    { line: DATA_COLORS[4], area: 'rgba(62, 155, 89, 0.2)' },
-    { line: DATA_COLORS[1], area: 'rgba(242, 140, 40, 0.2)' },
-    { line: DATA_COLORS[2], area: 'rgba(242, 201, 76, 0.2)' },
-    { line: DATA_COLORS[0], area: 'rgba(217, 67, 67, 0.2)' }
+    { line: DATA_COLORS[0], area: 'rgba(23, 185, 129, 0.2)' },
+    { line: DATA_COLORS[1], area: 'rgba(80, 185, 210, 0.2)' },
+    { line: DATA_COLORS[2], area: 'rgba(70, 203, 176, 0.2)' },
+    { line: DATA_COLORS[3], area: 'rgba(127, 222, 245, 0.2)' }
   ];
 
   try {
@@ -547,6 +558,7 @@ export async function updateMultiSummaryChart(apiBaseUrl) {
         symbolSize: 6,
         lineStyle: { width: 3, color: colors.line },
         itemStyle: { color: colors.line },
+        label: { show: true, position: 'top', fontSize: 10, formatter: ({ value, dataIndex }) => dataIndex === labels.length - 1 ? Number(value).toLocaleString('ru-RU') : '' },
         areaStyle: {
           color: colors.area
         },
@@ -565,8 +577,7 @@ export async function updateMultiSummaryChart(apiBaseUrl) {
         textStyle: { fontSize: 13, color: getThemeColors().textColor }
       },
       tooltip: {
-        trigger: 'axis',
-        axisPointer: { type: 'cross' }
+        trigger: 'item'
       },
       legend: {
         type: 'scroll',
@@ -651,7 +662,7 @@ export async function initKazakhstanMap(apiBaseUrl, indicator, year) {
         zoom: 1,
         data: formattedData,
         itemStyle: { areaColor: document.body.classList.contains('dark-theme') ? '#48534b' : '#8b9298', borderColor: document.body.classList.contains('dark-theme') ? '#b8d6a0' : '#fff', borderWidth: 1 },
-        emphasis: { itemStyle: { areaColor: '#86b93f' }, label: { show: true, color: '#222', fontSize: 13 } },
+        emphasis: { itemStyle: { areaColor: '#86b93f' }, label: { show: true, color: '#222', fontSize: 11, formatter: ({ name, value }) => `${name}\n${value == null ? 'Нет данных' : Number(value).toLocaleString('ru-RU')}` } },
         label: { show: false, fontSize: 13 },
         universalTransition: true
       }]

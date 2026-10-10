@@ -1134,6 +1134,31 @@ aside.category-sidebar-hover.pinned .sidebar-settings-footer {
     color: var(--text-primary);
 }
 
+.filter-reset-button {
+    min-height: 36px;
+    align-self: end;
+    justify-self: start;
+    padding: 7px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-input, var(--card-bg));
+    color: var(--text-primary);
+    font: inherit;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.filter-reset-button:hover {
+    border-color: var(--accent-color);
+    background: color-mix(in srgb, var(--accent-color) 10%, var(--card-bg));
+}
+
+.filter-reset-button:focus-visible {
+    outline: 2px solid var(--accent-color);
+    outline-offset: 2px;
+}
+
 .d002-question-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 390px), 1fr));
@@ -1300,7 +1325,7 @@ body.dark-theme .d002-question-card {
 }
 
 .d006-filter-panel {
-    grid-template-columns: minmax(220px, 360px);
+    grid-template-columns: minmax(220px, 360px) auto;
 }
 
 .d006-stat-grid {
@@ -1418,12 +1443,17 @@ body.dark-theme .d002-question-card {
 .d008-trend-grid .d006-chart,
 .d008-trend-grid .d006-chart-tall { height: 390px; }
 
+#d008Dashboard .d006-chart { height: 430px; }
+#d008Dashboard .d006-chart-tall { height: 500px; }
+
 @media (max-width: 760px) {
     .d008-filter-heading { align-items: stretch; flex-direction: column; }
     .d008-filter-heading button { width: 100%; }
     .d008-filter-grid { grid-template-columns: 1fr; }
     .d008-trend-grid .d006-chart,
     .d008-trend-grid .d006-chart-tall { height: 360px; }
+    #d008Dashboard .d006-chart { height: 400px; }
+    #d008Dashboard .d006-chart-tall { height: 540px; }
 }
 
 /* Dataset controls stay together as a compact page toolbar. */
@@ -1518,7 +1548,7 @@ body.dark-theme .d002-question-card {
 
 .d006-chart-grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
     gap: 18px;
     margin-bottom: 18px;
 }
@@ -1683,8 +1713,13 @@ body.dark-theme .d006-chart-panel {
     padding: 6px 10px;
     border: 1px solid var(--border-color, #cbd5e1);
     border-radius: 7px;
-    background: var(--surface-color, #fff);
-    color: var(--text-primary);
+    background: #fff;
+    color: #000;
+}
+
+.d004-map-controls select option {
+    background: #fff;
+    color: #000;
 }
 
 .d004-map-controls button {
@@ -6514,6 +6549,59 @@ body {
     text-align: left;
 }
 
+.d008-values-details {
+    margin-top: 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--card-bg) 82%, var(--bg-input));
+}
+
+.d008-values-details summary {
+    padding: 9px 12px;
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.d008-values-scroll {
+    max-height: 240px;
+    overflow: auto;
+    padding: 0 10px 10px;
+}
+
+.d008-values-table {
+    width: 100%;
+    border-collapse: collapse;
+    color: var(--text-primary);
+    font-size: 12px;
+}
+
+.d008-values-table th,
+.d008-values-table td {
+    padding: 7px 9px;
+    border-bottom: 1px solid var(--border-color);
+    text-align: right;
+    white-space: nowrap;
+}
+
+.d008-values-table th:first-child {
+    position: sticky;
+    left: 0;
+    text-align: left;
+    background: var(--card-bg);
+}
+
+.d008-values-table thead th {
+    position: sticky;
+    top: 0;
+    background: var(--card-bg);
+}
+
+#d004TerritoryChart {
+    height: 560px;
+}
+
 .ai-popup-sidebar {
     top: 5vh;
     right: -1100px;
@@ -6745,7 +6833,11 @@ body[data-style-preset="classic"] .home-eyebrow { color: #fbb085; }
 }
 
 #d006Dashboard .d006-chart-tall {
-    height: 560px;
+    height: 600px;
+}
+
+#d006Dashboard .d006-chart {
+    height: 420px;
 }
 
 @media (max-width: 760px) {
@@ -6767,6 +6859,10 @@ body[data-style-preset="classic"] .home-eyebrow { color: #fbb085; }
     }
 
     #d006Dashboard .d006-chart-tall {
-        height: 660px;
+        height: 620px;
+    }
+
+    #d006Dashboard .d006-chart {
+        height: 400px;
     }
 }

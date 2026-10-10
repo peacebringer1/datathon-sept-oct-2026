@@ -234,6 +234,7 @@
                 <label>Общий год:</label>
                 <select id="regionYearSelect" onchange="onRegionFilterChange()"></select>
               </div>
+              <button class="filter-reset-button" type="button" data-reset-filter-group title="Сбросить фильтры общего графика">Сброс фильтра</button>
             </div>
 
             <div class="charts-grid-4">
@@ -244,6 +245,7 @@
                   <div class="left-local-controls">
                     <select class="mini-select" id="card1Indicator" onchange="onCardFilterChange(1)"></select>
                     <select class="mini-select" id="card1Year" onchange="onCardFilterChange(1)"></select>
+                    <button class="filter-reset-button" type="button" data-reset-filter-group title="Сбросить фильтры графика">Сброс фильтра</button>
                     <button class="custom-analytics-btn" onclick="openAnalyticsFromCard(this)"
                       title="Открыть детальный анализ графика">📊</button>
                   </div>
@@ -257,6 +259,7 @@
                   <div class="left-local-controls">
                     <select class="mini-select" id="card2Indicator" onchange="onCardFilterChange(2)"></select>
                     <select class="mini-select" id="card2Year" onchange="onCardFilterChange(2)"></select>
+                    <button class="filter-reset-button" type="button" data-reset-filter-group title="Сбросить фильтры графика">Сброс фильтра</button>
                     <button class="custom-analytics-btn" onclick="openAnalyticsFromCard(this)"
                       title="Открыть детальный анализ графика">📊</button>
                   </div>
@@ -270,6 +273,7 @@
                   <div class="left-local-controls">
                     <select class="mini-select" id="card3Indicator" onchange="onCardFilterChange(3)"></select>
                     <select class="mini-select" id="card3Year" onchange="onCardFilterChange(3)"></select>
+                    <button class="filter-reset-button" type="button" data-reset-filter-group title="Сбросить фильтры графика">Сброс фильтра</button>
                     <button class="custom-analytics-btn" onclick="openAnalyticsFromCard(this)"
                       title="Открыть детальный анализ графика">📊</button>
                   </div>
@@ -283,6 +287,7 @@
                   <div class="left-local-controls">
                     <select class="mini-select" id="card4Indicator" onchange="onCardFilterChange(4)"></select>
                     <select class="mini-select" id="card4Year" onchange="onCardFilterChange(4)"></select>
+                    <button class="filter-reset-button" type="button" data-reset-filter-group title="Сбросить фильтры графика">Сброс фильтра</button>
                     <button class="custom-analytics-btn" onclick="openAnalyticsFromCard(this)"
                       title="Открыть детальный анализ графика">📊</button>
                   </div>
@@ -397,6 +402,7 @@
               <div class="left-local-controls">
                 <select class="mini-select" id="card6Indicator" onchange="onCardFilterChange(6)"></select>
                 <select class="mini-select" id="card6Year" onchange="onCardFilterChange(6)"></select>
+                <button class="filter-reset-button" type="button" data-reset-filter-group title="Сбросить фильтры графика">Сброс фильтра</button>
                 <button class="custom-analytics-btn" onclick="openAnalyticsFromCard(this)"
                   title="Открыть детальный анализ графика">📊</button>
                 <button class="custom-analytics-btn btn-danger-custom" onclick="resetCustomCard()"
@@ -427,6 +433,7 @@
                 <label>Год карты:</label>
                 <select id="mapYearSelect" onchange="onMapFilterChange()"></select>
               </div>
+              <button class="filter-reset-button" type="button" data-reset-filter-group title="Сбросить фильтры карты">Сброс фильтра</button>
             </div>
             <div class="map-container-wrapper" id="mapWrapper">
               <p class="map-interaction-hint">Красный — меньше, зелёный — больше, серый — нет данных. Приближайте карту колёсиком мыши и перемещайте её перетаскиванием.</p>
@@ -440,6 +447,7 @@
                 <label>Показатель:</label>
                 <select id="summaryIndicatorSelect" onchange="onSummaryFilterChange()"></select>
               </div>
+              <button class="filter-reset-button" type="button" data-reset-filter-group title="Сбросить фильтр сводного графика">Сброс фильтра</button>
             </div>
 
             <div class="summary-charts-container">
@@ -493,6 +501,7 @@
               <label>Раздел анкеты
                 <select id="d002FormSelect" aria-label="Раздел анкеты D002"></select>
               </label>
+              <button id="d002ResetFilters" class="filter-reset-button" type="button">Сброс фильтра</button>
             </div>
 
             <p id="d002Status" class="dataset-status" role="status" aria-live="polite">Загрузка параметров D002…</p>
@@ -527,6 +536,7 @@
                 <div class="d002-map-filters" aria-label="Фильтры карты">
                   <label>Область<select id="d002MapTerritoryFilter"><option value="">Все области</option></select></label>
                   <label>Ответ<select id="d002MapAnswerFilter"><option value="">Все варианты</option></select></label>
+                  <button id="d002MapResetFilters" class="filter-reset-button" type="button">Сброс фильтра</button>
                 </div>
               </div>
               <p id="d002MapStatus" class="dataset-status" role="status" aria-live="polite"></p>
@@ -559,6 +569,7 @@
               <label>Раздел анкеты
                 <select id="d004ModuleSelect" aria-label="Раздел анкеты"></select>
               </label>
+              <button id="d004ResetFilters" class="filter-reset-button" type="button">Сброс фильтра</button>
             </div>
 
             <p id="d004Status" class="dataset-status" role="status" aria-live="polite">Загрузка параметров D004…</p>
@@ -583,12 +594,6 @@
               </div>
             </article>
 
-            <article class="dataset-panel d004-questionnaires-panel">
-              <h2>Все разделы анкеты</h2>
-              <p class="dataset-panel-caption">Каждый график сравнивает число записей выбранного раздела по территориям за установленный год и период. Карточки загружаются по мере прокрутки.</p>
-              <div id="d004QuestionnaireCards" class="d004-questionnaire-grid"></div>
-            </article>
-
             <article class="dataset-panel">
               <h2>Сводка по территориям</h2>
               <p class="dataset-panel-caption">Количество строк и уникальных домохозяйств в выбранном периоде.</p>
@@ -610,6 +615,7 @@
                   <option value="households">Количество домохозяйств</option>
                   <option value="amount">Сумма стоимости</option>
                 </select>
+                <button id="d004MapResetFilter" class="filter-reset-button" type="button">Сброс фильтра</button>
                 <button id="d004MapReset" type="button">Сбросить масштаб и выбор</button>
               </div>
               <div id="d004MapChart" class="dataset-chart" role="img" aria-label="Карта Казахстана по показателю D004"></div>
@@ -646,6 +652,7 @@
               <label>Год обследования
                 <select id="d006YearSelect" aria-label="Год обследования D006"></select>
               </label>
+              <button id="d006ResetFilters" class="filter-reset-button" type="button">Сброс фильтра</button>
             </div>
             <p id="d006Status" class="dataset-status" role="status" aria-live="polite">Загрузка параметров D006…</p>
 
@@ -666,8 +673,8 @@
 
             <article class="dataset-panel d006-chart-guide">
               <h2>Как читать графики</h2>
-              <p>Горизонтальные столбцы показывают точное число домохозяйств. «Город и село» и «Доступ к сельхозземле» показаны круговыми диаграммами: каждый сектор — точное число домохозяйств в категории. Фильтр территории применяется только к своему графику. Цвет столбца удобств показывает долю ответов «да», а подпись и подсказка — точное количество.</p>
-              <p class="d006-color-guide-title">Цвет удобств показывает долю ответов «да»:</p>
+              <p>Горизонтальные столбцы показывают точное количество, а названия осей X и Y поясняют, что сравнивается. «Город и село» и «Доступ к сельхозземле» показаны круговыми диаграммами: подписи секторов содержат категорию и точное число домохозяйств. Фильтр территории применяется только к своему графику. В распределениях типов жилья, владения и удобств цвет показывает долю категории; для удобств это доля ответов «да». В графике товаров используется один цвет, поскольку доля для этого показателя не рассчитывается. Точное количество указано рядом со столбцом и в подсказке.</p>
+              <p class="d006-color-guide-title">Шкала доли для графиков распределений:</p>
               <div class="d006-color-scale" aria-label="Цветовая шкала доли: красный — от 0 до 20 процентов, оранжевый — от 20 до 40, жёлтый — от 40 до 60, салатовый — от 60 до 80, зелёный — от 80 до 100">
                 <span style="--scale-color:#d74747">0–20%</span><span style="--scale-color:#f39437">20–40%</span><span style="--scale-color:#f0cf4a">40–60%</span><span style="--scale-color:#a8c94a">60–80%</span><span style="--scale-color:#168849">80–100%</span>
               </div>
@@ -704,7 +711,7 @@
 
           <div id="d008Dashboard" hidden>
             <div class="d008-filter-panel dataset-panel">
-              <div class="d008-filter-heading"><div><p class="d006-eyebrow">ДИНАМИКА</p><h2>Сравнение по годам</h2><p>Выберите годы. Значения каждого года показаны отдельно.</p></div><button id="d008ResetFilters" type="button">Сбросить фильтры</button></div>
+              <div class="d008-filter-heading"><div><p class="d006-eyebrow">ДИНАМИКА</p><h2>Сравнение по годам</h2><p>Выберите годы. Значения каждого года показаны отдельно.</p></div><button id="d008ResetFilters" type="button">Сброс фильтра</button></div>
               <fieldset class="d008-year-filter"><legend>Годы на графиках</legend>
                 <label><input type="checkbox" name="d008Year" value="2021" checked> 2021</label>
                 <label><input type="checkbox" name="d008Year" value="2022" checked> 2022</label>

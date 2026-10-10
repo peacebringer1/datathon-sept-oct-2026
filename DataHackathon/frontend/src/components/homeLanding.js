@@ -1,10 +1,10 @@
 const API_BASE_URL = window.API_BASE_URL || `http://127.0.0.1:${new URLSearchParams(window.location.search).get('apiPort') || '5000'}`;
 const chartInstances = new Map();
-let chartColors = ['#d94343', '#f28c28', '#f2c94c', '#a8cf45', '#3e9b59', '#8b9298'];
+let chartColors = ['#17b981', '#50b9d2', '#46cbb0', '#7fdef5', '#7ef5ad', '#13966d'];
 window.addEventListener('app-style-preset-changed', (event) => {
   const palettes = {
-    classic: ['#fbb085', '#c9aace', '#a88db1', '#df987d', '#e5c2ac', '#8b9298'],
-    green: ['#d94343', '#f28c28', '#f2c94c', '#a8cf45', '#3e9b59', '#8b9298']
+    classic: ['#a78bfa', '#7c9cff', '#6ee7f9', '#5be7c4', '#a3f7bd', '#b8a6ff'],
+    green: ['#17b981', '#50b9d2', '#46cbb0', '#7fdef5', '#7ef5ad', '#13966d']
   };
   chartColors = palettes[event.detail?.preset] || palettes.green;
 });
@@ -79,7 +79,7 @@ function chartFor(id, items, type = 'bar') {
       color: chartColors,
       tooltip,
       series: [{ type: 'pie', radius: ['45%', '78%'], center: ['50%', '52%'], avoidLabelOverlap: true,
-        itemStyle: { borderColor: '#fff', borderWidth: 2, borderRadius: 4 }, label: { show: false }, labelLine: { show: false },
+        itemStyle: { borderColor: '#fff', borderWidth: 2, borderRadius: 4 }, label: { show: true, position: 'outside', formatter: '{b}: {c}', fontSize: 9 }, labelLine: { show: true },
         emphasis: { scale: true, scaleSize: 5 }, data: cleaned.map((item) => ({ name: item.name, value: Number(item.value), suffix: item.suffix || '' })) }]
     };
   } else if (type === 'rose') {
@@ -87,7 +87,7 @@ function chartFor(id, items, type = 'bar') {
       color: chartColors,
       tooltip,
       series: [{ type: 'pie', roseType: 'area', radius: ['12%', '78%'], center: ['50%', '52%'],
-        itemStyle: { borderColor: '#fff', borderWidth: 2, borderRadius: 4 }, label: { show: false }, labelLine: { show: false },
+        itemStyle: { borderColor: '#fff', borderWidth: 2, borderRadius: 4 }, label: { show: true, position: 'outside', formatter: '{b}: {c}', fontSize: 9 }, labelLine: { show: true },
         emphasis: { scale: true, scaleSize: 4 }, data: cleaned.map((item) => ({ name: item.name, value: Number(item.value), suffix: item.suffix || '' })) }]
     };
   } else if (type === 'treemap') {
@@ -95,7 +95,7 @@ function chartFor(id, items, type = 'bar') {
       color: chartColors,
       tooltip,
       series: [{ type: 'treemap', roam: false, nodeClick: false, breadcrumb: { show: false }, visibleMin: 1,
-        label: { show: false }, upperLabel: { show: false }, itemStyle: { borderColor: '#fff', borderWidth: 2, gapWidth: 2 },
+        label: { show: true, formatter: ({ name, value }) => `${name}\n${Number(value).toLocaleString('ru-RU')}`, color: '#fff', fontSize: 10, overflow: 'truncate' }, upperLabel: { show: false }, itemStyle: { borderColor: '#fff', borderWidth: 2, gapWidth: 2 },
         data: cleaned.map((item, index) => ({ name: item.name, value: Number(item.value), itemStyle: { color: chartColors[index % chartColors.length] } })) }]
     };
   } else if (type === 'line') {
@@ -103,11 +103,13 @@ function chartFor(id, items, type = 'bar') {
       color: chartColors,
       animationDuration: 650,
       grid: { left: 4, right: 4, top: 10, bottom: 8, containLabel: false },
-      tooltip: { ...tooltip, trigger: 'axis', axisPointer: { type: 'line', lineStyle: { color: '#8b9298', type: 'dashed' } } },
+      tooltip: { ...tooltip, trigger: 'item' },
       xAxis: { type: 'category', data: cleaned.map((item) => item.name), boundaryGap: false, show: false },
       yAxis: { type: 'value', show: false, min: 0 },
       series: [{ type: 'line', smooth: .35, symbol: 'circle', symbolSize: 9,
-        lineStyle: { color: '#3e9b59', width: 3 }, areaStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: 'rgba(62,155,89,.3)' }, { offset: .5, color: 'rgba(242,201,76,.12)' }, { offset: 1, color: 'rgba(217,67,67,.02)' }] } },
+        label: { show: true, position: 'top', formatter: ({ name, value }) => `${name}: ${Number(value).toLocaleString('ru-RU')}`, fontSize: 9 },
+        labelLayout: { hideOverlap: true },
+        lineStyle: { color: chartColors[4], width: 3 }, areaStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: 'rgba(126,245,173,.3)' }, { offset: .5, color: 'rgba(80,185,210,.12)' }, { offset: 1, color: 'rgba(23,185,129,.02)' }] } },
         data: cleaned.map((item, index) => ({ name: item.name, value: Number(item.value), suffix: item.suffix || '', itemStyle: { color: chartColors[index % chartColors.length], borderColor: '#fff', borderWidth: 2 } })) }]
     };
   } else {
@@ -115,13 +117,15 @@ function chartFor(id, items, type = 'bar') {
       color: chartColors,
       animationDuration: 650,
       grid: { left: 3, right: 4, top: 5, bottom: 4, containLabel: false },
-      tooltip: { ...tooltip, trigger: 'axis', axisPointer: { type: 'shadow' } },
+      tooltip: { ...tooltip, trigger: 'item' },
       xAxis: { type: 'value', show: false, max: (value) => value.max || 1 },
       yAxis: { type: 'category', data: cleaned.map((item) => item.name), show: false, inverse: true },
       series: [{
         type: 'bar',
         data: cleaned.map((item, index) => ({ name: item.name, value: Number(item.value), suffix: item.suffix || '', itemStyle: { color: chartColors[index % chartColors.length], borderRadius: [0, 7, 7, 0] } })),
         barWidth: '48%',
+        label: { show: true, position: 'right', formatter: ({ name, value }) => `${name}: ${Number(value).toLocaleString('ru-RU')}`, fontSize: 9 },
+        labelLayout: { hideOverlap: true },
         showBackground: true,
         backgroundStyle: { color: 'rgba(139,146,152,.12)', borderRadius: 7 },
         itemStyle: { borderRadius: [0, 7, 7, 0] }

@@ -28,6 +28,19 @@ const analyzerPort = new URLSearchParams(window.location.search).get('analyzerPo
 window.DATA_ANALYZER_URL = analyzerPort ? `http://127.0.0.1:${analyzerPort}` : '';
 window.API_BASE_URL = API_BASE_URL;
 
+document.addEventListener('click', (event) => {
+  const target = event.target instanceof Element ? event.target : null;
+  const button = target?.closest('[data-reset-filter-group]');
+  if (!button) return;
+  const group = button.parentElement;
+  const selects = [...group.querySelectorAll('select')];
+  selects.forEach((select) => {
+    if (!select.options.length) return;
+    select.selectedIndex = 0;
+  });
+  selects[0]?.dispatchEvent(new Event('change', { bubbles: true }));
+});
+
 window.syncAnalyzerPreferences = function () {
   document.getElementById('dataAnalyzerFrame')?.contentWindow?.postMessage({
     type: 'da-settings',

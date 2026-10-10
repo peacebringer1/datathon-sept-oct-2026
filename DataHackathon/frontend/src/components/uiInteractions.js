@@ -109,8 +109,8 @@ export function initThemeToggle() {
   const styleMenu = document.getElementById('stylePresetMenu');
   const styleOptions = [...(styleMenu?.querySelectorAll('[data-style-preset]') || [])];
   const stylePalettes = {
-    classic: ['#fbb085', '#c9aace', '#a88db1', '#df987d', '#e5c2ac', '#8b9298'],
-    green: ['#d94343', '#f28c28', '#f2c94c', '#a8cf45', '#3e9b59', '#8b9298']
+    classic: ['#a78bfa', '#7c9cff', '#6ee7f9', '#5be7c4', '#a3f7bd', '#b8a6ff'],
+    green: ['#17b981', '#50b9d2', '#46cbb0', '#7fdef5', '#7ef5ad', '#13966d']
   };
   const applyStylePreset = (preset) => {
     if (!stylePalettes[preset]) return;
