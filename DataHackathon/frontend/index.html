@@ -711,12 +711,13 @@
 
           <div id="d008Dashboard" hidden>
             <div class="d008-filter-panel dataset-panel">
-              <div class="d008-filter-heading"><div><p class="d006-eyebrow">ДИНАМИКА</p><h2>Сравнение по годам</h2><p>Выберите годы. Значения каждого года показаны отдельно.</p></div><button id="d008ResetFilters" type="button">Сброс фильтра</button></div>
-              <fieldset class="d008-year-filter"><legend>Годы на графиках</legend>
-                <label><input type="checkbox" name="d008Year" value="2021" checked> 2021</label>
-                <label><input type="checkbox" name="d008Year" value="2022" checked> 2022</label>
-                <label><input type="checkbox" name="d008Year" value="2023" checked> 2023</label>
-                <label><input type="checkbox" name="d008Year" value="2024" checked> 2024</label>
+              <div class="d008-filter-heading"><div><p class="d006-eyebrow">ДЕМОГРАФИЯ</p><h2>Год данных</h2><p>Выберите отдельный год или динамику за весь период.</p></div><button id="d008ResetFilters" type="button">Сброс фильтров</button></div>
+              <fieldset class="d008-year-filter"><legend>Показать данные</legend>
+                <label><input type="radio" name="d008Year" value="2021"> 2021</label>
+                <label><input type="radio" name="d008Year" value="2022"> 2022</label>
+                <label><input type="radio" name="d008Year" value="2023"> 2023</label>
+                <label><input type="radio" name="d008Year" value="2024"> 2024</label>
+                <label><input type="radio" name="d008Year" value="dynamic" checked> Динамика</label>
               </fieldset>
               <p class="d008-filter-note">Откройте «Фильтры графика» в нужной карточке. Настройки графиков независимы друг от друга.</p>
             </div>
@@ -727,8 +728,8 @@
               <article class="dataset-stat-card"><span id="d008HouseholdsLabel">Домохозяйств в выборке</span><strong id="d008HouseholdsStat">—</strong></article>
               <article class="dataset-stat-card"><span id="d008HouseholdSizeLabel">Средний размер семьи</span><strong id="d008HouseholdSizeStat">—</strong></article>
               <article class="dataset-stat-card"><span id="d008AverageAgeLabel">Средний возраст</span><strong id="d008AverageAgeStat">—</strong></article>
-              <article class="dataset-stat-card"><span>Доля детей младше 15 лет</span><strong id="d008ChildrenStat">—</strong></article>
-              <article class="dataset-stat-card"><span>Территорий</span><strong id="d008TerritoriesStat">—</strong></article>
+              <article class="dataset-stat-card"><span id="d008ChildrenLabel">Доля детей младше 15 лет</span><strong id="d008ChildrenStat">—</strong></article>
+              <article class="dataset-stat-card"><span id="d008TerritoriesLabel">Территорий</span><strong id="d008TerritoriesStat">—</strong></article>
             </div>
 
             <article class="dataset-panel d006-intro-panel">

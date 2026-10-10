@@ -639,9 +639,11 @@ function renderD008Trend(id, yearlyResults, metric, valueMode) {
     ? yearlyResults.map((result) => ({
       name: String(result.year),
       type: 'bar',
-      stack: 'total',
       barMaxWidth: 26,
-      label: { show: true, position: 'inside', color: textColor, fontSize: 10, formatter: ({ value }) => value == null ? '' : formatValue(value) },
+      label: {
+        show: true, position: 'inside', color: textColor, fontSize: 10,
+        formatter: ({ value }) => value == null || (valueMode === 'count' && value < Number(result.households || 0) * 0.05) ? '' : formatValue(value)
+      },
       labelLayout: { hideOverlap: true },
       emphasis: { focus: 'series' },
       data: categoryEntries.map(([code]) => {
@@ -659,7 +661,17 @@ function renderD008Trend(id, yearlyResults, metric, valueMode) {
     });
     if (horizontalChart) return {
       name: label, type: 'bar', stack: 'total', barMaxWidth: 34,
-      label: { show: true, position: 'inside', color: textColor, fontSize: 10, formatter: ({ value }) => value == null ? '' : formatValue(value) },
+      label: {
+        show: true, position: 'inside', color: textColor, fontSize: 10,
+        formatter: ({ value, dataIndex }) => {
+          if (value == null) return '';
+          // Small stacked segments cannot fit their labels and make adjacent
+          // values look like one incorrect number. Their exact values remain
+          // available in the tooltip and the table below the chart.
+          if (metric !== 'household_sizes' && valueMode === 'count' && value < (totals[dataIndex] || 0) * 0.05) return '';
+          return formatValue(value);
+        }
+      },
       labelLayout: { hideOverlap: true }, emphasis: { focus: 'series' }, data
     };
     return {
@@ -784,6 +796,22 @@ function renderD008ValuesTable(chartElement, yearlyResults, categoryEntries, met
   table.replaceChildren(head, body);
 }
 
+function setD008SummaryValue(id, yearlyResults, selectedYear, getValue, formatValue) {
+  const element = document.getElementById(id);
+  if (!element) return;
+  element.replaceChildren();
+  element.classList.toggle('d008-stat-values', selectedYear === 'dynamic');
+  if (selectedYear === 'dynamic') {
+    yearlyResults.forEach((result) => {
+      const line = document.createElement('span');
+      line.textContent = `${result.year}: ${formatValue(getValue(result))}`;
+      element.append(line);
+    });
+    return;
+  }
+  element.textContent = formatValue(getValue(yearlyResults.at(-1)));
+}
+
 function disposeD008Charts() {
   d008Charts.forEach((chart) => chart.dispose());
   d008Charts.clear();
@@ -883,15 +911,19 @@ async function refreshD008Chart(panel) {
   const currentId = String(Number(panel.dataset.requestId || 0) + 1);
   panel.dataset.requestId = currentId;
   try {
-    const yearlyResults = Object.keys(filters).length
+    let yearlyResults = Object.keys(filters).length
       ? await Promise.all(d008BaseResults.map(({ year }) => fetchD008Year(year, filters)))
       : d008BaseResults;
     if (panel.dataset.requestId !== currentId) return;
     const latest = yearlyResults.at(-1);
     renderD008Trend(chartId, yearlyResults, metric, valueMode);
-    const answeredValue = latest?.answered?.[metric] ?? (metric === 'household_sizes' ? latest?.households : latest?.people);
-    const answered = Number(answeredValue ?? 0);
-    setText(unitId, valueMode === 'share' ? `доля от ${answered.toLocaleString('ru-RU')}, %` : `${metric === 'household_sizes' ? 'домохозяйств' : 'ответов'} · ${answered.toLocaleString('ru-RU')}`);
+    if (yearlyResults.length > 1) {
+      setText(unitId, valueMode === 'share' ? 'доля ответов каждого года, %' : `${metric === 'household_sizes' ? 'домохозяйства' : 'ответы'} показаны отдельно по годам`);
+    } else {
+      const answeredValue = latest?.answered?.[metric] ?? (metric === 'household_sizes' ? latest?.households : latest?.people);
+      const answered = Number(answeredValue ?? 0);
+      setText(unitId, valueMode === 'share' ? `доля от ${answered.toLocaleString('ru-RU')} ответов, %` : `${metric === 'household_sizes' ? 'домохозяйств' : 'ответов'} · ${answered.toLocaleString('ru-RU')}`);
+    }
     if (metric === 'age_structure') {
       document.getElementById(chartId).hidden = !yearlyResults.some((result) => result.age_available);
       document.getElementById('d008AgeNoData').hidden = yearlyResults.some((result) => result.age_available);
@@ -907,9 +939,10 @@ async function refreshD008Chart(panel) {
 async function loadD008Page() {
   const status = document.getElementById('d008Status');
   const requestId = ++d008RequestId;
-  const selectedYears = [...document.querySelectorAll('input[name="d008Year"]:checked')].map((input) => input.value).filter((year) => d008AvailableYears.includes(year));
+  const selectedYear = document.querySelector('input[name="d008Year"]:checked')?.value || 'dynamic';
+  const selectedYears = selectedYear === 'dynamic' ? [...d008AvailableYears] : d008AvailableYears.includes(selectedYear) ? [selectedYear] : [];
   status.dataset.state = 'loading';
-  status.textContent = 'Сравниваем демографические показатели по выбранным годам…';
+  status.textContent = 'Загружаем демографические показатели…';
   try {
     if (!selectedYears.length) throw new Error('Выберите хотя бы один год для сравнения.');
     const yearlyResults = await Promise.all(selectedYears.map((year) => fetchD008Year(year)));
@@ -918,25 +951,32 @@ async function loadD008Page() {
     d008BaseResults = yearlyResults;
     disposeD008Charts();
     const latest = yearlyResults.at(-1);
-    setText('d008PeopleLabel', `Людей в выборке · ${latest.year}`);
-    setText('d008HouseholdsLabel', `Домохозяйств · ${latest.year}`);
-    setText('d008HouseholdSizeLabel', `Средний размер семьи · ${latest.year}`);
-    setText('d008AverageAgeLabel', `Средний возраст · ${latest.year}`);
-    setText('d008PeopleStat', Number(latest.people).toLocaleString('ru-RU'));
-    setText('d008HouseholdsStat', Number(latest.households).toLocaleString('ru-RU'));
-    setText('d008HouseholdSizeStat', latest.average_household_size == null ? '—' : `${Number(latest.average_household_size).toLocaleString('ru-RU', { maximumFractionDigits: 1 })} чел.`);
-    setText('d008AverageAgeStat', latest.average_age == null ? '—' : `${Number(latest.average_age).toLocaleString('ru-RU', { maximumFractionDigits: 1 })} года`);
-    setText('d008ChildrenStat', latest.under_15_share == null ? '—' : `${Number(latest.under_15_share).toLocaleString('ru-RU', { maximumFractionDigits: 1 })}%`);
-    setText('d008TerritoriesStat', Number(latest.territories).toLocaleString('ru-RU'));
+    const periodLabel = selectedYear === 'dynamic' ? 'по годам' : `· ${latest.year}`;
+    setText('d008PeopleLabel', `Людей в выборке ${periodLabel}`);
+    setText('d008HouseholdsLabel', `Домохозяйств ${periodLabel}`);
+    setText('d008HouseholdSizeLabel', `Средний размер домохозяйства ${periodLabel}`);
+    setText('d008AverageAgeLabel', `Средний возраст ${periodLabel}`);
+    setText('d008ChildrenLabel', `Доля детей младше 15 лет ${periodLabel}`);
+    setText('d008TerritoriesLabel', `Территорий ${periodLabel}`);
+    const formatCount = (value) => Number(value || 0).toLocaleString('ru-RU');
+    const formatDecimal = (value, suffix = '') => value == null ? '—' : `${Number(value).toLocaleString('ru-RU', { maximumFractionDigits: 1 })}${suffix}`;
+    setD008SummaryValue('d008PeopleStat', yearlyResults, selectedYear, (result) => result.people, formatCount);
+    setD008SummaryValue('d008HouseholdsStat', yearlyResults, selectedYear, (result) => result.households, formatCount);
+    setD008SummaryValue('d008HouseholdSizeStat', yearlyResults, selectedYear, (result) => result.average_household_size, (value) => formatDecimal(value, ' чел.'));
+    setD008SummaryValue('d008AverageAgeStat', yearlyResults, selectedYear, (result) => result.average_age, (value) => formatDecimal(value, ' года'));
+    setD008SummaryValue('d008ChildrenStat', yearlyResults, selectedYear, (result) => result.under_15_share, (value) => formatDecimal(value, '%'));
+    setD008SummaryValue('d008TerritoriesStat', yearlyResults, selectedYear, (result) => result.territories, formatCount);
     D008_CHARTS.forEach(([metric]) => {
       const panel = document.querySelector(`[data-d008-chart="${metric}"]`);
       if (panel) void refreshD008Chart(panel);
     });
     const yearsLabel = yearlyResults.map((result) => result.year).join(', ');
     const sources = [...new Set(yearlyResults.map((result) => result.source === 'database.sqlite' ? 'database.sqlite' : 'CSV в data/sinte'))].join(', ');
-    setText('d008SourceNote', `Сравниваются годы ${yearsLabel}; значения каждого года рассчитаны отдельно. Источник: ${sources}. Средний возраст и размер домохозяйства показаны для ${latest.year} года. В каждой карточке графика можно отдельно настроить фильтры.`);
+    setText('d008SourceNote', `${selectedYear === 'dynamic' ? `Динамика за ${yearsLabel}` : `Данные за ${latest.year} год`}; источник: ${sources}. При выборе динамики каждый график и сводная карточка показывают значения по каждому году. В каждой карточке графика можно отдельно настроить фильтры.`);
     status.dataset.state = 'success';
-    status.textContent = `${yearsLabel}: каждый год показан отдельно. В выборке ${latest.year} года — ${Number(latest.people).toLocaleString('ru-RU')} человек и ${Number(latest.households).toLocaleString('ru-RU')} домохозяйств.`;
+    status.textContent = selectedYear === 'dynamic'
+      ? `Динамика за ${yearsLabel}: графики и сводные показатели показаны отдельно по годам.`
+      : `Показаны данные за ${latest.year} год: ${Number(latest.people).toLocaleString('ru-RU')} человек и ${Number(latest.households).toLocaleString('ru-RU')} домохозяйств.`;
   } catch (error) {
     if (requestId !== d008RequestId) return;
     disposeD008Charts();
@@ -957,14 +997,15 @@ async function initializeD008(apiBaseUrl) {
     if (!d008AvailableYears.length) throw new Error('Для динамики нужны данные D008 за 2021–2024 годы.');
     const isFirstInitialization = !dashboard.dataset.listenersReady;
     document.querySelectorAll('input[name="d008Year"]').forEach((input) => {
-      input.disabled = !d008AvailableYears.includes(input.value);
-      if (isFirstInitialization || input.disabled) input.checked = d008AvailableYears.includes(input.value);
+      input.disabled = input.value !== 'dynamic' && !d008AvailableYears.includes(input.value);
+      if (isFirstInitialization) input.checked = input.value === 'dynamic';
+      if (input.disabled && input.checked) document.querySelector('input[name="d008Year"][value="dynamic"]').checked = true;
     });
     if (!dashboard.dataset.listenersReady) {
       initializeD008ChartFilters();
       document.querySelectorAll('input[name="d008Year"]').forEach((control) => control.addEventListener('change', loadD008Page));
       document.getElementById('d008ResetFilters').addEventListener('click', () => {
-        document.querySelectorAll('input[name="d008Year"]').forEach((input) => { input.checked = d008AvailableYears.includes(input.value); });
+        document.querySelector('input[name="d008Year"][value="dynamic"]').checked = true;
         document.querySelectorAll('[data-d008-filter]').forEach((control) => {
           const chart = control.closest('[data-d008-chart]')?.dataset.d008Chart;
           control.value = d008DefaultFilterValue(chart, control.dataset.d008Filter);
