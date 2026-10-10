@@ -40,6 +40,24 @@ let D002_SATISFACTION_COLORS = {
   'Не применимо / затруднились ответить': '#687780'
 };
 let D002_CATEGORY_COLORS = ['#50b9d2', '#a78bfa', '#46cbb0', '#7c9cff', '#7ef5ad', '#6ee7f9', '#b8a6ff'];
+let D002_MULTI_SELECT_COLORS = ['#11845f', '#2877b8', '#177b72', '#22a873', '#176c9e', '#3b9a8b', '#2d9166', '#155a79', '#58ad91', '#247f9c', '#45b889', '#3d7386', '#70bd9e', '#548d77'];
+
+function d002MultiSelectColorMap(options) {
+  const semanticRank = (label) => {
+    const value = String(label).toLocaleLowerCase('ru-RU');
+    if (/^(да\b|полностью|высок|полож|улучш)/.test(value)) return 0;
+    if (/^(нет\b|низк|отриц|ухудш)/.test(value)) return 1;
+    if (/деньг|денеж|дорог|оплат|кредит|долг|средств|пособи|пенси|зарплат|оплат/.test(value)) return 0;
+    if (/учрежден|услуг|специалист|доступ|интернет|пропис|очеред|транспорт|доех|далек/.test(value)) return 1;
+    if (/здоров|болез|медицин|лечени|лекар|инвалид/.test(value)) return 2;
+    if (/реб[её]н|семь|родствен|нян|уход|возраст/.test(value)) return 3;
+    if (/образован|знан|квалификац|опыт|работ/.test(value)) return 4;
+    if (/друг|проч|не знаю|затрудн/.test(value)) return 6;
+    return 5;
+  };
+  const ordered = [...options].sort((left, right) => semanticRank(left[1]) - semanticRank(right[1]) || left[1].localeCompare(right[1], 'ru'));
+  return new Map(ordered.map(([code], index) => [code, D002_MULTI_SELECT_COLORS[index % D002_MULTI_SELECT_COLORS.length]]));
+}
 
 function d002AnswerColor(label, index, satisfactionScale = false) {
   if (satisfactionScale && D002_SATISFACTION_COLORS[label]) return D002_SATISFACTION_COLORS[label];
@@ -60,22 +78,18 @@ window.addEventListener('app-style-preset-changed', (event) => {
   D002_CATEGORY_COLORS = event.detail?.preset === 'classic'
     ? ['#cf7f5f', '#a78bb5', '#c58eaa', '#e1a07f', '#9b82a6', '#d99a8d', '#765f80']
     : ['#50b9d2', '#a78bfa', '#46cbb0', '#7c9cff', '#7ef5ad', '#6ee7f9', '#b8a6ff'];
+  D002_MULTI_SELECT_COLORS = event.detail?.preset === 'classic'
+    ? ['#c56543', '#6951a4', '#a84e62', '#d18a18', '#87549b', '#ad6440', '#78608a', '#c87382', '#88602e', '#a84f8e', '#8c7165', '#bd805b', '#765b77', '#69727b']
+    : ['#11845f', '#2877b8', '#177b72', '#22a873', '#176c9e', '#3b9a8b', '#2d9166', '#155a79', '#58ad91', '#247f9c', '#45b889', '#3d7386', '#70bd9e', '#548d77'];
   D002_SATISFACTION_COLORS = event.detail?.preset === 'classic'
     ? { 'Высокая удовлетворённость': '#a78bb5', 'Частичная удовлетворённость': '#f0a17e', 'Низкая удовлетворённость': '#b96767', 'Не применимо / затруднились ответить': '#8c828d' }
     : { 'Высокая удовлетворённость': '#7ef5ad', 'Частичная удовлетворённость': '#50b9d2', 'Низкая удовлетворённость': '#a78bfa', 'Не применимо / затруднились ответить': '#687780' };
   d002Charts?.forEach((chart) => {
-    const series = chart.getOption().series.map((item) => {
-      const data = (item.data || []).map((point) => point && typeof point === 'object' ? point : { value: point });
-      const satisfactionScale = data.some((point) => Object.hasOwn(D002_SATISFACTION_COLORS, point.name));
-      return {
-        ...item,
-        data: data.map((point, index) => ({
-          ...point,
-          itemStyle: { ...point.itemStyle, color: d002AnswerColor(point.name || point.label || '', index, satisfactionScale) }
-        }))
-      };
-    });
-    chart.setOption({ color: DATA_COLORS, series });
+    const activeQuestion = d002FilteredQuestions[d002QuestionIndex];
+    if (chart.getDom()?.id === 'd002QuestionChart' && activeQuestion) {
+      renderD002QuestionChart(chart.getDom(), activeQuestion);
+      return;
+    }
   });
   d008Charts?.forEach((chart) => {
     chart.setOption({ color: DATA_COLORS });
@@ -115,6 +129,7 @@ let d002MapGeoJSON = null;
 let d002MapRevision = 0;
 let d002MapRegions = [];
 let d002MapData = null;
+let d002MapAnswerColors = new Map();
 let d006Charts = new Map();
 let d006BaseResult = null;
 let d008Charts = new Map();
@@ -170,6 +185,54 @@ function renderD002QuestionChart(element, question) {
   const categories = new Map();
   years.forEach((item) => (item.distribution || []).forEach((answer) => categories.set(String(answer.code ?? answer.label), answer.label)));
   const trend = years.length > 1;
+  if (question.is_multi_select) {
+    const options = [...categories.entries()];
+    const trend = years.length > 1;
+    const optionColors = d002MultiSelectColorMap(options);
+    element.style.height = `${Math.max(360, Math.min(820, options.length * 42 + (trend ? 100 : 70)))}px`;
+    chart.setOption({
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: { type: 'shadow' },
+        confine: true,
+        formatter: (items) => {
+          const points = Array.isArray(items) ? items : [items];
+          const answer = points[0]?.axisValueLabel || '';
+          return `${answer}<br>${points.map((point) => `${point.marker}${point.seriesName}: <strong>${Number(point.value).toLocaleString('ru-RU')} анкет</strong>`).join('<br>')}`;
+        }
+      },
+      legend: trend ? { bottom: 0, textStyle: { color: textColor, fontSize: 12 } } : undefined,
+      grid: { left: 16, right: 48, top: 18, bottom: trend ? 48 : 24, containLabel: true },
+      xAxis: {
+        type: 'value',
+        min: 0,
+        axisLabel: { color: textColor },
+        axisLine: { lineStyle: { color: textColor, opacity: 0.25 } },
+        splitLine: { lineStyle: { color: textColor, opacity: 0.12 } },
+        name: 'Число анкет',
+        nameLocation: 'middle',
+        nameGap: 25,
+        nameTextStyle: { color: textColor }
+      },
+      yAxis: { type: 'category', inverse: true, data: options.map(([, label]) => label), axisLabel: { color: textColor, width: 240, overflow: 'break', lineHeight: 14, fontSize: 10 }, axisLine: { show: false }, axisTick: { show: false } },
+      toolbox: { right: 8, feature: { dataView: { readOnly: true }, restore: {}, saveAsImage: {} } },
+      series: years.map((year, yearIndex) => ({
+        name: trend ? String(year.year || question.year || '') : 'Число анкет',
+        type: 'bar',
+        barMaxWidth: trend ? 20 : 30,
+        data: options.map(([code, label]) => {
+          const answer = (year.distribution || []).find((item) => String(item.code ?? item.label) === code);
+          return { value: Number(answer?.count || 0), itemStyle: { color: optionColors.get(code) }, label: { show: Number(answer?.count || 0) > 0, position: 'right', color: textColor, fontWeight: 700, formatter: ({ value }) => Number(value).toLocaleString('ru-RU') } };
+        })
+      }))
+    }, true);
+    chart.resize();
+    return;
+  }
+  element.style.height = '';
+  const answerColors = question.is_satisfaction_scale
+    ? new Map([...categories.entries()].map(([code, label]) => [code, D002_SATISFACTION_COLORS[label] || D002_MULTI_SELECT_COLORS[0]]))
+    : d002MultiSelectColorMap([...categories.entries()]);
   const pieSeries = years.map((year, index) => ({
     name: String(year.year || question.year || ''),
     type: 'pie',
@@ -180,9 +243,9 @@ function renderD002QuestionChart(element, question) {
     itemStyle: { borderColor: styles.backgroundColor || '#fff', borderWidth: 2, borderRadius: 3 },
     label: { show: !trend && categories.size <= 7, position: 'outside', formatter: '{b}\n{c}', color: textColor, fontSize: 10 },
     emphasis: { scale: true, scaleSize: 7, label: { show: true, formatter: '{b}\n{c}', color: textColor, fontSize: 12, fontWeight: 700 } },
-    data: [...categories.entries()].map(([code, label], categoryIndex) => {
+    data: [...categories.entries()].map(([code, label]) => {
       const answer = (year.distribution || []).find((item) => String(item.code ?? item.label) === code);
-      return { name: label, value: Number(answer?.count || 0), itemStyle: { color: d002AnswerColor(label, categoryIndex, question.is_satisfaction_scale) } };
+      return { name: label, value: Number(answer?.count || 0), itemStyle: { color: answerColors.get(code) } };
     }).filter((item) => item.value > 0)
   }));
   chart.setOption({
@@ -221,17 +284,30 @@ function renderD002Question() {
   }
   setText('d002CurrentQuestionTitle', question.label);
   setText('d002QuestionInfoTitle', question.label);
-  setText('d002CurrentQuestionCode', question.id);
+  setText('d002CurrentQuestionCode', question.display_code || question.id);
   setText('d002AnsweredCount', Number(question.answered).toLocaleString('ru-RU'));
   setText('d002MissingCount', Number(question.missing).toLocaleString('ru-RU'));
   setText('d002TotalCount', Number(question.answered + question.missing).toLocaleString('ru-RU'));
+  const answeredLabel = document.querySelector('[data-d002-stat="answered"]');
+  const missingLabel = document.querySelector('[data-d002-stat="missing"]');
+  if (answeredLabel) answeredLabel.textContent = question.is_multi_select ? 'Есть хотя бы одна отметка' : 'Ответили';
+  if (missingLabel) missingLabel.textContent = question.is_multi_select ? 'Нет отметок' : 'Без ответа';
   setText('d002QuestionNote', question.chart_note || 'На диаграмме показано точное число ответов каждого типа.');
-  setText('d002ChartCaption', question.yearly?.length > 1
-    ? `Круги показывают точное число ответов за каждый год отдельно; значения между годами не суммируются.`
-    : `${Number(question.answered).toLocaleString('ru-RU')} ответов. Сектора показывают их точное число за ${question.year || 'выбранный год'}.`);
+  setText('d002ChartCaption', question.is_multi_select
+    ? (question.yearly?.length > 1
+      ? 'Каждый столбец показывает число анкет, отметивших вариант ответа, отдельно за каждый год.'
+      : `Столбцы показывают число анкет, отметивших каждый вариант за ${question.year || 'выбранный год'}.`)
+    : question.yearly?.length > 1
+      ? `Круги показывают точное число ответов за каждый год отдельно; значения между годами не суммируются.`
+      : `${Number(question.answered).toLocaleString('ru-RU')} ответов. Сектора показывают их точное число за ${question.year || 'выбранный год'}.`);
   if (hasAnswers) {
     renderD002QuestionChart(document.getElementById('d002QuestionChart'), question);
-    renderD002Map(question);
+    if (question.is_multi_select) {
+      document.getElementById('d002MapPanel').hidden = true;
+      d002MapRevision += 1;
+    } else {
+      renderD002Map(question);
+    }
   } else {
     document.getElementById('d002MapPanel').hidden = true;
     d002MapRevision += 1;
@@ -251,6 +327,10 @@ async function renderD002Map(question) {
   const panel = document.getElementById('d002MapPanel');
   const chartElement = document.getElementById('d002MapChart');
   const revision = ++d002MapRevision;
+  if (question?.is_multi_select) {
+    panel.hidden = true;
+    return;
+  }
   if (!(question.distribution?.length || question.yearly?.some((item) => item.distribution?.length))) {
     panel.hidden = true;
     return;
@@ -308,9 +388,12 @@ async function renderD002Map(question) {
     if (revision !== d002MapRevision) return;
     const dark = document.body.classList.contains('dark-theme');
     const satisfactionScale = result.categories.some((category) => Object.hasOwn(D002_SATISFACTION_COLORS, category.label));
+    d002MapAnswerColors = satisfactionScale
+      ? new Map(result.categories.map((category) => [String(category.code), D002_SATISFACTION_COLORS[category.label] || D002_MULTI_SELECT_COLORS[0]]))
+      : d002MultiSelectColorMap(result.categories.map((category) => [String(category.code), category.label]));
     if (satisfactionScale) setText('d002MapStatus', 'Каждый круг — область. Цвета показывают высокий, частичный и низкий уровни удовлетворённости. Наведите курсор или нажмите на круг, чтобы увидеть точные числа.');
     d002Map.setOption({
-      color: result.categories.map((category, index) => d002AnswerColor(category.label, index, satisfactionScale)),
+      color: result.categories.map((category) => d002MapAnswerColors.get(String(category.code))),
       tooltip: {
         trigger: 'item',
         formatter: (item) => {
@@ -350,7 +433,7 @@ async function renderD002Map(question) {
         data: region.distribution.filter((answer) => !selectedAnswer || answer.code === selectedAnswer).map((answer) => ({
           name: answer.label, value: answer.count,
           count: answer.count, regionCode: region.code,
-          itemStyle: { color: d002AnswerColor(answer.label, result.categories.findIndex((category) => category.code === answer.code), satisfactionScale) }
+          itemStyle: { color: d002MapAnswerColors.get(String(answer.code)) }
         }))
       };
       })
@@ -387,7 +470,7 @@ function showD002RegionDetails(region) {
   region.distribution.forEach((item, index) => {
     const row = document.createElement('article');
     row.className = 'd002-region-answer';
-    row.style.setProperty('--answer-color', d002AnswerColor(item.label, index, satisfactionScale));
+    row.style.setProperty('--answer-color', d002MapAnswerColors.get(String(item.code)) || d002AnswerColor(item.label, index, satisfactionScale));
     const heading = document.createElement('div');
     heading.className = 'd002-region-answer-heading';
     const label = document.createElement('span');
@@ -1070,9 +1153,12 @@ async function loadD002Page() {
       const results = (await fetchDatasetYearData('/api/d002/data', years, { form: params.get('form') })).sort((a, b) => Number(a.year) - Number(b.year));
       const questionMap = new Map();
       results.forEach((yearResult) => yearResult.questions.forEach((question) => {
-        const current = questionMap.get(question.id) || { ...question, yearly: [] };
+        // GR codes were renumbered between the 2021 and revised forms. Merge
+        // years only when both the code and documented question text agree.
+        const questionKey = `${question.id}|${question.label.trim().toLocaleLowerCase('ru-RU')}`;
+        const current = questionMap.get(questionKey) || { ...question, yearly: [] };
         current.yearly.push({ ...question, year: yearResult.year });
-        questionMap.set(question.id, current);
+        questionMap.set(questionKey, current);
       }));
       const latest = results.at(-1);
       result = {
