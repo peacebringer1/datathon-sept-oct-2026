@@ -2812,7 +2812,28 @@ def call_claude(contents, dataset_overview, dashboard_context, max_output_tokens
             )
             if answer:
                 return {'answer': answer, 'chart': chart_result} if include_chart else answer
-            raise RuntimeError('Claude вернул пустой ответ.')
+            # Keep enough upstream metadata to distinguish a refusal, a truncated
+            # response, and an unexpected content block without logging user data.
+            stop_reason = result.get('stop_reason') or 'не указана'
+            block_types = ', '.join(
+                str(block.get('type', 'неизвестный'))
+                for block in blocks
+                if isinstance(block, dict)
+            ) or 'нет блоков'
+            app.logger.warning(
+                'Claude returned no text: model=%s stop_reason=%s content_blocks=%s usage=%s',
+                CLAUDE_MODEL,
+                stop_reason,
+                block_types,
+                result.get('usage')
+            )
+            if stop_reason == 'max_tokens':
+                detail = 'ответ был оборван из-за лимита токенов'
+            elif stop_reason == 'refusal':
+                detail = 'запрос был отклонён моделью'
+            else:
+                detail = f'модель завершила генерацию без текстового ответа (stop_reason: {stop_reason}; блоки: {block_types})'
+            raise RuntimeError(f'Claude не вернул текст: {detail}. Попробуйте повторить запрос.')
 
         messages.append({'role': 'assistant', 'content': blocks})
         tool_results = []
