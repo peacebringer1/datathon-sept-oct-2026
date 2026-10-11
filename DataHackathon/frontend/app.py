@@ -1988,6 +1988,16 @@ AI_TOOLS = [{
                     }}
                 }, 'required': ['metric']
             }
+        },
+        {
+            'name': 'list_sinte_datasets',
+            'description': 'Проверить структуру датасетов в папке data/sinte, чтобы понять, какие наборы и CSV-файлы доступны для анализа.',
+            'parameters': {
+                'type': 'OBJECT',
+                'properties': {
+                    'dataset_name': {'type': 'STRING', 'description': 'Необязательное имя набора, например d002, d004, d006, d008.'}
+                }
+            }
         }
     ]
 }]
@@ -1995,7 +2005,7 @@ AI_TOOLS = [{
 AI_SYSTEM_INSTRUCTION = '''Ты аналитический помощник дашборда статистики Казахстана.
 Отвечай на русском языке, ясно и по существу. Для фактов, чисел, сравнений, рейтингов и трендов из базы обязательно вызывай query_demographics; не придумывай значения и не делай выводы по памяти.
 Для вопросов о наборе D008 обязательно используй query_d008. Каждый год показывай отдельно: никогда не складывай и не усредняй значения разных лет. Учитывай datasetFilters из контекста, если пользователь не задал более точные фильтры. В сравнении годов описывай динамику показателя, а долю трактуй как процент среди заполненных ответов; абсолютное значение — как число людей/домохозяйств.
-Если не знаешь точное название показателя или региона, сначала вызови get_dataset_overview. Учитывай, что база содержит агрегированные записи demographics: indicator, year, province, value. Объясняй, какие фильтры и годы использованы. Если запрос нельзя подтвердить данными, прямо скажи об этом.
+Если вопрос касается доступных датасетов, сначала проверь списки в папке data/sinte через list_sinte_datasets. Для наборов D002, D004, D006, D008, D010 и других csv/эксел-источников ориентируйся на каталог из папки data/sinte и соответствующие API-эндпоинты. Если не знаешь точное название показателя или региона, сначала вызови get_dataset_overview. Учитывай, что база содержит агрегированные записи demographics: indicator, year, province, value. Объясняй, какие фильтры и годы использованы. Если запрос нельзя подтвердить данными, прямо скажи об этом.
 Если пользователь прямо просит построить, показать или визуализировать график, вызови build_dataset_chart. Для наборов D002, D004, D006 и D008 выбирай только метрики из описания инструмента. Для D002 укажи идентификатор вопроса анкеты; если его невозможно определить из запроса, попроси уточнить вопрос, не выбирая его наугад. Для таблицы demographics обязательно укажи точный показатель и группировку. Не представляй график как готовый, если инструмент вернул ошибку. В текстовом ответе кратко укажи источник данных, период и что показано.
 Не делай выводов о причинно-следственных связях только на основе графика. Отделяй наблюдаемые факты от гипотез.
 Оформляй ответ простым текстом: не используй Markdown-заголовки с #, выделение через * или ** и кодовые блоки. Не добавляй нумерацию разделов, если она не нужна; вместо маркеров Markdown используй короткие абзацы или тире.
@@ -2004,6 +2014,33 @@ AI_SYSTEM_INSTRUCTION = '''Ты аналитический помощник да
 
 def _escape_like(value):
     return str(value).replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_')
+
+
+def get_sinte_dataset_summary():
+    if not DATA_DIR.exists():
+        return {'folder': str(DATA_DIR), 'datasets': []}
+
+    datasets = []
+    for entry in sorted(DATA_DIR.iterdir(), key=lambda item: item.name.lower()):
+        if not entry.is_dir():
+            continue
+        children = sorted(entry.iterdir(), key=lambda item: item.name.lower())
+        files = []
+        for child in children:
+            if child.is_file() and child.suffix.lower() in {'.csv', '.xlsx', '.xls', '.parquet'}:
+                files.append({
+                    'name': child.name,
+                    'size_bytes': child.stat().st_size,
+                    'type': child.suffix.lower().lstrip('.')
+                })
+        datasets.append({
+            'name': entry.name,
+            'path': str(entry),
+            'file_count': len(files),
+            'files': files[:12]
+        })
+
+    return {'folder': str(DATA_DIR), 'datasets': datasets}
 
 
 def get_dataset_overview():
@@ -2026,7 +2063,8 @@ def get_dataset_overview():
             'record_count': row_count,
             'indicators': indicators,
             'years': years,
-            'provinces': provinces
+            'provinces': provinces,
+            'sinte_catalog': get_sinte_dataset_summary()
         }
     finally:
         conn.close()
@@ -2822,6 +2860,13 @@ def call_claude(contents, dataset_overview, dashboard_context, max_output_tokens
             try:
                 if name == 'get_dataset_overview':
                     tool_result = dataset_overview
+                elif name == 'list_sinte_datasets' and isinstance(arguments, dict):
+                    dataset_name = str(arguments.get('dataset_name', '')).strip().lower()
+                    catalog = get_sinte_dataset_summary()
+                    datasets = catalog.get('datasets', [])
+                    if dataset_name:
+                        datasets = [item for item in datasets if dataset_name in item.get('name', '').lower()]
+                    tool_result = {'folder': catalog.get('folder'), 'datasets': datasets}
                 elif name == 'query_demographics' and isinstance(arguments, dict):
                     tool_result = query_demographics(arguments)
                 elif name == 'query_d008' and isinstance(arguments, dict):
