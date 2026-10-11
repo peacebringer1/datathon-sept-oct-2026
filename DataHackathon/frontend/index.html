@@ -671,15 +671,6 @@
               <p class="d006-intro-note">Выберите один год. На графиках показаны точные количества в рамках выбранного года. Цвет удобств дополнительно показывает долю ответивших «да».</p>
             </article>
 
-            <article class="dataset-panel d006-chart-guide">
-              <h2>Как читать графики</h2>
-              <p>Горизонтальные столбцы показывают точное количество, а названия осей X и Y поясняют, что сравнивается. «Город и село» и «Доступ к сельхозземле» показаны круговыми диаграммами: подписи секторов содержат категорию и точное число домохозяйств. Фильтр территории применяется только к своему графику. В распределениях типов жилья, владения и удобств цвет показывает долю категории; для удобств это доля ответов «да». В графике товаров используется один цвет, поскольку доля для этого показателя не рассчитывается. Точное количество указано рядом со столбцом и в подсказке.</p>
-              <p class="d006-color-guide-title">Шкала доли для графиков распределений:</p>
-              <div class="d006-color-scale" aria-label="Цветовая шкала доли: красный — от 0 до 20 процентов, оранжевый — от 20 до 40, жёлтый — от 40 до 60, салатовый — от 60 до 80, зелёный — от 80 до 100">
-                <span style="--scale-color:#d74747">0–20%</span><span style="--scale-color:#f39437">20–40%</span><span style="--scale-color:#f0cf4a">40–60%</span><span style="--scale-color:#a8c94a">60–80%</span><span style="--scale-color:#168849">80–100%</span>
-              </div>
-            </article>
-
             <div class="d006-chart-grid d008-trend-grid">
               <article class="dataset-panel d006-chart-panel" data-d006-chart="home_types">
                 <div class="d006-chart-heading"><div><p class="d006-eyebrow">Основное жильё</p><h2>Тип жилья</h2></div><span class="d006-chart-unit">точное число домохозяйств</span></div>
@@ -696,6 +687,14 @@
               <article class="dataset-panel d006-chart-panel" data-d006-chart="land_access">
                 <div class="d006-chart-heading"><div><p class="d006-eyebrow">Земельные участки</p><h2>Доступ к сельхозземле</h2></div><span class="d006-chart-unit">точное число домохозяйств</span></div>
                 <div id="d006LandChart" class="dataset-chart d006-chart" role="img" aria-label="Доступ домохозяйств к сельскохозяйственной земле"></div>
+              </article>
+              <article class="dataset-panel d006-chart-guide">
+                <h2>Как читать графики</h2>
+                <p>Горизонтальные столбцы показывают точное количество, а названия осей X и Y поясняют, что сравнивается. «Город и село» и «Доступ к сельхозземле» показаны круговыми диаграммами: подписи секторов содержат категорию и точное число домохозяйств. Фильтр территории применяется только к своему графику. В распределениях типов жилья, владения и удобств цвет показывает долю категории; для удобств это доля ответов «да». В графике товаров используется один цвет, поскольку доля для этого показателя не рассчитывается. Точное количество указано рядом со столбцом и в подсказке.</p>
+                <p class="d006-color-guide-title">Шкала доли для графиков распределений:</p>
+                <div class="d006-color-scale" aria-label="Цветовая шкала доли: красный — от 0 до 20 процентов, оранжевый — от 20 до 40, жёлтый — от 40 до 60, салатовый — от 60 до 80, зелёный — от 80 до 100">
+                  <span style="--scale-color:#d74747">0–20%</span><span style="--scale-color:#f39437">20–40%</span><span style="--scale-color:#f0cf4a">40–60%</span><span style="--scale-color:#a8c94a">60–80%</span><span style="--scale-color:#168849">80–100%</span>
+                </div>
               </article>
               <article class="dataset-panel d006-chart-panel d006-chart-panel-wide" data-d006-chart="amenities">
                 <div class="d006-chart-heading"><div><p class="d006-eyebrow">Удобства в жилье</p><h2>Что есть в доме</h2></div><span class="d006-chart-unit">точное число ответов «да»</span></div>
@@ -985,24 +984,24 @@
     <aside class="ai-chat-history">
       <div class="ai-history-brand"><span aria-hidden="true">AI</span><strong>AI Stat</strong></div>
       <button id="aiNewChatButton" class="ai-new-chat" type="button">Новый чат <span aria-hidden="true">＋</span></button>
-      <label class="ai-history-search"><span class="sr-only">Поиск по истории запросов</span><input id="aiHistorySearch" type="search" placeholder="Поиск по истории запросов"></label>
-      <h4>Ранее отправленные запросы</h4>
+      <label class="ai-history-search"><span class="sr-only">Поиск по истории запросов</span><input id="aiHistorySearch" type="search" placeholder="Поиск по истории"></label>
+      <h4>История запросов</h4>
       <div id="aiHistoryList" class="ai-history-list"><p class="ai-history-empty">Пока нет запросов</p></div>
-      <button id="aiClearHistoryButton" class="ai-clear-history" type="button">Очистить историю <span aria-hidden="true">⌫</span></button>
+      <button id="aiClearHistoryButton" class="ai-clear-history" type="button">Очистить <span aria-hidden="true">⌫</span></button>
     </aside>
     <div class="ai-card">
       <div class="ai-card-header">
-        <div><p class="ai-header-eyebrow">ПОМОЩНИК ПО ДАННЫМ</p><h3>AI Stat · Аналитика Казахстана</h3></div>
+        <div><p class="ai-header-eyebrow">AI</p><h3>ИИ-ассистент</h3></div>
         <div class="ai-header-controls">
-          <span id="aiStatusBadge" class="ai-status-badge" data-state="checking" title="Проверяем доступ к ИИ">Проверка…</span>
+          <span id="aiStatusBadge" class="ai-status-badge" data-state="checking" title="Проверяем доступ к ИИ">Готов</span>
           <button class="expand-chat-btn" type="button" aria-label="Развернуть ИИ-панель на весь экран" aria-pressed="false" title="Развернуть на весь экран">⛶</button>
           <button class="close-chat-btn" onclick="toggleAIChat()">✕</button>
         </div>
       </div>
       <div class="ai-chat-body">
-        <section class="ai-chat-welcome"><span class="ai-welcome-mark" aria-hidden="true">✦</span><p class="ai-header-eyebrow">AI-ПОМOЩНИК ПО СТАТИСТИКЕ</p><h2>Исследуйте данные Казахстана</h2><p>Задайте вопрос о показателе или попросите построить график. Ответ будет основан на выбранном наборе данных.</p></section>
+        <section class="ai-chat-welcome"><span class="ai-welcome-mark" aria-hidden="true">✦</span><h2>Готов помочь</h2><p>Задайте вопрос по данным проекта.</p></section>
       <div class="chat-messages" id="chatMessages">
-        <div class="chat-bubble ai">Здравствуйте! Я помогу разобраться в показателях и сравнить данные по годам.</div>
+        <div class="chat-bubble ai">Готов помочь по данным проекта.</div>
       </div>
       <div id="aiChartSuggestions" class="ai-chat-quick-actions" aria-label="Быстрые запросы"></div>
       <button id="aiFaqButton" class="ai-faq-card" type="button"><span class="ai-faq-mark" aria-hidden="true">?</span><span><strong>Как задавать вопросы</strong><small>Примеры запросов к наборам данных</small></span><span aria-hidden="true">›</span></button>

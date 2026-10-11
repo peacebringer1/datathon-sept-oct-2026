@@ -119,7 +119,7 @@ function initChartSuggestions() {
     const chatMessages = document.getElementById('chatMessages');
     chatMessages?.querySelectorAll('.chat-chart').forEach((element) => window.echarts?.getInstanceByDom(element)?.dispose());
     chatMessages?.replaceChildren();
-    appendMessage('Здравствуйте! Я помогу разобраться в показателях и сравнить данные по годам.', 'ai');
+    appendMessage('Готов помочь по данным проекта.', 'ai');
     const input = document.getElementById('chatInput');
     if (input) { input.value = ''; input.focus(); }
   });

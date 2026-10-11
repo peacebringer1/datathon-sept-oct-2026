@@ -2567,7 +2567,7 @@ th {
     background-color: #68a9a0;
     color: white;
     border: none;
-    border-radius: 8px;
+    border-radius: 12px;
     font-weight: 600;
     cursor: pointer;
     transition: background-color 0.2s;
@@ -6677,7 +6677,7 @@ body {
 .ai-faq-mark { display: grid; width: 30px; height: 30px; place-items: center; border: 2px solid #71bdf5; border-radius: 50%; color: #83c9ff; font-weight: 800; }
 .ai-popup-sidebar .chat-input-area { padding: 14px 20px 18px; border-color: #34383b; background: #1b1c1d; }
 .ai-popup-sidebar .chat-input-area textarea { min-height: 48px; border-color: #42474a; border-radius: 24px; background: #242627; color: #f1f2f3; }
-.ai-popup-sidebar .chat-input-area button { border-radius: 50%; width: 46px; padding: 0; background: #087bcd; }
+.ai-popup-sidebar .chat-input-area button { border-radius: 12px; width: auto; min-width: 46px; padding: 0 14px; background: #087bcd; }
 
 @media (max-width: 760px) {
     .ai-popup-sidebar { top: 0; right: -105vw; width: 100vw; height: 100dvh; max-height: 100dvh; grid-template-columns: 138px minmax(0, 1fr); border-radius: 0; }

@@ -42,6 +42,12 @@ let D002_SATISFACTION_COLORS = {
 let D002_CATEGORY_COLORS = ['#50b9d2', '#a78bfa', '#46cbb0', '#7c9cff', '#7ef5ad', '#6ee7f9', '#b8a6ff'];
 let D002_MULTI_SELECT_COLORS = ['#11845f', '#2877b8', '#177b72', '#22a873', '#176c9e', '#3b9a8b', '#2d9166', '#155a79', '#58ad91', '#247f9c', '#45b889', '#3d7386', '#70bd9e', '#548d77'];
 
+function d006StyleColors() {
+  return document.body.dataset.stylePreset === 'classic'
+    ? ['#f5ad86', '#c9aace']
+    : ['#17b981', '#50b9d2'];
+}
+
 function d002MultiSelectColorMap(options) {
   const semanticRank = (label) => {
     const value = String(label).toLocaleLowerCase('ru-RU');
@@ -95,6 +101,7 @@ window.addEventListener('app-style-preset-changed', (event) => {
     chart.setOption({ color: DATA_COLORS });
     chart.__redrawFlowConnections?.();
   });
+  document.querySelectorAll('#d006Dashboard [data-d006-chart]').forEach((panel) => void refreshD006Chart(panel));
   ['d002MapChart', 'd004MapChart'].forEach((id) => {
     const chart = window.echarts?.getInstanceByDom(document.getElementById(id));
     chart?.setOption({ visualMap: { inRange: { color: MAP_SCALE } } });
@@ -497,8 +504,9 @@ function renderD006Pie(id, items) {
   d006Charts.set(id, chart);
   const panel = element.closest('.d006-chart-panel');
   const textColor = getComputedStyle(panel).getPropertyValue('--text-primary').trim() || '#222';
+  const colors = d006StyleColors();
   chart.setOption({
-    color: DATA_COLORS,
+    color: colors,
     tooltip: { trigger: 'item', formatter: ({ name, data }) => `${name}<br><strong>${Number(data.count).toLocaleString('ru-RU')} домохозяйств</strong>` },
     legend: { type: 'scroll', bottom: 4, left: 'center', textStyle: { color: textColor, fontSize: 12 } },
     series: [{ type: 'pie', radius: ['28%', '62%'], center: ['50%', '43%'], minAngle: 2, avoidLabelOverlap: true,
@@ -506,7 +514,7 @@ function renderD006Pie(id, items) {
       label: { show: true, position: 'outside', formatter: '{b}\n{c}', color: textColor, fontSize: 12 },
       labelLine: { show: true, length: 12, length2: 8 },
       emphasis: { scale: true, label: { show: true, color: textColor, formatter: '{b}\n{c}' } },
-      data: items.map((item) => ({ name: item.label, value: Number(item.count), count: Number(item.count), share: Number(item.share) })) }]
+      data: items.map((item, index) => ({ name: item.label, value: Number(item.count), count: Number(item.count), share: Number(item.share), itemStyle: { color: colors[index % colors.length] } })) }]
   }, true);
   chart.resize();
 }
@@ -536,10 +544,11 @@ function renderD006Bars(id, items) {
   const unitLabel = metric === 'amenities' ? 'ответов «да»' : metric === 'durable_goods' ? 'предметов' : 'домохозяйств';
   const shareRamp = ['#d74747', '#f39437', '#f0cf4a', '#a8c94a', '#168849'];
   const shareColor = (share) => shareRamp[Math.min(4, Math.floor(Math.max(0, Math.min(100, Number(share) || 0)) / 20))];
+  const colors = d006StyleColors();
   const compact = element.clientWidth < 620;
   const axisLabelWidth = compact ? 120 : metric === 'durable_goods' ? 260 : 240;
   chart.setOption({
-    color: DATA_COLORS,
+    color: metric === 'amenities' ? DATA_COLORS : colors,
     tooltip: { trigger: 'item', formatter: (point) => {
       const item = visible[point.dataIndex];
       const share = item.share == null ? '' : `<br>Доля: ${Number(item.share).toLocaleString('ru-RU')}%`;
@@ -570,7 +579,9 @@ function renderD006Bars(id, items) {
       data: visible.map((item, index) => ({
         value: Number(item.count || 0),
         itemStyle: {
-          color: item.share == null ? '#31b99a' : shareColor(item.share),
+          color: metric === 'amenities'
+            ? (item.share == null ? '#31b99a' : shareColor(item.share))
+            : colors[index % colors.length],
           borderRadius: [0, 5, 5, 0]
         }
       })),
