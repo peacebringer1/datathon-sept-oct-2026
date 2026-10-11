@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 sqlite3 = __import__('sqlite3')
+import csv
 import os
 import json
 import re
@@ -605,7 +606,7 @@ def get_d002_frame(year, form, catalog):
     conn = sqlite3.connect(DB_FILE)
     try:
         frame = pd.read_sql_query(f'SELECT * FROM {table}', conn, dtype=str).fillna('')
-        return frame, 'database.sqlite'
+        return frame, 'database.sqlite · импорт из data/sinte'
     finally:
         conn.close()
 
@@ -1183,7 +1184,7 @@ def get_d006_frame(year, catalog):
     table = '"' + spec['table'].replace('"', '""') + '"'
     conn = sqlite3.connect(DB_FILE)
     try:
-        return pd.read_sql_query(f'SELECT * FROM {table}', conn, dtype=str).fillna(''), 'database.sqlite'
+        return pd.read_sql_query(f'SELECT * FROM {table}', conn, dtype=str).fillna(''), 'database.sqlite · импорт из data/sinte'
     finally:
         conn.close()
 
@@ -1317,7 +1318,7 @@ def get_d008_frame(year, catalog):
     table = '"' + spec['table'].replace('"', '""') + '"'
     conn = sqlite3.connect(DB_FILE)
     try:
-        return pd.read_sql_query(f'SELECT * FROM {table}', conn, dtype=str).fillna(''), 'database.sqlite'
+        return pd.read_sql_query(f'SELECT * FROM {table}', conn, dtype=str).fillna(''), 'database.sqlite · импорт из data/sinte'
     finally:
         conn.close()
 
@@ -1625,7 +1626,7 @@ def d004_data_from_sqlite(specs, year, quarter, module, page, page_size):
         'chart_metric': chart_metric,
         'chart': {'labels': labels, 'values': chart_values},
         'territory_summary': summary,
-        'source': 'database.sqlite'
+        'source': 'database.sqlite · импорт из data/sinte'
     }
 
 
@@ -1951,27 +1952,8 @@ AI_TOOLS = [{
     'functionDeclarations': [
         {
             'name': 'get_dataset_overview',
-            'description': 'Получить каталог таблицы demographics: показатели, годы, регионы и количество записей.',
+            'description': 'Получить каталог файлов датасетов в data/sinte.',
             'parameters': {'type': 'OBJECT', 'properties': {}}
-        },
-        {
-            'name': 'query_demographics',
-            'description': 'Прочитать агрегированные данные по показателям Казахстана. Вызывай для вычислений, сравнений, трендов и любых числовых выводов.',
-            'parameters': {
-                'type': 'OBJECT',
-                'properties': {
-                    'indicator': {'type': 'STRING', 'description': 'Название показателя или его уникальная часть.'},
-                    'province': {'type': 'STRING', 'description': 'Название области/города или его уникальная часть.'},
-                    'start_year': {'type': 'INTEGER', 'description': 'Начальный год включительно.'},
-                    'end_year': {'type': 'INTEGER', 'description': 'Конечный год включительно.'},
-                    'group_by': {
-                        'type': 'STRING',
-                        'enum': ['none', 'indicator', 'year', 'province', 'province_year'],
-                        'description': 'Группировка результата.'
-                    },
-                    'limit': {'type': 'INTEGER', 'description': 'Максимум строк результата, от 1 до 200.'}
-                }
-            }
         },
         {
             'name': 'query_d008',
@@ -1990,6 +1972,29 @@ AI_TOOLS = [{
             }
         },
         {
+            'name': 'query_sinte_dataset',
+            'description': 'Читать и агрегировать фактические строки любого CSV-датасета из data/sinte (включая D002, D004, D006, D008, 1t_god, 1t_kv, 2t, t001). Если файл не указан и подходят несколько, верни их пути и заголовки для выбора.',
+            'parameters': {
+                'type': 'OBJECT',
+                'properties': {
+                    'dataset_name': {'type': 'STRING', 'description': 'Имя папки верхнего уровня датасета из каталога.'},
+                    'year': {'type': 'STRING', 'description': 'Необязательный год из пути к файлу.'},
+                    'file_path': {'type': 'STRING', 'description': 'Необязательный относительный путь CSV внутри data/sinte, например d004/2024/1kv/kv_vopr1.csv.'},
+                    'mode': {'type': 'STRING', 'enum': ['schema', 'rows', 'aggregate']},
+                    'columns': {'type': 'ARRAY', 'items': {'type': 'STRING'}, 'description': 'Поля результата для режима rows.'},
+                    'filters': {'type': 'ARRAY', 'items': {'type': 'OBJECT', 'properties': {
+                        'column': {'type': 'STRING'}, 'operator': {'type': 'STRING', 'enum': ['equals', 'contains']},
+                        'value': {'type': 'STRING'}
+                    }, 'required': ['column', 'value']}},
+                    'group_by': {'type': 'ARRAY', 'items': {'type': 'STRING'}, 'description': 'Одно или несколько полей для группировки агрегата.'},
+                    'value_column': {'type': 'STRING', 'description': 'Числовое поле для агрегации.'},
+                    'aggregation': {'type': 'STRING', 'enum': ['count', 'sum', 'mean', 'min', 'max']},
+                    'limit': {'type': 'INTEGER', 'description': 'Максимум строк результата, от 1 до 50.'}
+                },
+                'required': ['dataset_name']
+            }
+        },
+        {
             'name': 'list_sinte_datasets',
             'description': 'Проверить структуру датасетов в папке data/sinte, чтобы понять, какие наборы и CSV-файлы доступны для анализа.',
             'parameters': {
@@ -2002,16 +2007,17 @@ AI_TOOLS = [{
     ]
 }]
 
-AI_SYSTEM_INSTRUCTION = '''Ты аналитический помощник дашборда статистики Казахстана.
-Отвечай на русском языке, ясно и по существу. Для фактов, чисел, сравнений, рейтингов и трендов из базы обязательно вызывай query_demographics; не придумывай значения и не делай выводы по памяти.
-Для вопросов о наборе D008 обязательно используй query_d008. Каждый год показывай отдельно: никогда не складывай и не усредняй значения разных лет. Учитывай datasetFilters из контекста, если пользователь не задал более точные фильтры. В сравнении годов описывай динамику показателя, а долю трактуй как процент среди заполненных ответов; абсолютное значение — как число людей/домохозяйств.
-Если вопрос касается доступных датасетов, сначала проверь списки в папке data/sinte через list_sinte_datasets. Для наборов D002, D004, D006, D008, D010 и других csv/эксел-источников ориентируйся на каталог из папки data/sinte и соответствующие API-эндпоинты. Если не знаешь точное название показателя или региона, сначала вызови get_dataset_overview. Учитывай, что база содержит агрегированные записи demographics: indicator, year, province, value. Объясняй, какие фильтры и годы использованы.
-Если пользователь запрашивает прогноз, сценарий, оценку или гипотезу, не отказывайся автоматически из-за короткого ряда данных. Вместо этого: 1) честно укажи, есть ли достаточно данных для точного прогноза; 2) если данных мало, сформулируй рабочий сценарный прогноз, гипотезу или иллюстративную экстраполяцию; 3) явно раздели факты, допущения и неопределённость; 4) не подавай гипотезу как факт. Для коротких рядов, например D008 за 2022–2024, можно строить простую линейную экстраполяцию только как сценарный вариант, а не как надёжный прогноз.
-Если запрос нельзя подтвердить данными, скажи об этом прямо, но предложи ближайшую проверяемую альтернативу: сценарный прогноз, гипотезу, или прогноз по доступным показателям с комментариями по ограничению качества данных.
-Если пользователь прямо просит построить, показать или визуализировать график, вызови build_dataset_chart. Для наборов D002, D004, D006 и D008 выбирай только метрики из описания инструмента. Для D002 укажи идентификатор вопроса анкеты; если его невозможно определить из запроса, попроси уточнить вопрос, не выбирая его наугад. Для таблицы demographics обязательно укажи точный показатель и группировку. Не представляй график как готовый, если инструмент вернул ошибку. В текстовом ответе кратко укажи источник данных, период и что показано.
-Не делай выводов о причинно-следственных связях только на основе графика. Отделяй наблюдаемые факты от гипотез и сценарных прогнозов.
-Оформляй ответ простым текстом: не используй Markdown-заголовки с #, выделение через * или ** и кодовые блоки. Не добавляй нумерацию разделов, если она не нужна; вместо маркеров Markdown используй короткие абзацы или тире.
-Если пользователь ссылается на «текущий/открытый набор», ориентируйся на activeDataset и datasetFilters из контекста; явные фильтры пользователя важнее выбранных на странице. Контекст и история помогают понять вопрос, но не заменяют проверку базы.'''
+AI_SYSTEM_INSTRUCTION = '''Ты аналитический помощник приложения, который работает только с датасетами в папке data/sinte.
+Отвечай по-русски, ясно и по существу. Используй только результаты инструментов, читающих файлы из data/sinte или таблицы с подтверждённым source_path в sinte_import_manifest. Запрещено использовать legacy-таблицу demographics, непроверенные данные database.sqlite, внешние источники или знания модели как подтверждение фактов и чисел.
+Для числовых утверждений, сравнений, рейтингов и трендов сначала вызови подходящий инструмент. Для наличия файлов используй list_sinte_datasets; для произвольных вопросов по CSV любого набора — query_sinte_dataset; query_d008 применяй для готовых метрик D008; для графиков D002, D004, D006 и D008 — build_dataset_chart. Если файл не указан и инструмент вернул несколько кандидатов, выбери подходящий по пути и заголовкам, затем вызови инструмент ещё раз с точным file_path. Для сумм, средних и сравнений выбирай режим aggregate и требуемую группировку, а не делай расчёты по нескольким примерным строкам.
+Если в data/sinte нет набора с нужными данными или инструмент не вернул подтверждающие значения, прямо скажи, что в предоставленных датасетах таких данных нет. Не подменяй отсутствующие данные таблицей demographics. Числа из предыдущих сообщений ассистента не являются источником и не должны повторяться как факты; историю используй только для понимания контекста вопроса. В ответе указывай код набора и период, если они есть в результате инструмента.
+Для вопросов о наличии датасетов сначала проверь каталог data/sinte и учитывай вложенные папки и файлы. Указывай фактическое имя набора и период из результата инструмента.
+Для D008 обязательно используй query_d008. Каждый год показывай отдельно: не складывай и не усредняй значения разных лет. Учитывай datasetFilters из контекста, если пользователь не задал более точные фильтры. Доли трактуй как процент среди заполненных ответов; абсолютные значения — как количество людей или домохозяйств в выборке D008.
+Не путай семейное положение участников D008 с числом зарегистрированных браков или разводов: это разные показатели.
+Если пользователь просит прогноз, сценарий или гипотезу, используй только значения из инструментов по data/sinte. При коротком ряде допускается сценарная экстраполяция, но явно укажи исходные данные, метод, допущения и неопределённость; не выдавай сценарий за надёжный прогноз и не утверждай причинность без соответствующих данных.
+Если пользователь прямо просит график, вызови build_dataset_chart. Для D002, D004, D006 и D008 используй только метрики, поддержанные инструментом. Для D002 укажи идентификатор вопроса; если его нельзя определить по запросу и контексту, попроси уточнение. Не сообщай, что график построен, если инструмент вернул ошибку. Кратко укажи набор и период.
+Не делай выводов о причинно-следственных связях только на основе графика. Отделяй наблюдаемые факты от гипотез и прогнозов.
+Не используй Markdown-заголовки, жирное выделение и кодовые блоки. Если пользователь ссылается на «текущий/открытый набор», ориентируйся на activeDataset и datasetFilters; явные фильтры пользователя важнее выбранных на странице.'''
 
 
 def _escape_like(value):
@@ -2020,56 +2026,395 @@ def _escape_like(value):
 
 def get_sinte_dataset_summary():
     if not DATA_DIR.exists():
-        return {'folder': str(DATA_DIR), 'datasets': []}
+        return {'folder': 'data/sinte', 'datasets': []}
 
     datasets = []
     for entry in sorted(DATA_DIR.iterdir(), key=lambda item: item.name.lower()):
-        if not entry.is_dir():
+        if not entry.is_dir() or entry.name.lower() == 'documentation':
             continue
-        children = sorted(entry.iterdir(), key=lambda item: item.name.lower())
-        files = []
-        for child in children:
-            if child.is_file() and child.suffix.lower() in {'.csv', '.xlsx', '.xls', '.parquet'}:
-                files.append({
-                    'name': child.name,
-                    'size_bytes': child.stat().st_size,
-                    'type': child.suffix.lower().lstrip('.')
-                })
+        files = sorted(
+            (path for path in entry.rglob('*')
+             if path.is_file() and path.suffix.lower() == '.csv'),
+            key=lambda path: path.as_posix().casefold()
+        )
+        years = sorted({
+            part for path in files for part in path.relative_to(entry).parts
+            if len(part) == 4 and part.isdigit()
+        })
         datasets.append({
             'name': entry.name,
-            'path': str(entry),
+            'path': f'data/sinte/{entry.name}',
             'file_count': len(files),
-            'files': files[:12]
+            'years': years,
+            'files': [path.relative_to(DATA_DIR).as_posix() for path in files[:12]]
         })
 
-    return {'folder': str(DATA_DIR), 'datasets': datasets}
+    return {'folder': 'data/sinte', 'datasets': datasets}
+
+
+def list_sinte_dataset_files(dataset_name=''):
+    dataset_name = str(dataset_name or '').strip().casefold()
+    files = sorted(
+        (path for path in DATA_DIR.rglob('*.csv')
+         if path.is_file()
+         and 'documentation' not in {part.casefold() for part in path.relative_to(DATA_DIR).parts}
+         and (not dataset_name or path.relative_to(DATA_DIR).parts[0].casefold() == dataset_name)),
+        key=lambda path: path.as_posix().casefold()
+    ) if DATA_DIR.is_dir() else []
+    return [path.relative_to(DATA_DIR).as_posix() for path in files]
+
+
+def query_sinte_dataset(arguments):
+    """Query a CSV explicitly located under data/sinte; never reads legacy data."""
+    dataset_name = str(arguments.get('dataset_name', '')).strip()
+    if not dataset_name or Path(dataset_name).name != dataset_name:
+        return {'error': 'Укажите точное имя набора из каталога data/sinte.'}
+
+    dataset_dir = DATA_DIR / dataset_name
+    if not dataset_dir.is_dir():
+        return {'error': f'Набор «{dataset_name}» не найден в data/sinte.'}
+
+    requested_year = str(arguments.get('year', '')).strip()
+    file_path = str(arguments.get('file_path', '')).strip()
+    if file_path:
+        relative_path = Path(file_path)
+        if relative_path.is_absolute():
+            return {'error': 'file_path должен быть относительным путём внутри data/sinte.'}
+        selected_path = (DATA_DIR / relative_path).resolve()
+        try:
+            selected_path.relative_to(DATA_DIR.resolve())
+        except ValueError:
+            return {'error': 'file_path должен указывать внутрь data/sinte.'}
+        if (
+            not selected_path.is_file()
+            or selected_path.suffix.lower() != '.csv'
+            or selected_path.relative_to(DATA_DIR.resolve()).parts[0].casefold() != dataset_name.casefold()
+        ):
+            return {'error': f'CSV «{file_path}» не найден внутри набора «{dataset_name}».'}
+        if requested_year and requested_year not in selected_path.relative_to(DATA_DIR.resolve()).parts:
+            return {'error': f'Файл «{file_path}» не относится к {requested_year} году.'}
+        candidates = [selected_path]
+    else:
+        candidates = sorted(
+            (path for path in dataset_dir.rglob('*.csv')
+             if path.is_file() and (not requested_year or requested_year in path.relative_to(DATA_DIR).parts)),
+            key=lambda path: path.as_posix().casefold()
+        )
+        if not candidates:
+            return {'error': f'В наборе «{dataset_name}» не найден CSV' + (f' за {requested_year} год.' if requested_year else '.')}
+
+    mode = str(arguments.get('mode', 'schema')).strip().lower()
+    if mode not in {'schema', 'rows', 'aggregate'}:
+        return {'error': 'mode должен быть schema, rows или aggregate.'}
+
+    def inspect_file(path):
+        try:
+            with path.open('r', encoding='utf-8-sig', newline='') as source:
+                reader = csv.reader(source)
+                columns = next(reader, [])
+        except UnicodeDecodeError:
+            with path.open('r', encoding='cp1251', newline='') as source:
+                reader = csv.reader(source)
+                columns = next(reader, [])
+        return columns
+
+    if not file_path and not requested_year:
+        year_candidates = {}
+        for path in candidates:
+            year = next((part for part in path.relative_to(DATA_DIR).parts if len(part) == 4 and part.isdigit()), None)
+            if year:
+                year_candidates.setdefault(year, []).append(path)
+        if len(year_candidates) > 1:
+            representative_files = []
+            for year, paths in sorted(year_candidates.items()):
+                for path in paths[:3]:
+                    representative_files.append({
+                        'file_path': path.relative_to(DATA_DIR).as_posix(),
+                        'columns': inspect_file(path)[:80]
+                    })
+            return {
+                'dataset': dataset_name,
+                'year_selection_required': True,
+                'available_years': sorted(year_candidates),
+                'candidate_count': len(candidates),
+                'representative_files': representative_files,
+                'instruction': 'Не выбирайте один год наугад. Для динамики отдельно запросите каждый нужный год; укажите точный file_path для каждого файла. Полный список файлов доступен через list_sinte_datasets.'
+            }
+
+    if len(candidates) > 1:
+        candidate_limit = 60
+        visible_candidates = candidates[:candidate_limit]
+        return {
+            'dataset': dataset_name,
+            'year': requested_year or None,
+            'selection_required': True,
+            'candidate_count': len(candidates),
+            'candidates_truncated': len(candidates) > candidate_limit,
+            'candidates': [
+                {
+                    'file_path': path.relative_to(DATA_DIR).as_posix(),
+                    'columns': inspect_file(path)[:80]
+                }
+                for path in visible_candidates
+            ],
+            'instruction': 'Выберите один подходящий файл по названиям полей и повторите запрос с его file_path. Не объединяйте разные файлы без явной необходимости.'
+        }
+
+    selected_path = candidates[0]
+    columns = inspect_file(selected_path)
+    if not columns:
+        return {'error': f'В файле «{selected_path.relative_to(DATA_DIR).as_posix()}» нет заголовка CSV.'}
+
+    column_lookup = {str(column).strip().casefold(): column for column in columns}
+
+    def resolve_column(name):
+        return column_lookup.get(str(name).strip().casefold())
+
+    requested_columns = arguments.get('columns') or []
+    if not isinstance(requested_columns, list) or any(not isinstance(item, str) for item in requested_columns):
+        return {'error': 'columns должен быть списком имён столбцов.'}
+    selected_columns = []
+    for name in requested_columns:
+        column = resolve_column(name)
+        if not column:
+            return {'error': f'Столбец «{name}» не найден.', 'columns': columns[:100]}
+        selected_columns.append(column)
+
+    raw_filters = arguments.get('filters') or []
+    if not isinstance(raw_filters, list) or len(raw_filters) > 5:
+        return {'error': 'filters должен быть списком максимум из пяти условий.'}
+    filters = []
+    for filter_item in raw_filters:
+        if not isinstance(filter_item, dict) or not isinstance(filter_item.get('column'), str):
+            return {'error': 'Каждый фильтр должен содержать column и value.'}
+        column = resolve_column(filter_item['column'])
+        operator = str(filter_item.get('operator', 'equals')).lower()
+        if not column or operator not in {'equals', 'contains'} or 'value' not in filter_item:
+            return {'error': f'Некорректный фильтр для столбца «{filter_item.get("column", "")}».', 'columns': columns[:100]}
+        filters.append((columns.index(column), operator, str(filter_item['value']).strip().casefold()))
+
+    group_names = arguments.get('group_by') or []
+    if not isinstance(group_names, list) or len(group_names) > 3:
+        return {'error': 'group_by должен быть списком максимум из трёх столбцов.'}
+    group_columns = []
+    for name in group_names:
+        column = resolve_column(name)
+        if not column:
+            return {'error': f'Столбец группировки «{name}» не найден.', 'columns': columns[:100]}
+        group_columns.append(columns.index(column))
+
+    value_column_name = arguments.get('value_column')
+    value_column = resolve_column(value_column_name) if value_column_name else None
+    aggregation = str(arguments.get('aggregation', 'count')).lower()
+    if aggregation not in {'count', 'sum', 'mean', 'min', 'max'}:
+        return {'error': 'aggregation должен быть count, sum, mean, min или max.'}
+    if aggregation != 'count' and not value_column:
+        return {'error': 'Для sum, mean, min и max укажите существующий value_column.', 'columns': columns[:100]}
+    value_index = columns.index(value_column) if value_column else None
+    try:
+        limit = max(1, min(int(arguments.get('limit', 20)), 50))
+    except (TypeError, ValueError):
+        return {'error': 'limit должен быть целым числом от 1 до 50.'}
+
+    if mode == 'schema':
+        sample_rows = []
+        try:
+            with selected_path.open('r', encoding='utf-8-sig', newline='') as source:
+                reader = csv.reader(source)
+                next(reader, None)
+                for row in reader:
+                    if row:
+                        sample_rows.append(dict(zip(columns, row)))
+                    if len(sample_rows) >= 3:
+                        break
+        except UnicodeDecodeError:
+            sample_rows.clear()
+            with selected_path.open('r', encoding='cp1251', newline='') as source:
+                reader = csv.reader(source)
+                next(reader, None)
+                for row in reader:
+                    if row:
+                        sample_rows.append(dict(zip(columns, row)))
+                    if len(sample_rows) >= 3:
+                        break
+        return {
+            'dataset': dataset_name,
+            'file_path': selected_path.relative_to(DATA_DIR).as_posix(),
+            'year': requested_year or next((part for part in selected_path.relative_to(DATA_DIR).parts if len(part) == 4 and part.isdigit()), None),
+            'columns': columns,
+            'sample_rows': sample_rows
+        }
+
+    def row_matches(row):
+        return all(
+            (row[index].strip().casefold() == expected if operator == 'equals'
+             else expected in row[index].strip().casefold())
+            for index, operator, expected in filters
+        )
+
+    if mode == 'rows':
+        output_columns = selected_columns or columns[:30]
+        output_indices = [columns.index(column) for column in output_columns]
+        rows = []
+        try:
+            with selected_path.open('r', encoding='utf-8-sig', newline='') as source:
+                reader = csv.reader(source)
+                next(reader, None)
+                for row in reader:
+                    if len(row) != len(columns) or not row_matches(row):
+                        continue
+                    rows.append({column: row[index] for column, index in zip(output_columns, output_indices)})
+                    if len(rows) >= limit:
+                        break
+        except UnicodeDecodeError:
+            rows.clear()
+            with selected_path.open('r', encoding='cp1251', newline='') as source:
+                reader = csv.reader(source)
+                next(reader, None)
+                for row in reader:
+                    if len(row) != len(columns) or not row_matches(row):
+                        continue
+                    rows.append({column: row[index] for column, index in zip(output_columns, output_indices)})
+                    if len(rows) >= limit:
+                        break
+        return {
+            'dataset': dataset_name,
+            'file_path': selected_path.relative_to(DATA_DIR).as_posix(),
+            'filters': [{'column': columns[index], 'operator': operator, 'value': value} for index, operator, value in filters],
+            'columns': output_columns,
+            'rows': rows,
+            'limit': limit
+        }
+
+    groups = {}
+    matched_rows = 0
+    numeric_count = 0
+    numeric_total = 0.0
+    numeric_min = None
+    numeric_max = None
+    try:
+        source = selected_path.open('r', encoding='utf-8-sig', newline='')
+        reader = csv.reader(source)
+        next(reader, None)
+        try:
+            for row in reader:
+                if len(row) != len(columns) or not row_matches(row):
+                    continue
+                matched_rows += 1
+                value = None
+                if value_index is not None:
+                    raw_value = row[value_index].strip().replace(' ', '').replace(',', '.')
+                    try:
+                        parsed = float(raw_value) if raw_value else None
+                        value = parsed if parsed is not None and math.isfinite(parsed) else None
+                    except ValueError:
+                        value = None
+                if value is not None:
+                    numeric_count += 1
+                    numeric_total += value
+                    numeric_min = value if numeric_min is None else min(numeric_min, value)
+                    numeric_max = value if numeric_max is None else max(numeric_max, value)
+                if group_columns:
+                    key = tuple(row[index].strip() for index in group_columns)
+                    bucket = groups.setdefault(key, {'records': 0, 'numeric_count': 0, 'total': 0.0, 'min': None, 'max': None})
+                    bucket['records'] += 1
+                    if value is not None:
+                        bucket['numeric_count'] += 1
+                        bucket['total'] += value
+                        bucket['min'] = value if bucket['min'] is None else min(bucket['min'], value)
+                        bucket['max'] = value if bucket['max'] is None else max(bucket['max'], value)
+        finally:
+            source.close()
+    except UnicodeDecodeError:
+        groups.clear()
+        matched_rows = 0
+        numeric_count = 0
+        numeric_total = 0.0
+        numeric_min = None
+        numeric_max = None
+        source = selected_path.open('r', encoding='cp1251', newline='')
+        reader = csv.reader(source)
+        next(reader, None)
+        try:
+            for row in reader:
+                if len(row) != len(columns) or not row_matches(row):
+                    continue
+                matched_rows += 1
+                value = None
+                if value_index is not None:
+                    raw_value = row[value_index].strip().replace(' ', '').replace(',', '.')
+                    try:
+                        parsed = float(raw_value) if raw_value else None
+                        value = parsed if parsed is not None and math.isfinite(parsed) else None
+                    except ValueError:
+                        value = None
+                if value is not None:
+                    numeric_count += 1
+                    numeric_total += value
+                    numeric_min = value if numeric_min is None else min(numeric_min, value)
+                    numeric_max = value if numeric_max is None else max(numeric_max, value)
+                if group_columns:
+                    key = tuple(row[index].strip() for index in group_columns)
+                    bucket = groups.setdefault(key, {'records': 0, 'numeric_count': 0, 'total': 0.0, 'min': None, 'max': None})
+                    bucket['records'] += 1
+                    if value is not None:
+                        bucket['numeric_count'] += 1
+                        bucket['total'] += value
+                        bucket['min'] = value if bucket['min'] is None else min(bucket['min'], value)
+                        bucket['max'] = value if bucket['max'] is None else max(bucket['max'], value)
+        finally:
+            source.close()
+
+    def aggregate_value(bucket):
+        if aggregation == 'count':
+            return bucket['records']
+        count = bucket['numeric_count']
+        if not count:
+            return None
+        if aggregation == 'sum':
+            return round(bucket['total'], 4)
+        if aggregation == 'mean':
+            return round(bucket['total'] / count, 4)
+        return bucket[aggregation]
+
+    if group_columns:
+        grouped_rows = [{
+            **{columns[index]: value for index, value in zip(group_columns, key)},
+            'records': bucket['records'],
+            'numeric_count': bucket['numeric_count'],
+            aggregation: aggregate_value(bucket)
+        } for key, bucket in groups.items()]
+        grouped_rows.sort(key=lambda item: (item[aggregation] is None, -(item[aggregation] or 0) if isinstance(item[aggregation], (int, float)) else str(item[aggregation])))
+        return {
+            'dataset': dataset_name,
+            'file_path': selected_path.relative_to(DATA_DIR).as_posix(),
+            'filters': [{'column': columns[index], 'operator': operator, 'value': value} for index, operator, value in filters],
+            'group_by': [columns[index] for index in group_columns],
+            'value_column': value_column,
+            'aggregation': aggregation,
+            'matched_rows': matched_rows,
+            'group_count': len(grouped_rows),
+            'truncated': len(grouped_rows) > limit,
+            'rows': grouped_rows[:limit]
+        }
+    summary_bucket = {
+        'records': matched_rows, 'numeric_count': numeric_count,
+        'total': numeric_total, 'min': numeric_min, 'max': numeric_max
+    }
+    return {
+        'dataset': dataset_name,
+        'file_path': selected_path.relative_to(DATA_DIR).as_posix(),
+        'filters': [{'column': columns[index], 'operator': operator, 'value': value} for index, operator, value in filters],
+        'value_column': value_column,
+        'aggregation': aggregation,
+        'matched_rows': matched_rows,
+        'numeric_values': numeric_count if value_column else None,
+        'result': aggregate_value(summary_bucket)
+    }
 
 
 def get_dataset_overview():
-    print("[DB Query]: get_dataset_overview() -> таблица 'demographics'")
-    conn = get_db_connection()
-    try:
-        row_count = conn.execute('SELECT COUNT(*) FROM demographics').fetchone()[0]
-        indicators = [row[0] for row in conn.execute(
-            'SELECT DISTINCT indicator FROM demographics ORDER BY indicator'
-        ).fetchall()]
-        years = [row[0] for row in conn.execute(
-            'SELECT DISTINCT year FROM demographics WHERE year > 0 ORDER BY year'
-        ).fetchall()]
-        provinces = [row[0] for row in conn.execute(
-            'SELECT DISTINCT province FROM demographics ORDER BY province'
-        ).fetchall()]
-        return {
-            'table': 'demographics',
-            'columns': ['indicator', 'year', 'province', 'value'],
-            'record_count': row_count,
-            'indicators': indicators,
-            'years': years,
-            'provinces': provinces,
-            'sinte_catalog': get_sinte_dataset_summary()
-        }
-    finally:
-        conn.close()
+    return get_sinte_dataset_summary()
 
 
 def query_demographics(arguments):
@@ -2438,8 +2783,8 @@ def build_dataset_chart(arguments):
     dataset = arguments.get('dataset')
     metric = arguments.get('metric')
     chart_type = arguments.get('chart_type')
-    if dataset not in {'demographics', 'd002', 'd004', 'd006', 'd008'}:
-        return {'error': 'Выберите один из поддерживаемых наборов: demographics, D002, D004, D006 или D008.'}
+    if dataset not in {'d002', 'd004', 'd006', 'd008'}:
+        return {'error': 'Выберите датасет из data/sinte: D002, D004, D006 или D008.'}
     if chart_type not in {'bar', 'line', 'pie'}:
         return {'error': 'Поддерживаются столбчатый, линейный и круговой графики.'}
 
@@ -2452,37 +2797,6 @@ def build_dataset_chart(arguments):
     if value_key not in {'count', 'share', 'households', 'amount', 'records'}:
         return {'error': 'Недопустимый способ подсчёта значений.'}
 
-    if dataset == 'demographics':
-        indicator = arguments.get('indicator')
-        if not isinstance(indicator, str) or not indicator.strip():
-            return {'error': 'Для графика demographics укажите точное название показателя.'}
-        group_by = arguments.get('group_by', 'province')
-        if group_by not in {'year', 'province', 'province_year'}:
-            return {'error': 'Для demographics выберите группировку year, province или province_year.'}
-        query = {
-            'indicator': indicator.strip()[:120],
-            'group_by': group_by,
-            'limit': 30
-        }
-        for field in ('start_year', 'end_year'):
-            if arguments.get(field) is not None:
-                query[field] = arguments[field]
-        result = query_demographics(query)
-        if result.get('error'):
-            return result
-        data_rows = result.get('rows') or []
-        if group_by == 'year':
-            labels = [str(row.get('year', '')) for row in data_rows]
-        elif group_by == 'province':
-            labels = [str(row.get('province', '')) for row in data_rows]
-        else:
-            labels = [f"{row.get('province', '')} · {row.get('year', '')}" for row in data_rows]
-        values = [row.get('total') for row in data_rows]
-        title = indicator.strip()[:100]
-        period = ''
-        if query.get('start_year') or query.get('end_year'):
-            period = f"{query.get('start_year', 'все годы')}–{query.get('end_year', 'настоящее время')}"
-        subtitle = f"demographics · {period or 'все доступные годы'}"
     else:
         if dataset == 'd002':
             form = arguments.get('form', 'subject')
@@ -2695,10 +3009,10 @@ def call_claude(contents, dataset_overview, dashboard_context, max_output_tokens
         raise RuntimeError('CLAUDE_API_KEY должен быть ключом Anthropic, начинающимся с sk-ant-.')
 
     context_text = json.dumps({
-        'dataset': dataset_overview,
+        'sinte_datasets': dataset_overview,
         'dashboard_filters': dashboard_context
     }, ensure_ascii=False)
-    system_instruction = f'{AI_SYSTEM_INSTRUCTION}\n\nФактический каталог базы и выбранные фильтры: {context_text}'
+    system_instruction = f'{AI_SYSTEM_INSTRUCTION}\n\nКаталог data/sinte и выбранные фильтры: {context_text}'
     messages = []
     for item in contents:
         role = 'assistant' if item.get('role') in ('assistant', 'model') else 'user'
@@ -2713,25 +3027,16 @@ def call_claude(contents, dataset_overview, dashboard_context, max_output_tokens
     claude_tools = [
         {
             'name': 'get_dataset_overview',
-            'description': 'Получить каталог таблицы demographics: показатели, годы, регионы и количество записей.',
+            'description': 'Получить каталог файлов датасетов в папке data/sinte.',
             'input_schema': {'type': 'object', 'properties': {}}
         },
         {
-            'name': 'query_demographics',
-            'description': 'Прочитать агрегированные данные по показателям Казахстана. Вызывай для вычислений, сравнений, трендов и любых числовых выводов.',
+            'name': 'list_sinte_datasets',
+            'description': 'Проверить реальные файлы датасетов внутри data/sinte, включая вложенные папки. Используй, чтобы подтвердить наличие или отсутствие набора.',
             'input_schema': {
                 'type': 'object',
                 'properties': {
-                    'indicator': {'type': 'string', 'description': 'Название показателя или его уникальная часть.'},
-                    'province': {'type': 'string', 'description': 'Название области/города или его уникальная часть.'},
-                    'start_year': {'type': 'integer', 'description': 'Начальный год включительно.'},
-                    'end_year': {'type': 'integer', 'description': 'Конечный год включительно.'},
-                    'group_by': {
-                        'type': 'string',
-                        'enum': ['none', 'indicator', 'year', 'province', 'province_year'],
-                        'description': 'Группировка результата.'
-                    },
-                    'limit': {'type': 'integer', 'description': 'Максимум строк результата, от 1 до 200.'}
+                    'dataset_name': {'type': 'string', 'description': 'Необязательный код или имя набора, например d002, d004, d006 или d008.'}
                 }
             }
         },
@@ -2749,22 +3054,50 @@ def call_claude(contents, dataset_overview, dashboard_context, max_output_tokens
             }, 'required': ['metric']}
         },
         {
+            'name': 'query_sinte_dataset',
+            'description': (
+                'Читать реальные строки CSV любого датасета data/sinte: D002, D004, D006, D008, 1t_god, '
+                '1t_kv, 2t, t001 и других папок каталога. Можно получить структуру и примеры строк, '
+                'отфильтровать строки или выполнить count/sum/mean/min/max с группировкой. '
+                'Если подходит несколько файлов, сначала верни их пути и заголовки, затем выбери точный file_path.'
+            ),
+            'input_schema': {
+                'type': 'object',
+                'properties': {
+                    'dataset_name': {'type': 'string'},
+                    'year': {'type': 'string'},
+                    'file_path': {'type': 'string'},
+                    'mode': {'type': 'string', 'enum': ['schema', 'rows', 'aggregate']},
+                    'columns': {'type': 'array', 'items': {'type': 'string'}},
+                    'filters': {'type': 'array', 'items': {'type': 'object', 'properties': {
+                        'column': {'type': 'string'},
+                        'operator': {'type': 'string', 'enum': ['equals', 'contains']},
+                        'value': {'type': 'string'}
+                    }, 'required': ['column', 'value']}},
+                    'group_by': {'type': 'array', 'items': {'type': 'string'}},
+                    'value_column': {'type': 'string'},
+                    'aggregation': {'type': 'string', 'enum': ['count', 'sum', 'mean', 'min', 'max']},
+                    'limit': {'type': 'integer'}
+                },
+                'required': ['dataset_name']
+            }
+        },
+        {
             'name': 'build_dataset_chart',
             'description': (
                 'Построить реальный график только по имеющимся данным. Используй исключительно когда пользователь '
-                'прямо просит график/диаграмму. dataset: demographics, d002, d004, d006, d008. '
+                'прямо просит график/диаграмму. dataset: d002, d004, d006, d008. '
                 'Если пользователь ссылается на текущий набор, используй activeDataset и datasetFilters из контекста. '
                 'Метрики D006: city_rural, home_types, ownership, land_access, amenities, durable_goods. '
                 'Метрики D008: age_structure, settlement, gender, relationships, education, marital_status, activity, household_sizes. Для D008 всегда строй линейную динамику по years (2022/2023/2024), не объединяй года; передавай filters из контекста и value=count/share. '
                 'Для D002 укажи question (идентификатор GR... или часть названия); value=count или share, form=subject/ocenka. '
                 'Для D004 строится сравнение территорий; value=households, records или amount, quarter может быть all, module — номер раздела. '
-                'Для demographics задай точный indicator, group_by=province/year/province_year и при необходимости start_year/end_year. '
                 'chart_type: bar/line/pie. Не выдумывай недостающие фильтры.'
             ),
             'input_schema': {
                 'type': 'object',
                 'properties': {
-                    'dataset': {'type': 'string', 'enum': ['demographics', 'd002', 'd004', 'd006', 'd008']},
+                    'dataset': {'type': 'string', 'enum': ['d002', 'd004', 'd006', 'd008']},
                     'metric': {'type': 'string'},
                     'chart_type': {'type': 'string', 'enum': ['bar', 'line', 'pie']},
                     'year': {'type': 'string'},
@@ -2778,10 +3111,6 @@ def call_claude(contents, dataset_overview, dashboard_context, max_output_tokens
                     'form': {'type': 'string', 'enum': ['subject', 'ocenka']},
                     'quarter': {'type': 'string', 'enum': ['1kv', '2kv', '3kv', '4kv', 'all']},
                     'module': {'type': 'integer'},
-                    'indicator': {'type': 'string'},
-                    'group_by': {'type': 'string', 'enum': ['province', 'year', 'province_year']},
-                    'start_year': {'type': 'integer'},
-                    'end_year': {'type': 'integer'}
                 },
                 'required': ['dataset', 'chart_type']
             }
@@ -2868,9 +3197,15 @@ def call_claude(contents, dataset_overview, dashboard_context, max_output_tokens
                     datasets = catalog.get('datasets', [])
                     if dataset_name:
                         datasets = [item for item in datasets if dataset_name in item.get('name', '').lower()]
-                    tool_result = {'folder': catalog.get('folder'), 'datasets': datasets}
-                elif name == 'query_demographics' and isinstance(arguments, dict):
-                    tool_result = query_demographics(arguments)
+                    dataset_files = {
+                        item['name']: list_sinte_dataset_files(item['name'])
+                        for item in datasets
+                    } if dataset_name else {}
+                    tool_result = {
+                        'folder': catalog.get('folder'),
+                        'datasets': datasets,
+                        'files_by_dataset': dataset_files
+                    }
                 elif name == 'query_d008' and isinstance(arguments, dict):
                     d008_arguments = dict(arguments)
                     if dashboard_context.get('activeDataset') == 'd008':
@@ -2882,6 +3217,8 @@ def call_claude(contents, dataset_overview, dashboard_context, max_output_tokens
                             d008_arguments['years'] = dataset_filters.get('years')
                         d008_arguments.setdefault('value', selected.get('value_mode', 'count'))
                     tool_result = query_d008(d008_arguments)
+                elif name == 'query_sinte_dataset' and isinstance(arguments, dict):
+                    tool_result = query_sinte_dataset(arguments)
                 elif name == 'build_dataset_chart' and isinstance(arguments, dict):
                     chart_arguments = dict(arguments)
                     if chart_arguments.get('dataset') == 'd002' and dashboard_context.get('activeDataset') == 'd002':
@@ -2908,6 +3245,9 @@ def call_claude(contents, dataset_overview, dashboard_context, max_output_tokens
                     tool_result = {'error': 'Запрошена неизвестная функция или переданы неверные параметры.'}
             except (AttributeError, TypeError, ValueError, sqlite3.Error):
                 tool_result = {'error': 'Переданы некорректные параметры фильтрации.'}
+            except (OSError, csv.Error) as error:
+                app.logger.exception('Не удалось прочитать датасет из data/sinte')
+                tool_result = {'error': f'Не удалось прочитать CSV из data/sinte: {error}'}
             tool_results.append({
                 'type': 'tool_result',
                 'tool_use_id': tool_call.get('id', ''),
