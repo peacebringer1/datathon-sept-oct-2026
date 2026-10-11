@@ -554,7 +554,13 @@ function renderD006Bars(id, items) {
       const share = item.share == null ? '' : `<br>Доля: ${Number(item.share).toLocaleString('ru-RU')}%`;
       return `${item.label}<br><strong>${Number(item.count).toLocaleString('ru-RU')} ${unitLabel}</strong>${share}`;
     } },
-    grid: { left: axisLabelWidth + 56, right: compact ? 52 : 72, top: 24, bottom: compact ? 68 : 76, containLabel: true },
+    grid: {
+      left: axisLabelWidth + 56,
+      right: compact ? 52 : 72,
+      top: 24,
+      bottom: compact ? 68 : 76,
+      containLabel: true
+    },
     xAxis: {
       type: 'value', min: 0, minInterval: 1, splitNumber: compact ? 3 : 4,
       name: axisConfig.x, nameLocation: 'middle', nameGap: compact ? 36 : 42,

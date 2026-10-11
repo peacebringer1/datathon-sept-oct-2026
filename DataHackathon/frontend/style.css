@@ -6873,3 +6873,30 @@ body[data-style-preset="classic"] .home-eyebrow { color: #fbb085; }
         height: 400px;
     }
 }
+
+/* Shift dashboard charts left while keeping the two D006 pie charts centered. */
+.chart-box-h330,
+.chart-container,
+.summary-chart-inner,
+.dataset-chart,
+.d002-question-chart,
+.d002-single-question-chart,
+.d002-map-chart,
+.d004-questionnaire-chart,
+.d006-chart,
+.d006-chart-tall,
+.radar-box,
+.home-mini-chart,
+.chat-chart,
+#realDetailedChart,
+#kazakhstanMapChart {
+    position: relative;
+    left: calc(-1 * clamp(24px, 3vw, 64px));
+    width: calc(100% - clamp(24px, 3vw, 64px)) !important;
+}
+
+#d006SettlementChart,
+#d006LandChart {
+    left: 0;
+    width: 100% !important;
+}

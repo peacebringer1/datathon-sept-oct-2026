@@ -18,6 +18,9 @@
         "zip"
       ]
     },
+    "win": {
+      "icon": "img/app-icon.ico"
+    },
     "extraResources": [
       {
         "from": "resources",

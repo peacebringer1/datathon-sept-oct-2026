@@ -142,6 +142,7 @@ function createWindow(apiPort, analyzerPort) {
     height: 900,
     minWidth: 360,
     minHeight: 500,
+    icon: path.join(__dirname, 'img', 'app-icon.ico'),
     title: 'Аналитика Демографии Казахстана',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -150,6 +151,7 @@ function createWindow(apiPort, analyzerPort) {
       webSecurity: false
     }
   });
+  mainWindow.removeMenu();
 
   mainWindow.loadFile(INDEX_HTML_PATH, {
     query: {
