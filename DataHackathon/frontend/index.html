@@ -12,6 +12,8 @@
 
   <!-- ECharts is bundled with the application; runtime does not depend on a CDN. -->
   <script defer src="./node_modules/echarts/dist/echarts.min.js"></script>
+  <script defer src="./src/components/chartExport.js"></script>
+  <script defer src="./node_modules/exceljs/dist/exceljs.min.js"></script>
 
 </head>
 
@@ -105,13 +107,6 @@
           </div>
           <button id="langToggleBtn" class="lang-toggle-btn" title="Сменить язык">RU</button>
           <button id="themeToggleBtn" class="theme-toggle-btn" title="Сменить тему">🌙</button>
-          <div class="style-preset-container">
-            <button id="stylePresetToggleBtn" class="style-preset-toggle-btn" type="button" title="Цветовая схема" aria-label="Выбрать цветовую схему" aria-expanded="false">🎨</button>
-            <div id="stylePresetMenu" class="style-preset-menu" hidden role="group" aria-label="Цветовая схема">
-              <button type="button" data-style-preset="classic">Оранжево-сиреневый</button>
-              <button type="button" data-style-preset="green">Зелёный</button>
-            </div>
-          </div>
         </div>
       </div>
     </aside>
@@ -464,6 +459,7 @@
                 <input type="text" id="searchInput" placeholder="Поиск по регионам..." oninput="filterTable()">
                 <button onclick="exportTableToCSV()" class="tab-btn csv-btn">CSV</button>
                 <button onclick="exportTableToExcel()" class="tab-btn excel-btn">Excel</button>
+                <button onclick="exportTableToPDF()" class="tab-btn pdf-btn">PDF</button>
               </div>
             </div>
 

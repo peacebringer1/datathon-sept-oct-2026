@@ -1677,8 +1677,8 @@ body.dark-theme .d006-chart-panel {
 }
 
 #d004MapChart {
-    height: clamp(480px, 56vw, 640px);
-    min-height: 460px;
+    height: clamp(400px, 42vw, 540px);
+    min-height: 400px;
     margin-top: 10px;
     border-radius: 16px;
     background: color-mix(in srgb, var(--accent-color) 4%, var(--card-bg));
@@ -1760,6 +1760,10 @@ body.dark-theme .d006-chart-panel {
     margin: 14px 0 0;
 }
 
+.d004-region-stat {
+    min-width: 0;
+}
+
 .d004-region-details dt {
     color: var(--text-secondary, #64748b);
     font-size: 0.8rem;
@@ -1799,6 +1803,108 @@ body.dark-theme .d006-chart-panel {
 .dataset-pagination button:disabled {
     cursor: default;
     opacity: 0.45;
+}
+
+.table-export-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+    margin: 0 0 10px;
+    padding-right: 20px;
+}
+
+.table-export-actions .tab-btn,
+.table-toolbar-right .pdf-btn {
+    min-height: 34px;
+    padding: 7px 12px;
+    border: 1px solid var(--border-color, #d7dfda);
+    border-radius: 8px;
+    background: var(--card-bg, #fff);
+    color: var(--text-primary, #222);
+    cursor: pointer;
+}
+
+.table-export-actions .tab-btn:hover,
+.table-toolbar-right .pdf-btn:hover {
+    border-color: var(--accent-color, #17b981);
+}
+
+.export-toast {
+    position: fixed;
+    z-index: 10000;
+    right: 28px;
+    bottom: 28px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: max-content;
+    max-width: min(440px, calc(100vw - 32px));
+    padding: 14px 16px;
+    border: 1px solid color-mix(in srgb, var(--accent-color, #17b981) 32%, var(--border-color, #dce8e2));
+    border-radius: 16px;
+    background: color-mix(in srgb, var(--card-bg, #fff) 94%, var(--accent-color, #17b981));
+    color: var(--text-primary, #202522);
+    box-shadow: 0 14px 38px rgba(24, 29, 31, .18);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(12px);
+    transition: opacity .22s ease, transform .22s ease, visibility .22s ease;
+}
+
+.export-toast.is-visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.export-toast-icon {
+    display: grid;
+    flex: 0 0 30px;
+    width: 30px;
+    height: 30px;
+    place-items: center;
+    border-radius: 10px;
+    background: var(--brand-gradient, linear-gradient(100deg, #7fdef5, #7ef5ad));
+    color: #173b30;
+    font-size: 17px;
+    font-weight: 800;
+}
+
+.export-toast.is-error .export-toast-icon {
+    background: #fde8e6;
+    color: #a12f2b;
+}
+
+.export-toast-message {
+    overflow-wrap: anywhere;
+    font-size: 14px;
+    font-weight: 650;
+}
+
+.export-toast-close {
+    align-self: flex-start;
+    margin: -4px -5px -4px 4px;
+    padding: 0 3px;
+    border: 0;
+    background: transparent;
+    color: var(--text-secondary, #66756e);
+    font: inherit;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+@media (max-width: 560px) {
+    .export-toast {
+        right: 16px;
+        bottom: 16px;
+        max-width: calc(100vw - 32px);
+    }
+
+    .table-export-actions {
+        padding-right: 12px;
+    }
 }
 
 .dataset-table-scroll {
