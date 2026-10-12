@@ -127,6 +127,9 @@ async function fetchDatasetYearData(path, years, params = {}) {
 let activeApiUrl = '';
 let currentPage = 1;
 let totalRows = 0;
+let d004PageRequest = 0;
+let d004DisplayedPage = 1;
+const D004_PAGE_SIZE = 50;
 let d004Chart = null;
 let d002Charts = new Map();
 let d002ChartObserver = null;
@@ -1275,7 +1278,7 @@ function activeD004Query() {
     quarter: document.getElementById('d004QuarterSelect').value,
     module: document.getElementById('d004ModuleSelect').value,
     page: String(currentPage),
-    page_size: '50'
+    page_size: String(D004_PAGE_SIZE)
   });
   return params;
 }
@@ -1560,6 +1563,11 @@ function updateD004MapMetric() {
 }
 
 async function loadD004Page() {
+  const requestId = ++d004PageRequest;
+  const previousButton = document.getElementById('d004PrevPage');
+  const nextButton = document.getElementById('d004NextPage');
+  previousButton.disabled = true;
+  nextButton.disabled = true;
   const status = document.getElementById('d004Status');
   const params = activeD004Query();
   d004SelectedRegion = '';
@@ -1572,12 +1580,15 @@ async function loadD004Page() {
   try {
     const response = await fetch(`${activeApiUrl}/api/d004/data?${params}`);
     const result = await response.json().catch(() => ({}));
+    if (requestId !== d004PageRequest) return;
     if (response.status === 404 && !result.error) {
       throw new Error('Запущена старая версия локального сервера. Полностью закройте и снова откройте приложение, чтобы загрузить API D004.');
     }
     if (!response.ok) throw new Error(result.error || 'Не удалось загрузить D004.');
 
     totalRows = result.total_rows;
+    currentPage = result.page;
+    d004DisplayedPage = result.page;
     setText('d004RowsStat', Number(result.total_rows).toLocaleString('ru-RU'));
     setText('d004HouseholdsStat', Number(result.households).toLocaleString('ru-RU'));
     setText('d004TerritoriesStat', Number(result.territories).toLocaleString('ru-RU'));
@@ -1602,10 +1613,17 @@ async function loadD004Page() {
       : ' Источник: CSV в data/sinte.';
     status.textContent = `${Number(totalRows).toLocaleString('ru-RU')} строк в выбранном периоде.${sourceNote}`;
   } catch (error) {
+    if (requestId !== d004PageRequest) return;
+    currentPage = d004DisplayedPage;
     status.dataset.state = 'error';
     status.textContent = error.message;
     document.getElementById('d004TableHead').replaceChildren();
     document.getElementById('d004TableBody').replaceChildren();
+  } finally {
+    if (requestId === d004PageRequest) {
+      previousButton.disabled = currentPage <= 1;
+      nextButton.disabled = currentPage * D004_PAGE_SIZE >= totalRows;
+    }
   }
 }
 
@@ -1638,6 +1656,7 @@ async function initializeD004(apiBaseUrl) {
       ['d004YearSelect', 'd004QuarterSelect', 'd004ModuleSelect'].forEach((id) => {
         document.getElementById(id).addEventListener('change', () => {
           currentPage = 1;
+          d004DisplayedPage = 1;
           renderD004QuestionnaireCards(options.modules);
           loadD004Page();
         });
@@ -1647,6 +1666,7 @@ async function initializeD004(apiBaseUrl) {
         document.getElementById('d004QuarterSelect').value = 'all';
         document.getElementById('d004ModuleSelect').value = '1';
         currentPage = 1;
+        d004DisplayedPage = 1;
         renderD004QuestionnaireCards(options.modules);
         loadD004Page();
       });
@@ -1657,7 +1677,7 @@ async function initializeD004(apiBaseUrl) {
         }
       });
       document.getElementById('d004NextPage').addEventListener('click', () => {
-        if (currentPage * 50 < totalRows) {
+        if (currentPage * D004_PAGE_SIZE < totalRows) {
           currentPage += 1;
           loadD004Page();
         }

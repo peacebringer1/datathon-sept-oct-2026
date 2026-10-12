@@ -43,6 +43,7 @@ ACTIVE_DATASET_NAME = None
 ACTIVE_DATASET_MODE = None
 _D004_CACHE_KEY = None
 _D004_CACHE_FRAME = None
+_D004_CSV_PAGE_CACHE = {}
 CLAUDE_MODEL = os.environ.get('CLAUDE_MODEL', 'claude-sonnet-5-5').strip()
 CLAUDE_API_KEY = os.environ.get('CLAUDE_API_KEY', '').strip()
 AI_INSIGHTS_CACHE = {}
@@ -1625,6 +1626,45 @@ def d004_data_from_sqlite(specs, year, quarter, module, page, page_size):
         '62': 'Область Улытау', '63': 'Восточно-Казахстанская область', '71': 'г. Астана',
         '75': 'г. Алматы', '79': 'г. Шымкент'
     }
+
+
+def read_d004_csv_page(paths, start, page_size, output_columns):
+    """Read only the requested page once the full-period summary is cached."""
+    rows = []
+    skip = start
+    for csv_path in paths:
+        try:
+            encoding = 'utf-8-sig'
+            try:
+                pd.read_csv(csv_path, nrows=0, encoding=encoding)
+            except UnicodeDecodeError:
+                encoding = 'cp1251'
+
+            for chunk in pd.read_csv(
+                csv_path,
+                dtype=str,
+                keep_default_na=False,
+                encoding=encoding,
+                chunksize=50000,
+                low_memory=False,
+            ):
+                if skip >= len(chunk):
+                    skip -= len(chunk)
+                    continue
+                selected = chunk.iloc[skip:skip + page_size]
+                skip = 0
+                source_year = csv_path.parents[1].name
+                source_quarter = csv_path.parent.name.upper()
+                for record in selected.to_dict(orient='records'):
+                    record['Р“РћР”'] = source_year
+                    record['РљР’РђР РўРђР›'] = source_quarter
+                    rows.append({column: record.get(column, '') for column in output_columns})
+                if len(rows) >= page_size:
+                    return rows
+        except (OSError, pd.errors.ParserError, UnicodeError) as error:
+            print(f'[D004]: РќРµ СѓРґР°Р»РѕСЃСЊ РїСЂРѕС‡РёС‚Р°С‚СЊ СЃС‚СЂР°РЅРёС†Сѓ {csv_path}: {error}')
+            raise
+    return rows
     labels = list(territory_counts)
     chart_metric = 'Сумма значений STOIMK в строках выборки' if has_amount else 'Количество записей'
     chart_values = [territory_amounts.get(code, 0) for code in labels] if has_amount else [territory_counts[code] for code in labels]
@@ -1710,6 +1750,24 @@ def d004_data():
     page = max(1, request.args.get('page', default=1, type=int))
     page_size = min(100, max(10, request.args.get('page_size', default=50, type=int)))
     start = (page - 1) * page_size
+    cache_key = (
+        year,
+        quarter,
+        module,
+        tuple((str(path), path.stat().st_size, path.stat().st_mtime_ns) for path in paths),
+    )
+    cached_summary = _D004_CSV_PAGE_CACHE.get(cache_key)
+    if cached_summary is not None:
+        try:
+            cached_response = dict(cached_summary)
+            cached_response['rows'] = read_d004_csv_page(
+                paths, start, page_size, cached_response['columns']
+            )
+            cached_response['page'] = page
+            cached_response['page_size'] = page_size
+            return jsonify(cached_response)
+        except (OSError, pd.errors.ParserError, UnicodeError):
+            return jsonify({'error': 'РќРµ СѓРґР°Р»РѕСЃСЊ РїСЂРѕС‡РёС‚Р°С‚СЊ CSV-С„Р°Р№Р» D004.'}), 500
     rows, columns, total_rows = [], [], 0
     territory_counts, territory_amounts, households, territory_households = {}, {}, set(), {}
     has_amount = False
@@ -1792,7 +1850,7 @@ def d004_data():
         row['ГОД'] = row.get('ГОД', '')
         row['КВАРТАЛ'] = row.get('КВАРТАЛ', '')
 
-    return jsonify({
+    response_payload = {
         'dataset': 'd004',
         'year': year,
         'quarter': 'Все кварталы' if quarter == 'all' else quarter,
@@ -1809,7 +1867,14 @@ def d004_data():
         'chart': {'labels': labels, 'values': chart_values},
         'territory_summary': summary,
         'source': 'data/sinte CSV'
-    })
+    }
+    _D004_CSV_PAGE_CACHE[cache_key] = {
+        key: value for key, value in response_payload.items()
+        if key not in {'rows', 'page', 'page_size'}
+    }
+    while len(_D004_CSV_PAGE_CACHE) > 8:
+        _D004_CSV_PAGE_CACHE.pop(next(iter(_D004_CSV_PAGE_CACHE)))
+    return jsonify(response_payload)
 
 @app.route('/api/settings/claude-key', methods=['GET', 'POST', 'DELETE'])
 def claude_key_settings():
