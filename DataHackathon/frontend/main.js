@@ -213,7 +213,7 @@ function startPackagedBackend(apiPort, analyzerPort, savedApiKey) {
       ...(savedApiKey ? { CLAUDE_API_KEY: savedApiKey } : {}),
       APP_DATA_DIR: appDataPath,
       DATABASE_FILE: path.join(appDataPath, 'database.sqlite'),
-      DATASETS_DIR: path.join(appDataPath, 'sinte'),
+      DATASETS_DIR: path.join(process.resourcesPath, 'data', 'sinte'),
       APP_PACKAGED: '1',
       ANALYZER_UI_PATH: path.join(process.resourcesPath, 'app-ui', 'index.html'),
       PYTHONUNBUFFERED: '1',
