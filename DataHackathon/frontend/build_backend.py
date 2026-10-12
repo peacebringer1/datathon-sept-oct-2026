@@ -1,5 +1,7 @@
 import os
 from pathlib import Path
+import shutil
+import stat
 import subprocess
 import sys
 import tempfile
@@ -8,13 +10,20 @@ import tempfile
 FRONTEND_DIR = Path(__file__).resolve().parent
 PROJECT_DIR = FRONTEND_DIR.parent
 OUTPUT_DIR = FRONTEND_DIR / "resources" / "backend"
+OUTPUT_APP_DIR = OUTPUT_DIR / "desktop-backend"
 OUTPUT_NAME = "desktop-backend.exe" if os.name == "nt" else "desktop-backend"
+
+
+def remove_readonly(func, path, _error):
+    os.chmod(path, stat.S_IWRITE)
+    func(path)
 
 
 def main():
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    output_binary = OUTPUT_DIR / OUTPUT_NAME
-    output_binary.unlink(missing_ok=True)
+    if OUTPUT_APP_DIR.exists():
+        shutil.rmtree(OUTPUT_APP_DIR, onerror=remove_readonly)
+    output_binary = OUTPUT_APP_DIR / OUTPUT_NAME
 
     with tempfile.TemporaryDirectory(prefix="desktop-backend-build-") as temporary_dir:
         temporary_path = Path(temporary_dir)
@@ -24,7 +33,6 @@ def main():
             "PyInstaller",
             "--noconfirm",
             "--clean",
-            "--onefile",
             "--name",
             "desktop-backend",
             "--distpath",
