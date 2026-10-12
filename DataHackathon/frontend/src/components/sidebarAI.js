@@ -14,6 +14,8 @@ export function initAISidebar() {
 
     if (!sidebar || !appLayout) return;
 
+    let expandedSize = null;
+
     window.toggleAIChat = function() {
         const isOpen = sidebar.classList.toggle('open');
         appLayout.classList.toggle('ai-sidebar-open', isOpen);
@@ -22,6 +24,23 @@ export function initAISidebar() {
     };
 
     function setExpanded(expanded) {
+        const wasExpanded = sidebar.classList.contains('is-fullscreen');
+        if (expanded === wasExpanded) return;
+        if (expanded) {
+            expandedSize = {
+                width: sidebar.style.width,
+                height: sidebar.style.height,
+                top: sidebar.style.top
+            };
+            sidebar.style.width = '';
+            sidebar.style.height = '';
+            sidebar.style.top = '';
+        } else if (expandedSize) {
+            sidebar.style.width = expandedSize.width;
+            sidebar.style.height = expandedSize.height;
+            sidebar.style.top = expandedSize.top;
+            expandedSize = null;
+        }
         sidebar.classList.toggle('is-fullscreen', expanded);
         if (!expandBtn) return;
         expandBtn.setAttribute('aria-pressed', String(expanded));
@@ -31,6 +50,74 @@ export function initAISidebar() {
         expandBtn.title = expanded ? 'Вернуть боковой вид' : 'Развернуть на весь экран';
         expandBtn.textContent = expanded ? '↙' : '⛶';
     }
+
+    const getResizeDirection = (event) => {
+        const bounds = sidebar.getBoundingClientRect();
+        const edgeSize = 12;
+        const horizontal = event.clientX - bounds.left <= edgeSize
+            ? 'w'
+            : bounds.right - event.clientX <= edgeSize ? 'e' : '';
+        const vertical = event.clientY - bounds.top <= edgeSize ? 'n' : '';
+        if (vertical && horizontal) return `${vertical}${horizontal}`;
+        return vertical || horizontal;
+    };
+
+    sidebar.addEventListener('pointerdown', (event) => {
+        if (event.button !== 0 || sidebar.classList.contains('is-fullscreen')) return;
+        if (window.matchMedia('(max-width: 760px)').matches) return;
+        if (event.target.closest('button, input, textarea, select, a')) return;
+
+        const direction = getResizeDirection(event);
+        if (!direction) return;
+        event.preventDefault();
+
+        const bounds = sidebar.getBoundingClientRect();
+        const startX = event.clientX;
+        const startY = event.clientY;
+        const startWidth = bounds.width;
+        const startHeight = bounds.height;
+        const startTop = bounds.top;
+        const startRight = window.innerWidth - bounds.right;
+        const minWidth = Math.min(560, window.innerWidth - 32);
+        const maxWidth = window.innerWidth - 32;
+        const minHeight = Math.min(420, window.innerHeight - 32);
+        const maxHeight = window.innerHeight - 32;
+
+        const resize = (moveEvent) => {
+            const deltaX = moveEvent.clientX - startX;
+            const deltaY = moveEvent.clientY - startY;
+            const resizeWest = direction.includes('w');
+            const resizeEast = direction.includes('e');
+            const resizeNorth = direction.includes('n');
+            const width = Math.min(maxWidth, Math.max(
+                minWidth,
+                startWidth + (resizeWest ? -deltaX : resizeEast ? deltaX : 0)
+            ));
+            const height = Math.min(maxHeight, Math.max(
+                minHeight,
+                startHeight - (resizeNorth ? deltaY : 0)
+            ));
+
+            sidebar.style.width = `${width}px`;
+            sidebar.style.height = `${height}px`;
+            if (resizeEast) sidebar.style.right = `${Math.max(16, startRight - (width - startWidth))}px`;
+            if (resizeNorth) sidebar.style.top = `${Math.max(16, startTop + startHeight - height)}px`;
+        };
+        const finish = () => {
+            sidebar.removeEventListener('pointermove', resize);
+            sidebar.removeEventListener('pointerup', finish);
+            sidebar.removeEventListener('pointercancel', finish);
+            sidebar.classList.remove('is-resizing');
+            delete sidebar.dataset.resizeDirection;
+        };
+
+        sidebar.classList.add('is-resizing');
+        sidebar.dataset.resizeDirection = direction;
+        sidebar.setPointerCapture(event.pointerId);
+        sidebar.addEventListener('pointermove', resize);
+        sidebar.addEventListener('pointerup', finish, { once: true });
+        sidebar.addEventListener('pointercancel', finish, { once: true });
+    });
 
     expandBtn?.addEventListener('click', () => {
         setExpanded(!sidebar.classList.contains('is-fullscreen'));

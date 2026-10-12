@@ -265,7 +265,11 @@ function createWindow(apiPort, analyzerPort) {
     height: 900,
     minWidth: 360,
     minHeight: 500,
-    icon: path.join(__dirname, 'img', 'app-icon.ico'),
+    icon: path.join(
+      __dirname,
+      'img',
+      process.platform === 'win32' ? 'app-icon.ico' : 'app-icon.png'
+    ),
     title: 'Аналитика Демографии Казахстана',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),

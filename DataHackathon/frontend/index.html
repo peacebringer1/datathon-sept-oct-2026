@@ -83,7 +83,7 @@
       <div class="sidebar-settings-footer">
         <div class="sidebar-buttons-row">
           <div class="settings-dropdown-container">
-            <button id="settingsToggleBtn" class="settings-toggle-btn" title="Настройки"><span>⚙️</span></button>
+            <!--<button id="settingsToggleBtn" class="settings-toggle-btn" title="Настройки"><span>⚙️</span></button>-->
             <div id="settingsDropdown" class="settings-dropdown-menu">
               <form id="claudeApiKeyForm">
                 <div class="claude-settings-heading">
@@ -980,14 +980,12 @@
     <aside class="ai-chat-history">
       <div class="ai-history-brand"><span aria-hidden="true">AI</span><strong>AI Stat</strong></div>
       <button id="aiNewChatButton" class="ai-new-chat" type="button">Новый чат <span aria-hidden="true">＋</span></button>
-      <label class="ai-history-search"><span class="sr-only">Поиск по истории запросов</span><input id="aiHistorySearch" type="search" placeholder="Поиск по истории"></label>
       <h4>История запросов</h4>
       <div id="aiHistoryList" class="ai-history-list"><p class="ai-history-empty">Пока нет запросов</p></div>
       <button id="aiClearHistoryButton" class="ai-clear-history" type="button">Очистить <span aria-hidden="true">⌫</span></button>
     </aside>
     <div class="ai-card">
       <div class="ai-card-header">
-        <div><p class="ai-header-eyebrow">AI</p><h3>ИИ-ассистент</h3></div>
         <div class="ai-header-controls">
           <span id="aiStatusBadge" class="ai-status-badge" data-state="checking" title="Проверяем доступ к ИИ">Готов</span>
           <button class="expand-chat-btn" type="button" aria-label="Развернуть ИИ-панель на весь экран" aria-pressed="false" title="Развернуть на весь экран">⛶</button>

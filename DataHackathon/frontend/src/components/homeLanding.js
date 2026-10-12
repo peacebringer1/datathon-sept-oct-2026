@@ -1,13 +1,11 @@
 import { escapeHtml } from './htmlUtils.js';
 const API_BASE_URL = window.API_BASE_URL || `http://127.0.0.1:${new URLSearchParams(window.location.search).get('apiPort') || '5000'}`;
 const chartInstances = new Map();
-let chartColors = ['#17b981', '#50b9d2', '#46cbb0', '#7fdef5', '#7ef5ad', '#13966d'];
+let chartColors = ['#cf7f5f', '#a78bb5', '#c58eaa', '#e1a07f', '#9b82a6', '#765f80'];
 window.addEventListener('app-style-preset-changed', (event) => {
-  const palettes = {
-    classic: ['#cf7f5f', '#a78bb5', '#c58eaa', '#e1a07f', '#9b82a6', '#765f80'],
-    green: ['#17b981', '#50b9d2', '#46cbb0', '#7fdef5', '#7ef5ad', '#13966d']
-  };
-  chartColors = palettes[event.detail?.preset] || palettes.green;
+  if (event.detail?.preset === 'classic') {
+    chartColors = ['#cf7f5f', '#a78bb5', '#c58eaa', '#e1a07f', '#9b82a6', '#765f80'];
+  }
 });
 
 async function getJson(path) {

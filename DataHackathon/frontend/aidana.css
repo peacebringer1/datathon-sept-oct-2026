@@ -190,19 +190,12 @@ body[data-style-preset="classic"] .ai-faq-mark { border-color: #c9aace; color: #
 body[data-style-preset="classic"] .ai-popup-sidebar .chat-input-area textarea { border-color: var(--border-color); background: var(--bg-input); color: var(--text-primary); }
 body[data-style-preset="classic"] .ai-popup-sidebar .chat-input-area button { background: linear-gradient(120deg, #e89a78, #9d82a6); }
 
-/* Keep the two palettes isolated from legacy hard-coded component colors. */
+/* Isolate the active palette from legacy hard-coded component colors. */
 body[data-style-preset="classic"] {
     --theme-accent-strong: #9d82a6;
     --theme-accent-soft: rgba(201, 170, 206, .16);
     --theme-accent-warm: #e89a78;
     --theme-accent-contrast: #382d3b;
-}
-
-body[data-style-preset="green"] {
-    --theme-accent-strong: #11966d;
-    --theme-accent-soft: rgba(23, 185, 129, .14);
-    --theme-accent-warm: #58cfa2;
-    --theme-accent-contrast: #10251d;
 }
 
 body[data-style-preset] :is(.cat-header.active, .hypothesis-filter-btn.active,
@@ -223,8 +216,6 @@ body[data-style-preset] .about-flip-hint { color: var(--theme-accent-strong); }
 body[data-style-preset] .about-flip-hint b { color: var(--theme-accent-warm); }
 body[data-style-preset] .about-team-card:nth-child(odd) .about-avatar { background: linear-gradient(135deg, var(--theme-accent-warm), var(--accent-color)); }
 body[data-style-preset] .about-team-card:nth-child(even) .about-avatar { background: linear-gradient(135deg, var(--accent-color), color-mix(in srgb, var(--theme-accent-warm) 42%, var(--accent-color))); }
-body[data-style-preset="green"] .about-team-role { background: rgba(23, 185, 129, .12); color: #0f805e; }
-body.dark-theme[data-style-preset="green"] .about-team-role { background: rgba(126, 245, 173, .13); color: #a8edc8; }
 body[data-style-preset="classic"] .about-team-role { background: rgba(201, 170, 206, .15); color: #806b88; }
 
 /* The assistant panel used to carry a fixed blue palette in both themes. */
@@ -262,15 +253,9 @@ body[data-style-preset] :is(.ai-history-search input, .ai-popup-sidebar .chat-in
 body[data-style-preset] :is(.expand-chat-btn:hover, .expand-chat-btn:focus-visible, .chat-chart-card button:focus-visible) { border-color: var(--accent-color); }
 body[data-style-preset] :is(input, select, textarea):focus { border-color: var(--accent-color) !important; }
 body[data-style-preset] .about-team-card:focus-visible { outline-color: var(--accent-color); }
-body[data-style-preset="green"] .app-loading-mark span { background: linear-gradient(135deg, #7fdef5, #7ef5ad); }
 body[data-style-preset="classic"] .app-loading-mark span { background: linear-gradient(135deg, #f5ad86, #c9aace); }
-body[data-style-preset="green"] .app-loading-mark span:nth-child(2) { background: #7ef5ad; }
 body[data-style-preset="classic"] .app-loading-mark span:nth-child(2) { background: #c9aace; }
-body[data-style-preset="green"] .loading-spinner { border-color: rgba(126, 245, 173, .35); border-top-color: #17b981; border-right-color: #7fdef5; }
 body[data-style-preset="classic"] .loading-spinner { border-color: rgba(201, 170, 206, .35); border-top-color: #f5ad86; border-right-color: #c9aace; }
-body[data-style-preset="green"] :is(.home-card-living, .home-card-housing, .home-card-social) { --home-accent: #17b981; --home-tint: rgba(23, 185, 129, .13); }
-body[data-style-preset="green"] .home-card-housing { --home-accent: #58cfa2; --home-tint: rgba(88, 207, 162, .14); }
-body[data-style-preset="green"] .home-card-social { --home-accent: #7fdef5; --home-tint: rgba(127, 222, 245, .15); }
 body[data-style-preset] .tab-btn:hover,
 body[data-style-preset] .tab-btn.active { background: var(--brand-gradient); color: var(--theme-accent-contrast); box-shadow: 0 4px 14px var(--theme-accent-soft); }
 body[data-style-preset] .d002-question-card::before,
@@ -395,24 +380,12 @@ body[data-style-preset="classic"] .tab-btn:nth-child(2) {
   background-color: #f5ad86;
 }
 
-body[data-style-preset="green"] .tab-btn:nth-child(2):hover {
-  background-color: #7fdef5;
-}
-
 body[data-style-preset="classic"] .tab-btn:nth-child(2).active {
   box-shadow: 0 4px 14px rgba(245, 173, 134, 0.4);
 }
 
-body[data-style-preset="green"] .tab-btn:nth-child(2).active {
-  background-color: #7fdef5;
-}
-
 body[data-style-preset="classic"] .tab-btn:nth-child(3) {
   background-color: #c9aace;
-}
-
-body[data-style-preset="green"] .tab-btn:nth-child(3):hover {
-  background-color: #58cfa2;
 }
 
 body[data-style-preset="classic"] .tab-btn:nth-child(3).active {
@@ -618,10 +591,6 @@ body.dark-theme[data-style-preset="classic"] {
   --accent-color: #c9aace;
 }
 
-body.dark-theme[data-style-preset="green"] {
-  --accent-hover: #7fdef5;
-}
-
 body.dark-theme[data-style-preset="classic"] .cat-group {
   background: rgba(245, 173, 134, .07);
   border-color: rgba(245, 173, 134, .12);
@@ -652,10 +621,6 @@ body.dark-theme[data-style-preset="classic"] .active-dataset-status[data-state="
   background: rgba(201, 170, 206, .17);
 }
 
-body.dark-theme[data-style-preset="green"] .active-dataset-status[data-state="loading"] {
-  color: #b9f3d1;
-}
-
 body.dark-theme[data-style-preset="classic"] .sidebar-search-results {
   border-color: rgba(245, 173, 134, .22);
 }
@@ -666,22 +631,6 @@ body.dark-theme[data-style-preset="classic"] .ai-status-badge[data-state="checki
 
 body.dark-theme[data-style-preset="classic"] .ai-status-badge[data-state="offline"] {
   background: rgba(201, 170, 206, .17);
-}
-
-body.dark-theme[data-style-preset="green"] .ai-status-badge[data-state="offline"] {
-  color: #b9f3d1;
-}
-
-body.dark-theme[data-style-preset="green"] .chat-bubble.user {
-  background: linear-gradient(135deg, #7fdef5, #477e6c);
-}
-
-body.dark-theme[data-style-preset="green"] .chat-input-area button {
-  background: linear-gradient(135deg, #7fdef5, #477e6c);
-}
-
-body.dark-theme[data-style-preset="green"] .chat-input-area button:hover {
-  background: linear-gradient(135deg, #7fdef5, #477e6c);
 }
 
 body.dark-theme[data-style-preset="classic"] input:focus,
@@ -903,10 +852,6 @@ body[data-style-preset="classic"] .about-team-card:nth-child(even) .about-avatar
   background: linear-gradient(135deg, #f5ad86, #f1d1be);
 }
 
-body[data-style-preset="green"] .about-team-card:nth-child(even) .about-avatar {
-  background: linear-gradient(135deg, #b8d6a0, #b9f3d1);
-}
-
 body[data-style-preset="classic"] .about-team-card h3 {
   color: #2d292f;
 }
@@ -955,19 +900,6 @@ body[data-style-preset="classic"] .container::before {
         radial-gradient(ellipse at 32% 70%, rgba(201, 170, 206, .25), transparent 53%);
 }
 
-body[data-style-preset="green"] .sidebar-home-link:hover {
-  background: rgba(126, 245, 173, .15);
-}
-
-body[data-style-preset="green"] .sidebar-home-link.active {
-  background: linear-gradient(115deg, rgba(126, 245, 173, .3), rgba(127, 222, 245, .23));
-  border-color: rgba(127, 222, 245, .4);
-}
-
-body[data-style-preset="green"] .sidebar-home-icon {
-  background: #7ef5ad;
-}
-
 body[data-style-preset="classic"] .sidebar-home-link:hover {
   background: rgba(201, 170, 206, .15);
 }
@@ -983,20 +915,6 @@ body[data-style-preset="classic"] .sidebar-home-icon {
 
 body[data-style-preset="classic"] .app-loading-card {
   border: 1px solid rgba(245, 173, 134, .42);
-}
-
-body[data-style-preset="green"] .app-loading-mark span {
-  background: #7ef5ad;
-}
-
-body[data-style-preset="green"] .app-loading-mark span:nth-child(2) {
-  background: #7fdef5;
-}
-
-body[data-style-preset="green"] .loading-spinner {
-  border: 2px solid rgba(127, 222, 245, .4);
-  border-top-color: #58cfa2;
-  border-right-color: #7fdef5;
 }
 
 body[data-style-preset="classic"] .app-loading-mark span {
@@ -1021,24 +939,12 @@ body[data-style-preset="classic"] .about-team-face {
   border: 1px solid rgba(245, 173, 134, .3);
 }
 
-body[data-style-preset="green"] .about-team-face {
-  background: linear-gradient(150deg, #fff 0%, #f2faf6 100%);
-}
-
 body[data-style-preset="classic"] .about-team-back {
   background: radial-gradient(ellipse at 50% 5%, rgba(245, 173, 134, .2), transparent 55%), linear-gradient(150deg, #fff 0%, #f8faf8 100%);
 }
 
-body[data-style-preset="green"] .about-team-back {
-  background: radial-gradient(ellipse at 50% 5%, rgba(184, 214, 160, .2), transparent 55%), linear-gradient(150deg, #fff 0%, #f2faf6 100%);
-}
-
 body[data-style-preset="classic"] .about-flip-hint {
   color: #9d82a6;
-}
-
-body[data-style-preset="green"] .about-flip-hint b {
-  color: #58cfa2;
 }
 
 body[data-style-preset="classic"] .about-back-name {
@@ -1181,10 +1087,6 @@ body[data-style-preset="classic"] .theme-toggle-btn {
   box-shadow: 0 7px 18px rgba(232, 154, 120, .2);
 }
 
-body[data-style-preset="green"] .home-card-living {
-  --home-accent: #58cfa2;
-}
-
 body[data-style-preset="classic"] .home-card-housing {
   --home-accent: #f5ad86;
   --home-tint: rgba(245, 173, 134, .17);
@@ -1207,24 +1109,7 @@ body.dark-theme[data-style-preset="classic"] .home-category-card:hover {
   border-color: rgba(245, 173, 134, .5);
 }
 
-body[data-style-preset="green"] {
-  --accent-color: #7fdef5;
-  --accent-hover: #7fdef5;
-  --border-color: #d3e9df;
-}
-
-body.dark-theme[data-style-preset="green"] {
-  --accent-color: #7fdef5;
-  --accent-hover: #7ef5ad;
-  --border-color: rgba(127,222,245,.2);
-}
-
-body[data-style-preset="green"] .home-eyebrow {
-  color: #7ef5ad;
-}
-
-/* Final checks on the dark home screen: the promo's right side and card labels
-   previously inherited green values from dark-theme rules. */
+/* Final dark home-screen adjustments for the selected palette. */
 body.dark-theme[data-style-preset="classic"] .home-assistant-promo {
     border-color: rgba(201, 170, 206, .2);
     background: linear-gradient(110deg, rgba(201, 170, 206, .15), rgba(245, 173, 134, .12) 58%, #2d292f);

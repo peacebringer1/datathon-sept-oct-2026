@@ -498,12 +498,9 @@ export function updateChartThemeColors() {
 }
 
 window.addEventListener('app-style-preset-changed', (event) => {
-  const mapPalettes = {
-    classic: ['#f2c09c', '#e5a5a1', '#c99fba', '#a78bb5', '#806b88'],
-    green: ['#7fdef5', '#50b9d2', '#46cbb0', '#17b981', '#13966d']
-  };
+  if (event.detail?.preset !== 'classic') return;
   DATA_COLORS = window.appChartPalette || DATA_COLORS;
-  MAP_SCALE = mapPalettes[event.detail?.preset] || mapPalettes.green;
+  MAP_SCALE = ['#f2c09c', '#e5a5a1', '#c99fba', '#a78bb5', '#806b88'];
   updateChartThemeColors();
 });
 

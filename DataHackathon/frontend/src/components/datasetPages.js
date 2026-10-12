@@ -73,25 +73,17 @@ function d002AnswerColor(label, index, satisfactionScale = false) {
   return D002_CATEGORY_COLORS[stableIndex % D002_CATEGORY_COLORS.length];
 }
 window.addEventListener('app-style-preset-changed', (event) => {
-  const palettes = {
-    classic: ['#cf7f5f', '#a78bb5', '#c58eaa', '#e1a07f', '#9b82a6', '#765f80'],
-    green: ['#17b981', '#50b9d2', '#46cbb0', '#7fdef5', '#7ef5ad', '#13966d']
+  if (event.detail?.preset !== 'classic') return;
+  DATA_COLORS = ['#cf7f5f', '#a78bb5', '#c58eaa', '#e1a07f', '#9b82a6', '#765f80'];
+  MAP_SCALE = ['#f2c09c', '#e5a5a1', '#c99fba', '#a78bb5', '#806b88'];
+  D002_CATEGORY_COLORS = ['#cf7f5f', '#a78bb5', '#c58eaa', '#e1a07f', '#9b82a6', '#d99a8d', '#765f80'];
+  D002_MULTI_SELECT_COLORS = ['#c56543', '#6951a4', '#a84e62', '#d18a18', '#87549b', '#ad6440', '#78608a', '#c87382', '#88602e', '#a84f8e', '#8c7165', '#bd805b', '#765b77', '#69727b'];
+  D002_SATISFACTION_COLORS = {
+    'Высокая удовлетворённость': '#a78bb5',
+    'Частичная удовлетворённость': '#f0a17e',
+    'Низкая удовлетворённость': '#b96767',
+    'Не применимо / затруднились ответить': '#8c828d'
   };
-  const mapPalettes = {
-    classic: ['#f2c09c', '#e5a5a1', '#c99fba', '#a78bb5', '#806b88'],
-    green: ['#7fdef5', '#50b9d2', '#46cbb0', '#17b981', '#13966d']
-  };
-  DATA_COLORS = palettes[event.detail?.preset] || palettes.green;
-  MAP_SCALE = mapPalettes[event.detail?.preset] || mapPalettes.green;
-  D002_CATEGORY_COLORS = event.detail?.preset === 'classic'
-    ? ['#cf7f5f', '#a78bb5', '#c58eaa', '#e1a07f', '#9b82a6', '#d99a8d', '#765f80']
-    : ['#50b9d2', '#a78bfa', '#46cbb0', '#7c9cff', '#7ef5ad', '#6ee7f9', '#b8a6ff'];
-  D002_MULTI_SELECT_COLORS = event.detail?.preset === 'classic'
-    ? ['#c56543', '#6951a4', '#a84e62', '#d18a18', '#87549b', '#ad6440', '#78608a', '#c87382', '#88602e', '#a84f8e', '#8c7165', '#bd805b', '#765b77', '#69727b']
-    : ['#11845f', '#2877b8', '#177b72', '#22a873', '#176c9e', '#3b9a8b', '#2d9166', '#155a79', '#58ad91', '#247f9c', '#45b889', '#3d7386', '#70bd9e', '#548d77'];
-  D002_SATISFACTION_COLORS = event.detail?.preset === 'classic'
-    ? { 'Высокая удовлетворённость': '#a78bb5', 'Частичная удовлетворённость': '#f0a17e', 'Низкая удовлетворённость': '#b96767', 'Не применимо / затруднились ответить': '#8c828d' }
-    : { 'Высокая удовлетворённость': '#7ef5ad', 'Частичная удовлетворённость': '#50b9d2', 'Низкая удовлетворённость': '#a78bfa', 'Не применимо / затруднились ответить': '#687780' };
   d002Charts?.forEach((chart) => {
     const activeQuestion = d002FilteredQuestions[d002QuestionIndex];
     if (chart.getDom()?.id === 'd002QuestionChart' && activeQuestion) {

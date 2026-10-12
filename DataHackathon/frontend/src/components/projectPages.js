@@ -11,9 +11,7 @@ export function initProjectPages() {
     document.querySelectorAll('[data-member-chart]').forEach((element) => {
       const chart = window.echarts.getInstanceByDom(element) || window.echarts.init(element, null, { renderer: 'svg' });
       const dark = document.body.classList.contains('dark-theme');
-      const palette = document.body.dataset.stylePreset === 'classic'
-        ? ['#cf7f5f', '#a78bb5', '#c58eaa', '#e1a07f', '#9b82a6', '#765f80']
-        : ['#17b981', '#50b9d2', '#46cbb0', '#7fdef5', '#7ef5ad', '#13966d'];
+      const palette = ['#cf7f5f', '#a78bb5', '#c58eaa', '#e1a07f', '#9b82a6', '#765f80'];
       chart.setOption({
         animation: false,
         radar: {

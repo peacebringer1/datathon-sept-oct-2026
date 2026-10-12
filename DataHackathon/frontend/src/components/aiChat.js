@@ -50,7 +50,14 @@ export function cleanAIResponse(text) {
 export function initAIChat(apiBaseUrl) {
   window.sendMessageToAI = () => sendMessageToAI(apiBaseUrl);
   window.handleChatKeyDown = (event) => handleChatKeyDown(event, window.sendMessageToAI);
+  document.getElementById('chatInput')?.addEventListener('input', hideChatSuggestions);
   initChartSuggestions();
+}
+
+function hideChatSuggestions() {
+  if (document.getElementById('chatInput')?.value.trim()) {
+    document.getElementById('aiPopupSidebar')?.classList.add('has-chat-prompt');
+  }
 }
 
 function initChartSuggestions() {
@@ -78,22 +85,21 @@ function initChartSuggestions() {
       const input = document.getElementById('chatInput');
       if (!input || input.disabled) return;
       input.value = window.translateAppText?.(prompt) || prompt;
+      hideChatSuggestions();
       void window.sendMessageToAI();
     });
     suggestions.append(button);
   });
 
-  const historySearch = document.getElementById('aiHistorySearch');
   const historyList = document.getElementById('aiHistoryList');
   const renderHistory = () => {
     if (!historyList) return;
-    const query = historySearch?.value.trim().toLocaleLowerCase('ru-RU') || '';
-    const prompts = aiRecentPrompts.filter((item) => item.toLocaleLowerCase('ru-RU').includes(query));
+    const prompts = aiRecentPrompts;
     historyList.replaceChildren();
     if (!prompts.length) {
       const empty = document.createElement('p');
       empty.className = 'ai-history-empty';
-      empty.textContent = aiRecentPrompts.length ? 'Ничего не найдено' : 'Пока нет запросов';
+      empty.textContent = 'Пока нет запросов';
       historyList.append(empty);
     }
     prompts.forEach((prompt) => {
@@ -108,7 +114,6 @@ function initChartSuggestions() {
       historyList.append(item);
     });
   };
-  historySearch?.addEventListener('input', renderHistory);
   document.addEventListener('ai-chat-history-updated', renderHistory);
   document.getElementById('aiClearHistoryButton')?.addEventListener('click', () => {
     aiRecentPrompts.splice(0, aiRecentPrompts.length);
@@ -119,6 +124,7 @@ function initChartSuggestions() {
     const chatMessages = document.getElementById('chatMessages');
     chatMessages?.querySelectorAll('.chat-chart').forEach((element) => window.echarts?.getInstanceByDom(element)?.dispose());
     chatMessages?.replaceChildren();
+    document.getElementById('aiPopupSidebar')?.classList.remove('has-chat-prompt');
     appendMessage('Готов помочь по данным проекта.', 'ai');
     const input = document.getElementById('chatInput');
     if (input) { input.value = ''; input.focus(); }
@@ -127,6 +133,7 @@ function initChartSuggestions() {
     const input = document.getElementById('chatInput');
     if (input) {
       input.value = 'Какие вопросы можно задать по открытому набору данных?';
+      hideChatSuggestions();
       input.focus();
     }
   });
@@ -299,6 +306,7 @@ export async function sendMessageToAI(apiBaseUrl) {
   const message = input?.value.trim();
   if (!message || !input) return;
 
+  hideChatSuggestions();
   appendMessage(message, 'user');
   input.value = '';
   input.disabled = true;
