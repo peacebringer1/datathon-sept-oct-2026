@@ -22,8 +22,7 @@ const python = process.env.PYTHON
 function run(command, args) {
   const result = spawnSync(command, args, {
     cwd: frontendDirectory,
-    stdio: 'inherit',
-    shell: isWindows
+    stdio: 'inherit'
   });
   if (result.error) throw result.error;
   if (result.status !== 0) {
@@ -34,8 +33,11 @@ function run(command, args) {
 try {
   run(python, ['build_backend.py']);
   run(
-    path.join(frontendDirectory, 'node_modules', '.bin', `electron-builder${isWindows ? '.cmd' : ''}`),
-    [`--${target}`]
+    process.execPath,
+    [
+      path.join(frontendDirectory, 'node_modules', 'electron-builder', 'cli.js'),
+      `--${target}`
+    ]
   );
 } catch (error) {
   console.error(`Build failed: ${error.message}`);

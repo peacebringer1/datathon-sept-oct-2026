@@ -38,8 +38,6 @@ def main():
             "--paths",
             str(FRONTEND_DIR),
         ]
-        for package in ("numpy", "pandas", "openpyxl", "fastapi", "uvicorn", "waitress"):
-            command.extend(["--collect-all", package])
         command.append(str(FRONTEND_DIR / "desktop_backend.py"))
         subprocess.run(command, cwd=PROJECT_DIR, check=True)
 
