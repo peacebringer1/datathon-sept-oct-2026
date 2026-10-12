@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    name: Tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: DataHackathon/frontend/package-lock.json
+      - name: Install test dependencies
+        run: python -m pip install flask flask-cors pandas
+      - name: Run backend tests
+        run: python -m unittest discover -s DataHackathon/tests -p "test_*.py"
+      - name: Install frontend dependencies
+        working-directory: DataHackathon/frontend
+        run: npm ci
+      - name: Check frontend syntax
+        working-directory: DataHackathon/frontend
+        run: npm run test:frontend
+
+  build:
+    name: Build (${{ matrix.platform }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            platform: macOS
+            script: build:mac
+            artifact_path: DataHackathon/frontend/dist/*.dmg
+          - os: windows-latest
+            platform: Windows x64
+            script: build:win
+            artifact_path: DataHackathon/frontend/dist/*.exe
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: DataHackathon/frontend/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install packaged backend dependencies
+        run: python -m pip install -r DataHackathon/backend/requirements-packaging.txt
+      - name: Install frontend dependencies
+        working-directory: DataHackathon/frontend
+        run: npm ci
+      - name: Build application
+        working-directory: DataHackathon/frontend
+        run: npm run ${{ matrix.script }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: installer-${{ matrix.platform }}
+          path: ${{ matrix.artifact_path }}
+          if-no-files-found: error
+          retention-days: 14
