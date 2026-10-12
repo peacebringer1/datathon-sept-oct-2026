@@ -1,29 +1,64 @@
 {
   "name": "dataset-viewer",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Аналитика демографии Казахстана",
-  "author": "Daniil Shterkel",
+  "author": "Chepoclad",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "build:mac": "electron-builder --mac"
+    "build:mac": "node build_app.js mac",
+    "build:win": "node build_app.js win",
+    "test:frontend": "node --check main.js && node --check build_app.js && node --check preload.js && node --check renderer.js && node --check src/components/insightsTicker.js"
   },
   "build": {
     "appId": "com.datasetviewer.app",
     "productName": "Аналитика Демографии",
     "mac": {
+      "icon": "img/app-icon.icns",
       "category": "public.app-category.business",
-      "target": ["dmg", "zip"]
+      "target": [
+        "dmg",
+        "zip"
+      ]
+    },
+    "win": {
+      "icon": "img/app-icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
     },
     "extraResources": [
       {
-        "from": "resources",
-        "to": "."
+        "from": "resources/backend/desktop-backend",
+        "to": "backend",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "../database.sqlite",
+        "to": "database.sqlite"
+      },
+      {
+        "from": "../index.html",
+        "to": "app-ui/index.html"
       }
+    ],
+    "asarUnpack": [
+      "node_modules/echarts/dist/echarts.min.js"
     ]
   },
   "devDependencies": {
-    "electron": "^43.5.0",
-    "electron-builder": "^26.15.3"
+    "electron": "^43.7.5",
+    "electron-builder": "^26.15.3",
+    "electron-reload": "^2.0.0-alpha.1"
+  },
+  "dependencies": {
+    "echarts": "^6.1.0",
+    "exceljs": "^4.4.0",
+    "js": "^0.1.0"
   }
 }

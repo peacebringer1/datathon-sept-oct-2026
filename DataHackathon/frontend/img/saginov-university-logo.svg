@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 340" role="img" aria-labelledby="title desc">
+  <title id="title">Saginov Technical University</title>
+  <desc id="desc">Логотип университета имени Абылкаса Сагинова, основанного в 1953 году</desc>
+  <rect width="320" height="320" rx="3" fill="#073765"/>
+  <g fill="#e8b978">
+    <path d="M28 26h264v74h-39V63H67v37H28z"/>
+    <path d="M28 135h39v122l34 34h118l34-34V135h39v138l-52 51H80l-52-51z"/>
+    <path d="m160 81 67 67-30 30-37-37-27 27 72 72-45 45-88-88 31-31 28 28-9 9 38 38 11-11-74-74z"/>
+  </g>
+  <g font-family="Arial,Helvetica,sans-serif" font-weight="700" letter-spacing="14">
+    <text x="365" y="108" fill="#073765" font-size="62">SAGINOV</text>
+    <text x="365" y="190" fill="#dca65f" font-size="54" letter-spacing="11">TECHNICAL</text>
+    <text x="365" y="267" fill="#073765" font-size="54" letter-spacing="10">UNIVERSITY</text>
+  </g>
+  <text x="365" y="319" fill="#073765" font-family="Arial,Helvetica,sans-serif" font-size="40" font-weight="700" letter-spacing="13">1953</text>
+  <path d="M510 304h410" fill="none" stroke="#073765" stroke-width="3"/>
+</svg>

@@ -1,0 +1,392 @@
+export let chatHistory = [];
+const aiRecentPrompts = [];
+
+export function toggleAIChat() {
+  const sidebar = document.getElementById('aiPopupSidebar');
+  if (!sidebar) return;
+
+  if (sidebar.style.display === 'none' || sidebar.style.display === '') {
+    sidebar.style.display = 'block';
+    const input = document.getElementById('chatInput');
+    if (input) input.focus();
+  } else {
+    sidebar.style.display = 'none';
+  }
+}
+
+export function handleChatKeyDown(event, sendMessageCallback) {
+  if (event.key === 'Enter' && !event.shiftKey) {
+    event.preventDefault()
+    sendMessageCallback();
+  }
+}
+
+export function appendMessage(text, type) {
+  const chatMessages = document.getElementById('chatMessages');
+  if (!chatMessages) return null;
+  const bubble = document.createElement('div');
+  bubble.className = `chat-bubble ${type}`;
+  bubble.innerText = text;
+  chatMessages.appendChild(bubble);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+  return bubble;
+}
+
+export function cleanAIResponse(text) {
+  return text
+    .replace(/\r\n?/g, '\n')
+    .replace(/```[\w-]*\s*\n?/g, '')
+    .replace(/^[ \t]{0,3}#{1,6}[ \t]*(?:\d+[.)][ \t]*)?/gm, '')
+    .replace(/^([ \t]*)[*+][ \t]+/gm, '$1— ')
+    .replace(/\*\*(.*?)\*\*|__(.*?)__/g, (_match, stars, underscores) => stars || underscores)
+    .replace(/(^|[\s([{«])\*([^*\n]+)\*(?=$|[\s.,!?;:)\]}»])/gm, '$1$2')
+    .replace(/`([^`]*)`/g, '$1')
+    .replace(/^[ \t]*(?:-{3,}|_{3,}|\*{3,})[ \t]*$/gm, '')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+export function initAIChat(apiBaseUrl) {
+  window.sendMessageToAI = () => sendMessageToAI(apiBaseUrl);
+  window.handleChatKeyDown = (event) => handleChatKeyDown(event, window.sendMessageToAI);
+  document.getElementById('chatInput')?.addEventListener('input', hideChatSuggestions);
+  initChartSuggestions();
+}
+
+function hideChatSuggestions() {
+  if (document.getElementById('chatInput')?.value.trim()) {
+    document.getElementById('aiPopupSidebar')?.classList.add('has-chat-prompt');
+  }
+}
+
+function initChartSuggestions() {
+  const suggestions = document.getElementById('aiChartSuggestions');
+  if (!suggestions || suggestions.dataset.ready) return;
+  suggestions.dataset.ready = 'true';
+  [
+    ['📈', 'Сравнить по годам', 'Покажи динамику показателя по годам.'],
+    ['🧭', 'Сравнить регионы', 'Сравни выбранный показатель между регионами.'],
+    ['👥', 'Изучить демографию', 'Покажи возрастной состав населения по D008.'],
+    ['⌕', 'Найти закономерность', 'Какие заметные изменения есть в выбранном наборе?']
+  ].forEach(([icon, title, prompt]) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'ai-quick-action-card';
+    const mark = document.createElement('span');
+    mark.className = 'ai-quick-action-mark';
+    mark.textContent = icon;
+    const heading = document.createElement('strong');
+    heading.textContent = title;
+    const description = document.createElement('small');
+    description.textContent = prompt;
+    button.append(mark, heading, description);
+    button.addEventListener('click', () => {
+      const input = document.getElementById('chatInput');
+      if (!input || input.disabled) return;
+      input.value = window.translateAppText?.(prompt) || prompt;
+      hideChatSuggestions();
+      void window.sendMessageToAI();
+    });
+    suggestions.append(button);
+  });
+
+  const historyList = document.getElementById('aiHistoryList');
+  const renderHistory = () => {
+    if (!historyList) return;
+    const prompts = aiRecentPrompts;
+    historyList.replaceChildren();
+    if (!prompts.length) {
+      const empty = document.createElement('p');
+      empty.className = 'ai-history-empty';
+      empty.textContent = 'Пока нет запросов';
+      historyList.append(empty);
+    }
+    prompts.forEach((prompt) => {
+      const item = document.createElement('button');
+      item.type = 'button';
+      item.className = 'ai-history-item';
+      item.textContent = prompt;
+      item.addEventListener('click', () => {
+        const input = document.getElementById('chatInput');
+        if (input) { input.value = prompt; input.focus(); }
+      });
+      historyList.append(item);
+    });
+  };
+  document.addEventListener('ai-chat-history-updated', renderHistory);
+  document.getElementById('aiClearHistoryButton')?.addEventListener('click', () => {
+    aiRecentPrompts.splice(0, aiRecentPrompts.length);
+    renderHistory();
+  });
+  document.getElementById('aiNewChatButton')?.addEventListener('click', () => {
+    chatHistory = [];
+    const chatMessages = document.getElementById('chatMessages');
+    chatMessages?.querySelectorAll('.chat-chart').forEach((element) => window.echarts?.getInstanceByDom(element)?.dispose());
+    chatMessages?.replaceChildren();
+    document.getElementById('aiPopupSidebar')?.classList.remove('has-chat-prompt');
+    appendMessage('Готов помочь по данным проекта.', 'ai');
+    const input = document.getElementById('chatInput');
+    if (input) { input.value = ''; input.focus(); }
+  });
+  document.getElementById('aiFaqButton')?.addEventListener('click', () => {
+    const input = document.getElementById('chatInput');
+    if (input) {
+      input.value = 'Какие вопросы можно задать по открытому набору данных?';
+      hideChatSuggestions();
+      input.focus();
+    }
+  });
+}
+
+function getDashboardContext() {
+  const getSelection = (id) => {
+    const select = document.getElementById(id);
+    return select?.selectedOptions?.[0]?.textContent?.trim() || '';
+  };
+
+  const activeCategory = document.querySelector('.cat-header.active .cat-text');
+  const activeDatasetItem = document.querySelector('.cat-subitem.active[data-search-dataset]');
+  const activeDataset = activeDatasetItem?.dataset.searchDataset || '';
+  const context = {
+    category: activeCategory?.textContent?.trim() || '',
+    activeDataset,
+    indicator: getSelection('regionIndicatorSelect'),
+    year: getSelection('regionYearSelect'),
+    mapIndicator: getSelection('mapIndicatorSelect'),
+    mapYear: getSelection('mapYearSelect'),
+    summaryIndicator: getSelection('summaryIndicatorSelect')
+  };
+
+  if (activeDataset) {
+    const datasetFilters = {
+      year: document.getElementById(`${activeDataset}YearSelect`)?.value || ''
+    };
+    if (activeDataset === 'd002') {
+      datasetFilters.form = document.getElementById('d002FormSelect')?.value || '';
+      datasetFilters.question = document.getElementById('d002CurrentQuestionCode')?.textContent?.trim() || '';
+      datasetFilters.value_mode = document.getElementById('d002ValueMode')?.value || 'share';
+      if (datasetFilters.year === 'all') {
+        datasetFilters.years = Array.from(document.getElementById('d002YearSelect')?.options || []).map((option) => option.value).filter((year) => year !== 'all');
+      }
+    } else if (activeDataset === 'd004') {
+      datasetFilters.quarter = document.getElementById('d004QuarterSelect')?.value || '';
+      datasetFilters.module = document.getElementById('d004ModuleSelect')?.value || '';
+    } else if (activeDataset === 'd008') {
+      datasetFilters.years = [...document.querySelectorAll('input[name="d008Year"]:checked')].map((input) => input.value);
+      datasetFilters.chartFilters = Object.fromEntries([...document.querySelectorAll('[data-d008-chart]')].map((panel) => [
+        panel.dataset.d008Chart,
+        Object.fromEntries([...panel.querySelectorAll('[data-d008-filter]')].map((control) => [control.dataset.d008Filter, control.value]).filter(([, value]) => value))
+      ]));
+    }
+    context.datasetFilters = datasetFilters;
+  }
+
+  for (let card = 1; card <= 6; card += 1) {
+    const indicator = getSelection(`card${card}Indicator`);
+    const year = getSelection(`card${card}Year`);
+    if (indicator || year) context[`card${card}`] = { indicator, year };
+  }
+
+  return context;
+}
+
+function appendChartMessage(chartData) {
+  const hasSeries = Array.isArray(chartData?.series) && chartData.series.length > 0
+  if (
+    !chartData || !['bar', 'line', 'pie'].includes(chartData.chart_type)
+    || !Array.isArray(chartData.labels)
+    || (!hasSeries && !Array.isArray(chartData.values))
+    || chartData.labels.length === 0 || chartData.labels.length > 30
+    || (!hasSeries && chartData.labels.length !== chartData.values.length)
+    || chartData.labels.some((label) => typeof label !== 'string')
+    || (!hasSeries && chartData.values.some((value) => !Number.isFinite(Number(value))))
+    || (hasSeries && chartData.series.some((series) => !series || typeof series.name !== 'string' || !Array.isArray(series.data) || series.data.length !== chartData.labels.length || series.data.some((value) => value != null && !Number.isFinite(Number(value)))))
+  ) {
+    throw new Error('ИИ вернул график в неподдерживаемом формате.');
+  }
+  if (!window.echarts) {
+    throw new Error('Библиотека ECharts не загрузилась, график пока нельзя показать.');
+  }
+
+  const chatMessages = document.getElementById('chatMessages');
+  if (!chatMessages) return;
+  const card = document.createElement('section');
+  card.className = 'chat-bubble ai chat-chart-card';
+  const heading = document.createElement('h4');
+  heading.textContent = chartData.title || 'График по данным';
+  const caption = document.createElement('p');
+  caption.textContent = chartData.subtitle || chartData.dataset || '';
+  const chartElement = document.createElement('div');
+  chartElement.className = 'chat-chart';
+  chartElement.setAttribute('role', 'img');
+  chartElement.setAttribute('aria-label', `${heading.textContent}. ${caption.textContent}`);
+  card.append(heading, caption, chartElement);
+  chatMessages.append(card);
+
+  const darkTheme = document.body.classList.contains('dark-theme');
+  const chart = window.echarts.init(chartElement, darkTheme ? 'dark' : undefined);
+  const labels = chartData.labels;
+  const values = Array.isArray(chartData.values) ? chartData.values.map(Number) : [];
+  const series = hasSeries ? chartData.series.map((item) => ({
+    name: item.name,
+    type: item.type || chartData.chart_type,
+    data: item.data.map((value) => value == null ? null : Number(value)),
+    smooth: chartData.chart_type === 'line',
+    showSymbol: chartData.chart_type === 'line',
+    connectNulls: false,
+    barMaxWidth: 40,
+    label: chartData.chart_type === 'pie'
+      ? { show: true, formatter: '{b}: {c} ({d}%)', fontSize: 10 }
+      : { show: true, position: 'top', formatter: ({ value }) => value == null ? '' : `${Number(value).toLocaleString('ru-RU')}${suffix || ''}`, fontSize: 10 },
+    labelLayout: chartData.chart_type === 'pie' ? undefined : { hideOverlap: true }
+  })) : null;
+  const suffix = typeof chartData.value_label === 'string' ? chartData.value_label : '';
+  const escapeTooltipText = (value) => String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+  const option = {
+    animationDuration: 500,
+    color: ['#dc3545', '#f47721', '#f5c542', '#a8c93a', '#238b45', '#8b9298'],
+    tooltip: {
+      trigger: 'item',
+      formatter: chartData.chart_type === 'pie'
+        ? (item) => `${escapeTooltipText(item.name)}<br><strong>${Number(item.value).toLocaleString('ru-RU')}${escapeTooltipText(suffix)}</strong> · ${item.percent}%`
+        : (item) => {
+          if (!item) return '';
+          const category = item.name ? `${escapeTooltipText(item.name)}<br>` : '';
+          const seriesName = item.seriesName ? `${escapeTooltipText(item.seriesName)}: ` : '';
+          return `${category}${item.marker}${seriesName}<strong>${Number(item.value).toLocaleString('ru-RU')}${escapeTooltipText(suffix)}</strong>`;
+        }
+    },
+    toolbox: { right: 8, feature: { saveAsImage: { title: 'Сохранить график', pixelRatio: 2 } } },
+    legend: hasSeries ? { type: 'scroll', bottom: 2, left: 8, right: 8 } : undefined,
+    grid: { left: 48, right: 18, top: 38, bottom: hasSeries ? 72 : 54, containLabel: true },
+    series: chartData.chart_type === 'pie'
+      ? [{
+        type: 'pie',
+        radius: ['38%', '68%'],
+        data: labels.map((name, index) => ({ name, value: values[index] })),
+        label: { formatter: '{b}: {d}%' },
+        emphasis: { scale: true }
+      }]
+      : (hasSeries ? series : [{
+        type: chartData.chart_type,
+        data: values,
+        smooth: chartData.chart_type === 'line',
+        showSymbol: chartData.chart_type === 'line',
+        barMaxWidth: 40,
+        label: { show: true, position: 'top', formatter: ({ value }) => `${Number(value).toLocaleString('ru-RU')}${suffix}` },
+        labelLayout: { hideOverlap: true }
+      }])
+  };
+  if (chartData.chart_type !== 'pie') {
+    option.xAxis = { type: 'category', data: labels, axisLabel: { interval: 0, rotate: labels.length > 6 ? 30 : 0, hideOverlap: true } };
+    option.yAxis = { type: 'value' };
+  }
+  chart.setOption(option);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+
+  const resize = () => {
+    if (chartElement.isConnected) chart.resize();
+  };
+  if (window.ResizeObserver) {
+    const observer = new window.ResizeObserver(resize);
+    observer.observe(chartElement);
+  }
+}
+
+export async function sendMessageToAI(apiBaseUrl) {
+  const input = document.getElementById('chatInput');
+  const sendButton = document.getElementById('chatSendButton');
+  const sendSpinner = sendButton?.querySelector('.chat-send-spinner');
+  const message = input?.value.trim();
+  if (!message || !input) return;
+
+  hideChatSuggestions();
+  appendMessage(message, 'user');
+  input.value = '';
+  input.disabled = true;
+  if (sendButton) {
+    sendButton.disabled = true;
+  }
+  if (sendButton) {
+    sendButton.setAttribute('aria-busy', 'true');
+    sendButton.classList.add('is-loading');
+  }
+  if (sendSpinner) sendSpinner.hidden = false;
+  const loadingBubble = appendMessage('Формирую ответ…', 'ai');
+  if (loadingBubble) {
+    loadingBubble.classList.add('chat-loading');
+    loadingBubble.innerHTML = '<span class="loading-spinner" aria-hidden="true"></span><span>Формирую ответ…</span>';
+  }
+
+  const nextHistory = [...chatHistory, { role: 'user', text: message }].slice(-10);
+  aiRecentPrompts.unshift(message.slice(0, 160));
+  aiRecentPrompts.splice(12);
+  document.dispatchEvent(new Event('ai-chat-history-updated'));
+
+  try {
+    const response = await fetch(`${apiBaseUrl}/api/ai-chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messages: nextHistory,
+        dashboard_context: getDashboardContext(),
+        language: window.getAppLanguage?.() || 'ru'
+      })
+    });
+    const responseText = await response.text();
+    let result;
+    try {
+      result = JSON.parse(responseText);
+    } catch {
+      const message = response.status >= 500
+        ? `Ошибка Flask API (HTTP ${response.status}). Проверьте traceback в терминале backend.`
+        : `Flask API вернул не JSON (HTTP ${response.status}). Проверьте, что запрос отправлен на актуальный сервер.`;
+      throw new Error(message);
+    }
+    if (!response.ok) {
+      const errorMessage = typeof result.error === 'string'
+        ? result.error
+        : result.error?.message;
+      throw new Error(errorMessage || 'Не удалось получить ответ ИИ.');
+    }
+    if (typeof result.answer !== 'string' || !result.answer.trim()) {
+      throw new Error('Flask API не вернул текст ответа.');
+    }
+
+    const answer = cleanAIResponse(result.answer);
+    if (!answer) {
+      throw new Error('После очистки форматирования ответ ИИ оказался пустым.');
+    }
+    chatHistory = [...nextHistory, { role: 'model', text: answer }].slice(-10);
+    appendMessage(answer, 'ai');
+    if (result.chart) {
+      try {
+        appendChartMessage(result.chart);
+      } catch (error) {
+        appendMessage(error.message || 'Не удалось отобразить график.', 'ai');
+      }
+    }
+  } catch (error) {
+    const errorMessage = error.message || '';
+    const friendlyMessage = /Claude API \(429\)|HTTP 429|rate.?limit|quota/i.test(errorMessage)
+      ? 'Временно достигнут лимит запросов Claude. Попробуйте позже.'
+      : errorMessage || 'Не удалось получить ответ ИИ. Проверьте подключение и попробуйте ещё раз.';
+    appendMessage(friendlyMessage, 'ai');
+  } finally {
+    loadingBubble?.remove();
+    input.disabled = false;
+    if (sendButton) {
+      sendButton.disabled = false;
+      sendButton.removeAttribute('aria-busy');
+      sendButton.classList.remove('is-loading');
+    }
+    if (sendSpinner) sendSpinner.hidden = true;
+    input.focus();
+  }
+}

@@ -15,39 +15,53 @@
 
 ### Настройка среды для запуска приложения
 
-Предварительно нужно перейти в [каталог](DataHackathon/README.md) приложения:
+Перейдите в каталог приложения:
 
 ```shell
-cd DataHackathon\frontend\
+cd DataHackathon
 ```
 
 ### Установка зависимостей `Python`
 
-Рекомендуется создать виртуальную среду:
+Создайте виртуальное окружение в корне `DataHackathon` (именно здесь Electron ищет `.venv`):
 
 ```shell
 python -m venv .venv
 ```
 
-Можно устанавливать зависимости:
+Активируйте его и установите зависимости:
 
+Windows PowerShell:
 ```shell
-pip install -r requirements.txt
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r backend\requirements.txt
 ```
 
-`Visual Studio Code` сразу подхватит виртуальную среду и ее зависимости.
+macOS:
+```shell
+source .venv/bin/activate
+python -m pip install -r backend/requirements.txt
+```
 
 ### Установка зависимостей `NodeJS`
 
-Установить зависимости:
+```shell
+cd frontend
+npm ci
+```
+
+#### Подготовка локальной базы данных
+
+Папка `data/raw/`, наборы `data/sinte/` и файл `database.sqlite` не распространяются через Git и не включаются в установщик. Чтобы создать базу из исходных CSV, сначала скопируйте файлы в `DataHackathon/data/raw/`, затем из каталога `DataHackathon` выполните:
 
 ```shell
-npm install
+python clean_to_db.py
 ```
 
 ### Запуск приложения
 
 ```shell
+cd frontend
 npm start
 ```
 

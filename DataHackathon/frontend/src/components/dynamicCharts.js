@@ -1,0 +1,149 @@
+const availableChartTypes = [
+  { type: 'bar', name: 'Столбчатая' },
+  { type: 'line', name: 'Линейная' },
+  { type: 'scatter', name: 'Точечная' },
+  { type: 'pie', name: 'Круговая' }
+];
+const chartColors = ['#cf7f5f', '#a78bb5', '#c58eaa', '#e1a07f', '#9b82a6', '#765f80'];
+
+let selectedDynamicType = 'bar';
+
+export function renderBarAnimationChart(regions, values) {
+  const barAnimationDom = document.getElementById('barAnimationChart');
+  if (!barAnimationDom) return;
+  
+  const barChart = echarts.init(barAnimationDom);
+  const data1 = values && values.length > 0 ? values : [120, 200, 150, 80, 70];
+  const data2 = data1.map(v => Math.round(v * 0.85));
+
+  const barOption = {
+    color: chartColors,
+    title: { text: 'Сравнение показателей', textStyle: { fontSize: 13 } },
+    legend: { data: ['Текущий', 'Прошлый'] },
+    toolbox: {
+      feature: {
+        dataView: { title: 'Таблица данных', readOnly: true },
+        saveAsImage: { title: 'Сохранить картинку' }
+      }
+    },
+    tooltip: { trigger: 'item' },
+    xAxis: { 
+      data: regions, 
+      splitLine: { show: false },
+      axisLabel: { interval: 0, rotate: 25, fontSize: 13 }
+    },
+    yAxis: {},
+    series: [
+      {
+        name: 'Текущий',
+        type: 'bar',
+        data: data1,
+        label: { show: true, position: 'top', formatter: ({ value }) => Number(value).toLocaleString('ru-RU'), fontSize: 10 },
+        labelLayout: { hideOverlap: true },
+        emphasis: { focus: 'series' },
+        animationDelay: (idx) => idx * 10
+      },
+      {
+        name: 'Прошлый',
+        type: 'bar',
+        data: data2,
+        label: { show: true, position: 'top', formatter: ({ value }) => Number(value).toLocaleString('ru-RU'), fontSize: 10 },
+        labelLayout: { hideOverlap: true },
+        emphasis: { focus: 'series' },
+        animationDelay: (idx) => idx * 10 + 100
+      }
+    ],
+    animationEasing: 'elasticOut',
+    animationDelayUpdate: (idx) => idx * 5
+  };
+
+  barChart.setOption(barOption, true);
+  window.addEventListener('resize', () => barChart.resize());
+}
+
+export function renderDynamicSwitchChart(regions, values) {
+  const dynamicDom = document.getElementById('dynamicSwitchChart');
+  if (!dynamicDom) return;
+
+  let modal = document.getElementById('chartSelectorModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'chartSelectorModal';
+    modal.className = 'chart-modal-overlay hidden';
+    modal.innerHTML = `
+      <div class="chart-modal-content">
+        <h3>Выберите тип графика ECharts</h3>
+        <div class="chart-types-grid">
+          ${availableChartTypes.map(item => `
+            <button class="chart-type-option" data-type="${item.type}">${item.name}</button>
+          `).join('')}
+        </div>
+        <button class="close-modal-btn">Закрыть</button>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    modal.querySelectorAll('.chart-type-option').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        selectedDynamicType = e.target.getAttribute('data-type');
+        modal.classList.add('hidden');
+        buildChart(regions, values, selectedDynamicType, dynamicDom);
+      });
+    });
+
+    modal.querySelector('.close-modal-btn').addEventListener('click', () => {
+      modal.classList.add('hidden');
+    });
+  }
+
+  const selectBtn = document.getElementById('openChartModalBtn');
+  if (selectBtn) {
+    selectBtn.onclick = () => {
+      modal.classList.remove('hidden');
+    };
+  }
+
+  buildChart(regions, values, selectedDynamicType, dynamicDom);
+}
+
+function buildChart(regions, values, type, domElement) {
+  const chartInstance = echarts.init(domElement);
+
+  const commonToolbox = {
+    feature: {
+      dataView: { readOnly: true, title: 'Таблица данных' },
+      saveAsImage: { pixelRatio: 2, title: 'Сохранить изображение' }
+    }
+  };
+
+  let option = {
+    color: chartColors,
+    title: { text: `Тип: ${type.toUpperCase()}`, textStyle: { fontSize: 13 } },
+    toolbox: commonToolbox,
+    tooltip: { trigger: 'item' },
+  };
+
+  if (type === 'pie') {
+    option.series = [{
+      type: 'pie',
+      radius: ['35%', '65%'],
+      label: { show: true, formatter: '{b}: {c} ({d}%)', fontSize: 10 },
+      labelLayout: { hideOverlap: true },
+      data: regions.map((reg, idx) => ({ name: reg, value: values[idx] }))
+    }];
+  } else {
+    option.xAxis = { type: 'category', data: regions, axisLabel: { interval: 0, rotate: 25, fontSize: 13 } };
+    option.yAxis = { type: 'value' };
+    option.series = [{
+      data: values,
+      type: type,
+      smooth: type === 'line',
+      itemStyle: { color: '#cf7f5f' },
+      label: { show: true, position: 'top', formatter: ({ value }) => Number(value).toLocaleString('ru-RU'), fontSize: 10 },
+      labelLayout: { hideOverlap: true }
+    }];
+  }
+
+  chartInstance.setOption(option, true);
+  window.addEventListener('resize', () => chartInstance.resize());
+}
