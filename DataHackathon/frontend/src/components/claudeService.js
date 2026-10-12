@@ -25,6 +25,7 @@ export async function fetchAIAnalysisForChart(chartTitle, categoryName, apiBaseU
       indicator: chartTitle,
       category: categoryName,
       year: String(chartContext.year || ''),
+      language: window.getAppLanguage?.() || 'ru',
       chart: { title: chartTitle, labels, series }
     })
   });

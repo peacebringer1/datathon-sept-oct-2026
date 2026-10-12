@@ -1,4 +1,13 @@
+let activeApiBaseUrl = '';
+let latestRequestId = 0;
+
+window.addEventListener('app-language-changed', () => {
+  if (activeApiBaseUrl) void fetchAIInsights(activeApiBaseUrl);
+});
+
 export async function fetchAIInsights(API_BASE_URL) {
+  activeApiBaseUrl = API_BASE_URL;
+  const requestId = ++latestRequestId;
   const indicatorEl = document.getElementById('regionIndicatorSelect');
   const track = document.getElementById('tickerTrack');
   if (!indicatorEl || !track) return;
@@ -6,8 +15,12 @@ export async function fetchAIInsights(API_BASE_URL) {
   const indicator = indicatorEl.value;
 
   try {
-    const res = await fetch(`${API_BASE_URL}/api/ai-insights?indicator=${encodeURIComponent(indicator)}`);
+    const language = window.getAppLanguage?.() || 'ru';
+    const res = await fetch(
+      `${API_BASE_URL}/api/ai-insights?indicator=${encodeURIComponent(indicator)}&language=${encodeURIComponent(language)}`
+    );
     const result = await res.json();
+    if (requestId !== latestRequestId) return;
     if (!res.ok) {
       const message = typeof result.error === 'string'
         ? result.error
@@ -47,6 +60,7 @@ export async function fetchAIInsights(API_BASE_URL) {
     });
     track.replaceChildren(...items);
   } catch (err) {
+    if (requestId !== latestRequestId) return;
     console.error('Ошибка тикера:', err);
     const errorMessage = document.createElement('div');
     errorMessage.className = 'ticker-item';

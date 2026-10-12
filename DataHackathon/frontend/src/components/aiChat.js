@@ -77,7 +77,7 @@ function initChartSuggestions() {
     button.addEventListener('click', () => {
       const input = document.getElementById('chatInput');
       if (!input || input.disabled) return;
-      input.value = prompt;
+      input.value = window.translateAppText?.(prompt) || prompt;
       void window.sendMessageToAI();
     });
     suggestions.append(button);
@@ -327,7 +327,8 @@ export async function sendMessageToAI(apiBaseUrl) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         messages: nextHistory,
-        dashboard_context: getDashboardContext()
+        dashboard_context: getDashboardContext(),
+        language: window.getAppLanguage?.() || 'ru'
       })
     });
     const responseText = await response.text();

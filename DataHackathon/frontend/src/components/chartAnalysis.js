@@ -154,7 +154,10 @@ async function requestAnalysis(job) {
     const response = await fetch(`${apiBaseUrl}/api/chart-analysis`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(context)
+      body: JSON.stringify({
+        ...context,
+        language: window.getAppLanguage?.() || 'ru'
+      })
     });
     const result = await response.json();
     if (!response.ok) {

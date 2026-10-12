@@ -44,12 +44,18 @@ document.addEventListener('click', (event) => {
 window.syncAnalyzerPreferences = function () {
   document.getElementById('dataAnalyzerFrame')?.contentWindow?.postMessage({
     type: 'da-settings',
-    lang: window.getAppLanguage?.() === 'en' ? 'en' : 'ru',
-    theme: document.body.classList.contains('dark-theme') ? 'dark' : 'light'
+    lang: window.getAppLanguage?.() || 'ru',
+    theme: document.body.classList.contains('dark-theme') ? 'dark' : 'light',
+    translations: window.getAppTranslationCatalog?.() || {}
   }, '*');
 };
 window.addEventListener('app-language-changed', () => window.syncAnalyzerPreferences());
 window.addEventListener('app-theme-changed', () => window.syncAnalyzerPreferences());
+window.addEventListener('message', (event) => {
+  const analyzerFrame = document.getElementById('dataAnalyzerFrame');
+  if (event.source !== analyzerFrame?.contentWindow || event.data?.type !== 'da-language-change') return;
+  window.setAppLanguage?.(event.data.language);
+});
 
 const finishStartupLoading = startAppLoading('Запускаем приложение и подключаем данные…');
 async function waitForBackendStartup() {

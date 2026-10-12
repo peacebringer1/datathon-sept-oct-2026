@@ -466,9 +466,9 @@
     <div class="list" id="list"></div>
     <div class="source-tools"><button class="btn ghost" id="importDemographics"></button></div>
     <div class="tools">
-      <button class="btn" id="add">＋</button>
-      <button class="btn" id="lang">RU</button>
-      <button class="btn" id="theme">🌙</button>
+      <button class="btn" id="add" aria-label="Добавить набор данных" title="Добавить набор данных">＋</button>
+      <button class="btn" id="lang" aria-label="Язык интерфейса" title="Язык интерфейса">RU</button>
+      <button class="btn" id="theme" aria-label="Сменить тему" title="Сменить тему">🌙</button>
     </div>
     <input type="file" id="file" multiple accept=".csv,.xlsx" hidden>
   </aside>
@@ -497,21 +497,51 @@
         missing: "Empty cells", keep: "Keep as is", drop_all: "Drop fully empty rows", drop_any: "Drop rows with gaps", fill_zero: "Fill with zero", fill_mean: "Fill with mean", fill_median: "Fill with median", fill_mode: "Fill with mode", fill_value: "Fill with value",
         fillv: "Fill value", dupm: "Row duplicates", none: "Leave", all: "Remove by all columns", dropE: "Drop empty columns", apply: "Apply", reset: "Reset", save: "Download CSV",
         done: "Cleaning done", rr: "Empty rows removed", rc: "Empty columns removed", rd: "Duplicates removed", chg: "Columns changed", prev: "Showing", of: "of", busy: "Loading…"
+      },
+      kk: {
+        addDataset: "Деректер жиынтығын қосу", language: "Интерфейс тілі", theme: "Тақырыпты ауыстыру",
+        minimum: "Мин", maximum: "Макс", unspecified: "Көрсетілмеген",
+        datasetConnected: "Деректер жиынтығы «{name}» қосылды. Графиктерді ашу үшін «Демография» түймесін басыңыз.",
+        datasetNotConnected: "Деректер жиынтығы графиктерге қосылмады:"
       }
     };
-    let lang = localStorage.da_lang || "ru", theme = localStorage.da_theme || "light", sets = [], cur = null, tab = 0, cache = {}, filter = "", lastReport = null;
+    Object.assign(L.ru, {
+      addDataset: "Добавить набор данных", language: "Язык интерфейса", theme: "Сменить тему",
+      minimum: "Мин.", maximum: "Макс.", unspecified: "Не указано",
+      chartAria: "{measure} по {category}",
+      datasetConnected: "Набор данных «{name}» подключён. Нажмите «Демография», чтобы открыть графики.",
+      datasetNotConnected: "Набор данных не подключён к графикам:"
+    });
+    Object.assign(L.en, {
+      addDataset: "Add dataset", language: "Interface language", theme: "Change theme",
+      minimum: "Min", maximum: "Max", unspecified: "Not specified",
+      chartAria: "{measure} by {category}",
+      datasetConnected: "Dataset “{name}” connected. Select “Demographics” to open the charts.",
+      datasetNotConnected: "Dataset is not connected to charts:"
+    });
+    let lang = ["ru", "kk", "en"].includes(localStorage.da_lang) ? localStorage.da_lang : "ru", theme = localStorage.da_theme || "light", sets = [], cur = null, tab = 0, cache = {}, filter = "", lastReport = null, translationCatalog = {};
     const $ = s => document.querySelector(s), t = k => L[lang][k] || k, esc = s => String(s ?? "").replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c])), escAttr = s => esc(s).replace(/"/g, "&quot;").replace(/'/g, "&#39;");
-    const num = n => n == null ? "—" : Number(n).toLocaleString(lang == "ru" ? "ru-RU" : "en-US");
-    async function api(p, o) { const r = await fetch(API + p, o); if (!r.ok) { let m = r.statusText; try { m = (await r.json()).detail || m } catch { } throw new Error(m) } return r.json() }
+    const translateData = value => {
+      const text = String(value ?? "");
+      for (const [original, variants] of Object.entries(translationCatalog)) {
+        if (text === original || variants.includes(text)) {
+          return lang === "ru" ? original : variants[lang === "kk" ? 0 : 1];
+        }
+      }
+      return text;
+    };
+    const num = n => n == null ? "—" : Number(n).toLocaleString(lang == "ru" ? "ru-RU" : lang == "kk" ? "kk-KZ" : "en-US");
+    async function api(p, o) { const r = await fetch(API + p, o); if (!r.ok) { let m = r.statusText; try { m = (await r.json()).detail || m } catch { } throw new Error(translateData(m)) } return r.json() }
     function notifyDatasetSelection() { if (window.parent !== window) window.parent.postMessage({ type: "da-selected-dataset", datasetId: cur }, "*") }
-    function applyTheme() { document.documentElement.dataset.theme = theme; $("#theme").textContent = theme == "dark" ? "☀️" : "🌙"; localStorage.da_theme = theme }
+    function applyTheme() { document.documentElement.dataset.theme = theme; $("#theme").textContent = theme == "dark" ? "☀️" : "🌙"; $("#theme").title = t("theme") || "Theme"; $("#theme").setAttribute("aria-label", $("#theme").title); localStorage.da_theme = theme }
     function chrome() {
-      $("#t_ds").textContent = t("ds"); $("#q").placeholder = t("search"); $("#t_title").textContent = t("title"); $("#lang").textContent = lang.toUpperCase(); $("#importDemographics").textContent = t("importDemo"); localStorage.da_lang = lang;
+      document.documentElement.lang = lang;
+      $("#t_ds").textContent = t("ds"); $("#q").placeholder = t("search"); $("#t_title").textContent = t("title"); $("#lang").textContent = lang.toUpperCase(); $("#lang").title = t("language") || "Language"; $("#lang").setAttribute("aria-label", $("#lang").title); $("#add").title = t("addDataset") || "Add dataset"; $("#add").setAttribute("aria-label", $("#add").title); $("#importDemographics").textContent = t("importDemo"); localStorage.da_lang = lang;
       $("#tabs").innerHTML = t("tabs").map((x, i) => `<button class="tab ${i == tab ? "on" : ""}" data-i="${i}">${x}</button>`).join("")
     }
     function renderList() {
-      const f = sets.filter(s => s.name.toLowerCase().includes(filter));
-      $("#list").innerHTML = f.map(s => `<div class="item ${s.id == cur ? "on" : ""}" data-id="${s.id}"><div>${esc(s.name)}<small>${num(s.rows)} ${t("rows")} · ${s.cols} ${t("cols")}</small></div><button class="x" data-del="${s.id}">✕</button></div>`).join("")
+      const f = sets.filter(s => s.name.toLowerCase().includes(filter) || translateData(s.name).toLowerCase().includes(filter));
+      $("#list").innerHTML = f.map(s => `<div class="item ${s.id == cur ? "on" : ""}" data-id="${s.id}"><div>${esc(translateData(s.name))}<small>${num(s.rows)} ${t("rows")} · ${s.cols} ${t("cols")}</small></div><button class="x" data-del="${s.id}">✕</button></div>`).join("")
     }
     function strip() { const s = sets.find(x => x.id == cur); $("#strip").innerHTML = s ? `<span><b>${num(s.rows)}</b> ${t("rows")}</span><span><b>${s.cols}</b> ${t("cols")}</span><span>${t("enc")}: <b>${s.encoding || "—"}</b></span><span>${t("sep")}: <b>${s.separator || "—"}</b></span><span>${t("state")}: <b>${s.cleaned ? t("cleaned") : t("raw")}</b></span>` : "" }
     async function refresh() { sets = await api("/datasets"); if (!sets.find(s => s.id == cur)) cur = sets[0]?.id || null; renderList(); strip(); notifyDatasetSelection(); await view() }
@@ -523,14 +553,14 @@
       const p = await api(`/datasets/${cur}/profile`);
       const st = [[t("rows"), p.row_count], [t("cols"), p.column_count], [t("miss"), p.missing_values], [t("dup"), p.duplicate_count], [t("num"), p.numeric_columns], [t("cat"), p.categorical_columns], [t("dt"), p.datetime_columns], [t("txt"), p.text_columns]];
       v.innerHTML = `<div class="grid">${st.map(([a, b]) => `<div class="stat"><span>${a}</span><b>${num(b)}</b></div>`).join("")}</div>
- <div class="card"><div class="scroll"><table><tr><th>${t("col")}</th><th>${t("type")}</th><th>${t("empty_c")}</th><th></th><th>${t("uniq")}</th><th>Min</th><th>Max</th></tr>
- ${p.columns.map(c => `<tr><td><b>${esc(c.name)}</b></td><td>${esc(c.data_type)}</td><td>${num(c.missing_count)} (${(c.missing_percent || 0).toFixed(1)}%)</td><td><div class="bar"><i style="width:${Math.min(100, c.missing_percent || 0)}%"></i></div></td><td>${num(c.unique_count)}</td><td>${esc(c.min_value)}</td><td>${esc(c.max_value)}</td></tr>`).join("")}</table></div></div>`
+ <div class="card"><div class="scroll"><table><tr><th>${t("col")}</th><th>${t("type")}</th><th>${t("empty_c")}</th><th></th><th>${t("uniq")}</th><th>${t("minimum") || "Min"}</th><th>${t("maximum") || "Max"}</th></tr>
+ ${p.columns.map(c => `<tr><td><b>${esc(translateData(c.name))}</b></td><td>${esc(translateData(c.data_type))}</td><td>${num(c.missing_count)} (${(c.missing_percent || 0).toFixed(1)}%)</td><td><div class="bar"><i style="width:${Math.min(100, c.missing_percent || 0)}%"></i></div></td><td>${num(c.unique_count)}</td><td>${esc(translateData(c.min_value))}</td><td>${esc(translateData(c.max_value))}</td></tr>`).join("")}</table></div></div>`
     }
     function vClean(v) {
       const M = ["keep", "drop_all", "drop_any", "fill_zero", "fill_mean", "fill_median", "fill_mode", "fill_value"];
       v.innerHTML = `<div class="card"><div class="form">
  <label>${t("missing")}<select id="c_m">${M.map(m => `<option value="${m}">${t(m)}</option>`).join("")}</select></label>
- <label id="c_fvw" style="display:none">${t("fillv")}<input type="text" id="c_fv" value="Не указано"></label>
+ <label id="c_fvw" style="display:none">${t("fillv")}<input type="text" id="c_fv" value="${esc(t("unspecified"))}"></label>
  <label>${t("dupm")}<select id="c_d"><option value="none">${t("none")}</option><option value="all">${t("all")}</option></select></label>
  <label class="row"><input type="checkbox" id="c_e" checked> ${t("dropE")}</label>
  <div class="row"><button class="btn" id="c_go">${t("apply")}</button><button class="btn ghost" id="c_rs">${t("reset")}</button><button class="btn ghost" id="c_sv">${t("save")}</button></div></div>
@@ -546,12 +576,12 @@
     }
     async function vData(v) {
       const d = await api(`/datasets/${cur}/data?limit=100`);
-      v.innerHTML = `<div class="card"><div class="scroll"><table><tr>${d.columns.map(c => `<th>${esc(c)}</th>`).join("")}</tr>${d.rows.map(r => `<tr>${r.map(x => `<td>${esc(x)}</td>`).join("")}</tr>`).join("")}</table></div><p style="color:var(--mute);font-size:13px">${t("prev")} ${d.rows.length} ${t("of")} ${num(d.total)}</p></div>`
+      v.innerHTML = `<div class="card"><div class="scroll"><table><tr>${d.columns.map(c => `<th>${esc(translateData(c))}</th>`).join("")}</tr>${d.rows.map(r => `<tr>${r.map(x => `<td>${esc(translateData(x))}</td>`).join("")}</tr>`).join("")}</table></div><p style="color:var(--mute);font-size:13px">${t("prev")} ${d.rows.length} ${t("of")} ${num(d.total)}</p></div>`
     }
-    async function upload(files) { for (const f of files) { try { const r = await api("/datasets?name=" + encodeURIComponent(f.name), { method: "POST", body: await f.arrayBuffer() }); cur = r.id } catch (e) { alert(f.name + ": " + e.message) } } lastReport = null; await refresh() }
+    async function upload(files) { for (const f of files) { try { const r = await api("/datasets?name=" + encodeURIComponent(f.name), { method: "POST", body: await f.arrayBuffer() }); cur = r.id } catch (e) { alert(f.name + ": " + translateData(e.message)) } } lastReport = null; await refresh() }
     $("#add").onclick = () => $("#file").click(); $("#file").onchange = e => { upload(e.target.files); e.target.value = "" };
     $("#theme").onclick = () => { theme = theme == "dark" ? "light" : "dark"; applyTheme() };
-    $("#lang").onclick = () => { lang = lang == "ru" ? "en" : "ru"; renderList(); strip(); view() };
+    $("#lang").onclick = () => { lang = ["ru", "kk", "en"][(["ru", "kk", "en"].indexOf(lang) + 1) % 3]; renderList(); strip(); view(); if (window.parent !== window) window.parent.postMessage({ type: "da-language-change", language: lang }, "*") };
     $("#q").oninput = e => { filter = e.target.value.toLowerCase(); renderList() };
     $("#tabs").onclick = e => { const b = e.target.closest(".tab"); if (b) { tab = +b.dataset.i; view() } };
     $("#list").onclick = async e => { const x = e.target.closest("[data-del]"); if (x) { await api("/datasets/" + x.dataset.del, { method: "DELETE" }); return refresh() } const i = e.target.closest(".item"); if (i) { cur = i.dataset.id; lastReport = null; renderList(); strip(); notifyDatasetSelection(); view() } };
@@ -570,18 +600,31 @@
       comb: "Combine columns into one", newc: "New name", sepr: "Separator", skipE: "Skip empty", coal: "Coalesce duplicate columns (first non-empty)", addrule: "Add rule", run: "Run", ren: "Rename columns",
       base: "Base dataset", pick: "Datasets to merge", how: "Type", cond: "Condition", addc: "+ condition", m2m: "Allow N:M", runm: "Merge", res: "Result added to the list on the left", need2: "Select at least two datasets", ok: "Done", val: "Value", cnt: "Count"
     });
+    Object.assign(L.kk, {
+      ds: "Деректер жиынтықтары", search: "Деректер жиынтығын іздеу…", title: "Деректерді талдау және тазалау", tabs: ["Шолу", "Тазалау", "Деректер", "Түрлендіру", "Түсіндірмелер", "Біріктіру", "Графиктер"],
+      chartAria: "{measure} бойынша {category}",
+      empty: "Жұмысты бастау үшін CSV немесе XLSX файлын қосыңыз не демография деректерін импорттаңыз", rows: "жол", cols: "баған", enc: "Кодтау", sep: "Бөлгіш", state: "Күйі", cleaned: "тазартылған", raw: "бастапқы", importDemo: "Демография дерекқорын импорттау", chart: "Графиктер", category: "Топтау өрісі", measure: "Сандық көрсеткіш", aggregation: "Есептеу", sum: "Қосынды", mean: "Орташа мән", bar: "Бағандық", line: "Сызықтық", draw: "График құру", noChart: "График құру үшін санаттық және сандық бағандарды таңдаңыз.", indicator: "Көрсеткіш", allValues: "Барлық көрсеткіштер",
+      miss: "Бос мәндер", dup: "Қайталанатындар", num: "Сандық", cat: "Санаттық", dt: "Күндер", txt: "Мәтін", col: "Баған", type: "Түрі", empty_c: "Бос", uniq: "Бірегей",
+      missing: "Бос ұяшықтар", keep: "Өзгеріссіз қалдыру", drop_all: "Толық бос жолдарды жою", drop_any: "Бос ұяшықтары бар жолдарды жою", fill_zero: "Нөлмен толтыру", fill_mean: "Орташа мәнмен толтыру", fill_median: "Медианамен толтыру", fill_mode: "Модамен толтыру", fill_value: "Мәнмен толтыру",
+      fillv: "Толтыратын мән", dupm: "Қайталанатын жолдар", none: "Өзгертпеу", all: "Барлық бағандар бойынша жою", dropE: "Бос бағандарды жою", apply: "Қолдану", reset: "Қалпына келтіру", save: "CSV жүктеп алу",
+      done: "Тазалау аяқталды", rr: "Жойылған бос жолдар", rc: "Жойылған бос бағандар", rd: "Жойылған қайталанулар", chg: "Өзгертілген бағандар", prev: "Көрсетілгені", of: "/", busy: "Жүктелуде…",
+      selected: "Таңдалған бағандар бойынша жою", cats: "Санаттық ретінде қарастыру", dcols: "Қайталануды іздеу бағандары",
+      rule_col: "Баған", exact: "Нақты мән", range: "Аралық", from: "Бастап", to: "Дейін", repl: "Түсіндірме", addr: "Ереже қосу", load: "Мәндерді көрсету", rules: "Ережелер (тазалау кезінде қолданылады)", applyr: "Ережелерді қолдану",
+      comb: "Бағандарды бір бағанға біріктіру", newc: "Жаңа атау", sepr: "Бөлгіш", skipE: "Бос мәндерді өткізіп жіберу", coal: "Қайталанатын бағандарды біріктіру (бірінші бос емес мән)", addrule: "Ереже қосу", run: "Орындау", ren: "Бағандардың атауын өзгерту",
+      base: "Негізгі деректер жиынтығы", pick: "Біріктірілетін деректер жиынтықтары", how: "Түрі", cond: "Шарт", addc: "+ шарт", m2m: "N:M байланысына рұқсат беру", runm: "Біріктіру", res: "Нәтиже сол жақтағы тізімге қосылды", need2: "Кемінде екі деректер жиынтығын таңдаңыз", ok: "Дайын", val: "Мән", cnt: "Саны"
+    });
     const copts = {}, rules = {};
     const post = (p, b) => api(p, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(b) });
-    const opts = cols => cols.map(c => `<option>${esc(c)}</option>`).join("");
-    const checks = (cols, cls) => `<div class="row" style="max-height:140px;overflow:auto;gap:6px 14px">${cols.map(c => `<label class="row" style="font-weight:500"><input type="checkbox" class="${cls}" value="${esc(c)}"> ${esc(c)}</label>`).join("")}</div>`;
+    const opts = cols => cols.map(c => `<option value="${escAttr(c)}">${esc(translateData(c))}</option>`).join("");
+    const checks = (cols, cls) => `<div class="row" style="max-height:140px;overflow:auto;gap:6px 14px">${cols.map(c => `<label class="row" style="font-weight:500"><input type="checkbox" class="${cls}" value="${escAttr(c)}"> ${esc(translateData(c))}</label>`).join("")}</div>`;
     const picked = cls => [...document.querySelectorAll("." + cls + ":checked")].map(x => x.value);
-    const flash = (m, e) => { const x = $("#flash"); if (x) x.innerHTML = `<div class="msg ${e ? "err" : ""}">${esc(m)}</div>` };
+    const flash = (m, e) => { const x = $("#flash"); if (x) x.innerHTML = `<div class="msg ${e ? "err" : ""}">${esc(translateData(m))}</div>` };
     const fresh = async () => { const k = tab; await refresh(); tab = k; await view() };
     const cname = async () => (await api(`/datasets/${cur}/columns`)).map(c => c.name);
     const viewOld = view;
     view = async function () {
       chrome(); const v = $("#view"); if (!cur) { v.innerHTML = `<div class="card empty">${t("empty")}</div>`; return }
-      try { if (tab == 0) await vOverview(v); else if (tab == 1) await vClean(v); else if (tab == 2) await vData(v); else if (tab == 3) await vTrans(v); else if (tab == 4) await vDec(v); else if (tab == 5) await vMerge(v); else await vChart(v) } catch (e) { v.innerHTML = `<div class="card err">${esc(e.message)}</div>` }
+      try { if (tab == 0) await vOverview(v); else if (tab == 1) await vClean(v); else if (tab == 2) await vData(v); else if (tab == 3) await vTrans(v); else if (tab == 4) await vDec(v); else if (tab == 5) await vMerge(v); else await vChart(v) } catch (e) { v.innerHTML = `<div class="card err">${esc(translateData(e.message))}</div>` }
     };
     async function vChart(v) {
       const cols = await api(`/datasets/${cur}/columns`);
@@ -595,7 +638,7 @@
       v.innerHTML = `<div class="card"><div class="chart-controls">
  <label>${t("category")}<select id="g_x">${opts(categories)}</select></label>
  <label>${t("measure")}<select id="g_y">${opts(numeric)}</select></label>
- ${filters.length ? `<label>${t("indicator")}<select id="g_filter"><option value="">${t("allValues")}</option>${filters.map(([value]) => `<option value="${escAttr(value)}">${esc(value)}</option>`).join("")}</select></label>` : ""}
+ ${filters.length ? `<label>${t("indicator")}<select id="g_filter"><option value="">${t("allValues")}</option>${filters.map(([value]) => `<option value="${escAttr(value)}">${esc(translateData(value))}</option>`).join("")}</select></label>` : ""}
  <label>${t("aggregation")}<select id="g_agg"><option value="sum">${t("sum")}</option><option value="mean">${t("mean")}</option></select></label>
  <label>${t("chart")}<select id="g_type"><option value="bar">${t("bar")}</option><option value="line">${t("line")}</option></select></label>
  <button class="btn" id="g_draw">${t("draw")}</button></div></div>
@@ -615,13 +658,13 @@
           const data = await api(`/datasets/${cur}/chart?${query}`);
           const output = $("#g_result");
           if (output) output.innerHTML = svgChart(data, type);
-        } catch (e) { const output = $("#g_result"); if (output) output.innerHTML = `<div class="msg err">${esc(e.message)}</div>` }
+        } catch (e) { const output = $("#g_result"); if (output) output.innerHTML = `<div class="msg err">${esc(translateData(e.message))}</div>` }
       };
       $("#g_draw").onclick = build;
       await build();
     }
     function svgChart(data, type) {
-      const labels = data.labels || [], values = (data.values || []).map(Number);
+      const labels = (data.labels || []).map(translateData), values = (data.values || []).map(Number);
       if (!labels.length) return `<div class="empty">${t("noChart")}</div>`;
       const W = 960, H = 480, left = 78, right = 24, top = 30, bottom = 120, plotW = W - left - right, plotH = H - top - bottom;
       let min = Math.min(0, ...values), max = Math.max(0, ...values);
@@ -647,14 +690,15 @@
           return `<rect class="chart-bar" x="${x(i) - barWidth / 2}" y="${barY}" width="${barWidth}" height="${barH}" rx="3"><title>${esc(labels[i])}: ${esc(num(value))}</title></rect>`;
         }).join("");
       }
-      return `<svg class="dataset-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${escAttr(data.y)} по ${escAttr(data.x)}">${grid}${series}${labelMarkup}</svg>`;
+      const chartLabel = t("chartAria").replace("{measure}", translateData(data.y)).replace("{category}", translateData(data.x));
+      return `<svg class="dataset-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${escAttr(chartLabel)}">${grid}${series}${labelMarkup}</svg>`;
     }
     /* очистка: полный набор настроек */
     vClean = async function (v) {
       const cols = await cname(), M = ["keep", "drop_all", "drop_any", "fill_zero", "fill_mean", "fill_median", "fill_mode", "fill_value"], o = copts[cur] || {};
       v.innerHTML = `<div class="card"><div class="form">
  <label>${t("missing")}<select id="c_m">${M.map(m => `<option value="${m}" ${o.missing_mode == m ? "selected" : ""}>${t(m)}</option>`).join("")}</select></label>
- <label id="c_fvw" style="display:none">${t("fillv")}<input type="text" id="c_fv" value="${esc(o.fill_value || "Не указано")}"></label>
+ <label id="c_fvw" style="display:none">${t("fillv")}<input type="text" id="c_fv" value="${esc(o.fill_value || t("unspecified"))}"></label>
  <label>${t("dupm")}<select id="c_d"><option value="none">${t("none")}</option><option value="all">${t("all")}</option><option value="selected">${t("selected")}</option></select></label>
  <div id="c_dcw" style="display:none"><label>${t("dcols")}</label>${checks(cols, "dc")}</div>
  <div><label>${t("cats")}</label>${checks(cols, "cc")}</div>
@@ -743,12 +787,14 @@
         } catch (e) { flash(e.message, 1) }
       }
     }
-    addEventListener('message', e => { if (e.source !== parent) return; const d = e.data; if (d && d.type === 'da-settings') { if (d.theme) { theme = d.theme; applyTheme() } if (d.lang && L[d.lang]) { lang = d.lang; chrome(); renderList(); strip(); view() } } });
+    addEventListener('message', e => { if (e.source !== parent) return; const d = e.data; if (d && d.type === 'da-settings') { if (d.theme) { theme = d.theme; applyTheme() } if (d.translations) translationCatalog = d.translations; if (d.lang && L[d.lang]) { lang = d.lang; chrome(); renderList(); strip(); view() } } });
     addEventListener('message', e => {
       if (e.source !== parent || e.data?.type !== 'dashboard-dataset-sync') return; const notice = $("#dashboardSyncNotice"); if (!notice) return;
       if (e.data.state === "empty") { notice.hidden = true; return }
       notice.hidden = false; notice.classList.toggle("err", e.data.state === "error");
-      notice.textContent = e.data.state === "error" ? `Датасет не подключён к графикам: ${e.data.message}` : `Датасет «${e.data.name}» подключён. Нажмите «Демография», чтобы открыть графики.`
+      notice.textContent = e.data.state === "error"
+        ? `${t("datasetNotConnected")} ${translateData(e.data.message)}`
+        : t("datasetConnected").replace("{name}", translateData(e.data.name));
     });
     applyTheme(); chrome(); refresh();
   </script>

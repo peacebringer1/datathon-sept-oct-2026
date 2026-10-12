@@ -73,6 +73,28 @@ class AIInsightsTests(unittest.TestCase):
         self.assertEqual(response.get_json()['error']['code'], 'ai_service_error')
         self.assertFalse(app_module.AI_INSIGHTS_CACHE)
 
+    def test_uses_selected_language_and_keeps_localized_results_separate_in_cache(self):
+        app_module.ACTIVE_DEMOGRAPHICS = [
+            {'indicator': 'Population', 'province': 'Астана', 'year': 2024, 'value': 15.0}
+        ]
+        response_text = json.dumps({
+            'insights': [{
+                'type': 'neutral',
+                'title': 'Observation',
+                'badge': '2024',
+                'text': 'The value is 15.'
+            }]
+        })
+        with patch.object(app_module, 'call_claude', return_value=response_text) as call_claude:
+            english = self.client.get('/api/ai-insights?indicator=Population&language=en')
+            kazakh = self.client.get('/api/ai-insights?indicator=Population&language=kk')
+
+        self.assertEqual(english.status_code, 200)
+        self.assertEqual(kazakh.status_code, 200)
+        self.assertEqual(call_claude.call_count, 2)
+        self.assertEqual(call_claude.call_args_list[0].kwargs['response_language'], 'en')
+        self.assertEqual(call_claude.call_args_list[1].kwargs['response_language'], 'kk')
+
     def test_uses_active_dataset_and_passes_only_matching_aggregates(self):
         active_rows = [
             {'indicator': 'Population', 'province': 'Астана', 'year': 2024, 'value': 10.0},

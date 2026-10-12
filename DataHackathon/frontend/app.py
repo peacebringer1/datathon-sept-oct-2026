@@ -2638,6 +2638,9 @@ def ai_chat():
     dashboard_context = payload.get('dashboard_context') or {}
     if not isinstance(dashboard_context, dict):
         dashboard_context = {}
+    language = payload.get('language', 'ru')
+    if not isinstance(language, str) or language not in ('ru', 'kk', 'en'):
+        return jsonify({'error': 'Неподдерживаемый язык ответа ИИ.'}), 400
     dashboard_context = {
         str(key)[:50]: value[:1000] if isinstance(value, str) else value
         for key, value in list(dashboard_context.items())[:12]
@@ -2647,7 +2650,13 @@ def ai_chat():
 
     try:
         dataset_overview = get_dataset_overview()
-        result = call_claude(contents, dataset_overview, dashboard_context, include_chart=True)
+        result = call_claude(
+            contents,
+            dataset_overview,
+            dashboard_context,
+            include_chart=True,
+            response_language=language
+        )
         return jsonify(result)
     except ClaudeAPIError as error:
         upstream = {}
@@ -2684,6 +2693,9 @@ def chart_analysis():
     category = payload.get('category', 'Общие данные')
     year = payload.get('year', '')
     chart = payload.get('chart')
+    language = payload.get('language', 'ru')
+    if not isinstance(language, str) or language not in ('ru', 'kk', 'en'):
+        return jsonify({'error': 'Неподдерживаемый язык анализа.'}), 400
     if not isinstance(indicator, str) or not indicator.strip():
         return jsonify({'error': 'Не указан показатель графика.'}), 400
     if not isinstance(category, str) or not isinstance(year, str):
@@ -2760,7 +2772,8 @@ def chart_analysis():
                 'category': chart_context['category'],
                 'year': chart_context['year']
             },
-            max_output_tokens=1800
+            max_output_tokens=1800,
+            response_language=language
         )
         cleaned_analysis = raw_analysis.strip()
         if cleaned_analysis.startswith('```'):
@@ -3029,7 +3042,8 @@ def call_claude(
     max_output_tokens=1200,
     include_chart=False,
     system_instruction_override=None,
-    include_tools=True
+    include_tools=True,
+    response_language='ru'
 ):
     api_key = CLAUDE_API_KEY
     if not api_key:
@@ -3042,7 +3056,16 @@ def call_claude(
         'dashboard_filters': dashboard_context
     }, ensure_ascii=False)
     base_instruction = system_instruction_override or AI_SYSTEM_INSTRUCTION
-    system_instruction = f'{base_instruction}\n\nКаталог data/sinte и выбранные фильтры: {context_text}'
+    language_instructions = {
+        'ru': 'Отвечай на русском языке.',
+        'kk': 'Қазақ тілінде жауап бер. JSON құрылымын және берілген кілт атауларын өзгертпе.',
+        'en': 'Respond in English. Do not change the JSON structure or the provided key names.'
+    }
+    language_instruction = language_instructions.get(response_language, language_instructions['ru'])
+    system_instruction = (
+        f'{base_instruction}\n\n{language_instruction}\n\n'
+        f'Каталог data/sinte и выбранные фильтры: {context_text}'
+    )
     messages = []
     for item in contents:
         role = 'assistant' if item.get('role') in ('assistant', 'model') else 'user'
@@ -3472,6 +3495,9 @@ def ai_insights():
     if not isinstance(indicator, str) or not indicator.strip():
         return jsonify({'error': {'code': 'invalid_indicator', 'message': 'Выберите показатель.'}}), 400
     indicator = indicator.strip()[:200]
+    language = request.args.get('language', 'ru')
+    if language not in ('ru', 'kk', 'en'):
+        return jsonify({'error': {'code': 'invalid_language', 'message': 'Неподдерживаемый язык анализа.'}}), 400
     if not CLAUDE_API_KEY:
         return jsonify({
             'error': {
@@ -3549,6 +3575,7 @@ def ai_insights():
 
     cache_material = json.dumps({
         'indicator': indicator,
+        'language': language,
         'source': source_name,
         'model': CLAUDE_MODEL,
         'rows': valid_rows
@@ -3593,7 +3620,8 @@ def ai_insights():
             {'indicator': indicator},
             max_output_tokens=900,
             system_instruction_override=system_instruction,
-            include_tools=False
+            include_tools=False,
+            response_language=language
         )
         cleaned_result = raw_result.strip()
         if cleaned_result.startswith('```'):
