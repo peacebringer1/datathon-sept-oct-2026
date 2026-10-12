@@ -51,6 +51,36 @@ class TableDataValidationTests(unittest.TestCase):
         self.assertEqual(response.get_json()['page'], 2)
         self.assertEqual(connection.execute.call_args.args[1][-2:], [2000, 2000])
 
+    def test_packaged_app_reads_existing_database(self):
+        with tempfile.TemporaryDirectory() as directory, patch.multiple(
+            app_module,
+            DB_FILE=str(Path(directory) / 'database.sqlite'),
+            APP_PACKAGED=True
+        ):
+            import sqlite3
+            database_path = Path(directory) / 'database.sqlite'
+            with sqlite3.connect(database_path) as setup_connection:
+                setup_connection.execute(
+                    'CREATE TABLE demographics (indicator TEXT, year INTEGER, province TEXT, value REAL)'
+                )
+                setup_connection.execute(
+                    'INSERT INTO demographics VALUES (?, ?, ?, ?)',
+                    ('Population', 2024, 'Astana', 100.0)
+                )
+
+            connection = app_module.get_db_connection()
+            try:
+                rows = connection.execute(
+                    'SELECT indicator, year, province, value FROM demographics'
+                ).fetchall()
+            finally:
+                connection.close()
+
+        self.assertEqual(
+            [tuple(row) for row in rows],
+            [('Population', 2024, 'Astana', 100.0)]
+        )
+
     def test_packaged_app_creates_an_empty_database_instead_of_fake_data(self):
         with tempfile.TemporaryDirectory() as directory, patch.multiple(
             app_module,

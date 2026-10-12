@@ -134,7 +134,10 @@ async function openDataAnalyzerPage() {
         clearTimeout(timeout);
         resolve();
       }, { once: true });
-      frame.src = `${window.DATA_ANALYZER_URL}/analyzer/`;
+      const analyzerUrl = `${window.DATA_ANALYZER_URL}/analyzer/`;
+      frame.src = window.APP_MODE === 'web'
+        ? `${analyzerUrl}?daApi=${encodeURIComponent(window.DATA_ANALYZER_URL)}&daToken=${encodeURIComponent(window.ANALYZER_ACCESS_TOKEN || '')}`
+        : analyzerUrl;
     });
     frame.dataset.loaded = 'true';
     frame.hidden = false;

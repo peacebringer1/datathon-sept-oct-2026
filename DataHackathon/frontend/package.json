@@ -8,7 +8,7 @@
     "start": "electron .",
     "build:mac": "node build_app.js mac",
     "build:win": "node build_app.js win",
-    "test:frontend": "node --check main.js && node --check preload.js && node --check renderer.js && node --check src/components/insightsTicker.js"
+    "test:frontend": "node --check main.js && node --check build_app.js && node --check preload.js && node --check renderer.js && node --check src/components/insightsTicker.js"
   },
   "build": {
     "appId": "com.datasetviewer.app",
@@ -43,6 +43,34 @@
       {
         "from": "../index.html",
         "to": "app-ui/index.html"
+      },
+      {
+        "from": "../data/sinte/d002",
+        "to": "datasets/d002",
+        "filter": [
+          "**/*.csv"
+        ]
+      },
+      {
+        "from": "../data/sinte/d004",
+        "to": "datasets/d004",
+        "filter": [
+          "**/*.csv"
+        ]
+      },
+      {
+        "from": "../data/sinte/d006",
+        "to": "datasets/d006",
+        "filter": [
+          "**/*.csv"
+        ]
+      },
+      {
+        "from": "../data/sinte/d008",
+        "to": "datasets/d008",
+        "filter": [
+          "**/*.csv"
+        ]
       }
     ],
     "asarUnpack": [

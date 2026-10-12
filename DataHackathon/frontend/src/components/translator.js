@@ -2,6 +2,11 @@ const languages = ['ru', 'kk', 'en'];
 const languageStorageKey = 'app-language';
 const translations = {
   'Аналитика Республики Казахстан': ['Қазақстан Республикасының аналитикасы', 'Analytics of the Republic of Kazakhstan'],
+  'Выйти': ['Шығу', 'Log out'],
+  'ИИ-помощник временно отключён: подключение защищённого сервиса ещё не настроено.': [
+    'Қорғалған сервис әлі бапталмағандықтан, ЖИ көмекшісі уақытша өшірулі.',
+    'The AI assistant is temporarily unavailable while its secure service is being configured.'
+  ],
   'Атырауская область': ['Атырау облысы', 'Atyrau Region'],
   'Акмолинская область': ['Ақмола облысы', 'Akmola Region'],
   'Актюбинская область': ['Ақтөбе облысы', 'Aktobe Region'],

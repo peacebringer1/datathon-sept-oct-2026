@@ -20,7 +20,8 @@ CORS(app, resources={
             r"^null$",
             r"^https?://(?:localhost|127\.0\.0\.1)(?::\d+)?$"
         ]
-    }
+    },
+    r"/analyzer-api/*": {"origins": [r"^null$"]}
 })
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
@@ -36,6 +37,7 @@ DATA_DIR = Path(os.environ.get(
     APP_DATA_DIR / 'data' / 'sinte'
 ))
 APP_PACKAGED = os.environ.get('APP_PACKAGED') == '1'
+APP_WEB_MODE = os.environ.get('APP_WEB_MODE') == '1'
 ACTIVE_DEMOGRAPHICS = None
 ACTIVE_DATASET_NAME = None
 ACTIVE_DATASET_MODE = None
@@ -1815,6 +1817,10 @@ def claude_key_settings():
 
     if request.method == 'GET':
         return jsonify({'configured': bool(CLAUDE_API_KEY)})
+    if APP_WEB_MODE:
+        return jsonify({
+            'error': 'Ключом ИИ управляет защищённая конфигурация сервера.'
+        }), 403
 
     if request.method == 'DELETE':
         CLAUDE_API_KEY = ''

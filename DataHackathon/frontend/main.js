@@ -203,8 +203,19 @@ function startAnalyzerServer(port) {
 
 function startPackagedBackend(apiPort, analyzerPort, savedApiKey) {
   const appDataPath = path.join(app.getPath('userData'), 'data');
-  fs.mkdirSync(path.join(appDataPath, 'sinte'), { recursive: true });
+  const datasetsPath = path.join(process.resourcesPath, 'datasets');
+  fs.mkdirSync(appDataPath, { recursive: true });
 
+  for (const dataset of ['d002', 'd004', 'd006', 'd008']) {
+    if (!fs.existsSync(path.join(datasetsPath, dataset))) {
+      dialog.showErrorBox(
+        'Не найдены встроенные данные',
+        `В установщике отсутствует набор ${dataset}. Переустановите приложение или обратитесь к команде проекта.`
+      );
+      app.quit();
+      return false;
+    }
+  }
   packagedBackendProcess = spawn(PACKAGED_BACKEND_PATH, [], {
     cwd: appDataPath,
     windowsHide: true,
@@ -213,7 +224,7 @@ function startPackagedBackend(apiPort, analyzerPort, savedApiKey) {
       ...(savedApiKey ? { CLAUDE_API_KEY: savedApiKey } : {}),
       APP_DATA_DIR: appDataPath,
       DATABASE_FILE: path.join(appDataPath, 'database.sqlite'),
-      DATASETS_DIR: path.join(appDataPath, 'sinte'),
+      DATASETS_DIR: datasetsPath,
       APP_PACKAGED: '1',
       ANALYZER_UI_PATH: path.join(process.resourcesPath, 'app-ui', 'index.html'),
       PYTHONUNBUFFERED: '1',
@@ -244,6 +255,7 @@ function startPackagedBackend(apiPort, analyzerPort, savedApiKey) {
       }
     }
   });
+  return true;
 }
 
 function createWindow(apiPort, analyzerPort) {
@@ -282,7 +294,7 @@ app.whenReady().then(async () => {
     getAvailablePort()
   ]);
   if (app.isPackaged) {
-    startPackagedBackend(apiPort, analyzerPort, savedApiKey);
+    if (!startPackagedBackend(apiPort, analyzerPort, savedApiKey)) return;
   } else {
     startFlaskServer(apiPort, savedApiKey);
     startAnalyzerServer(analyzerPort);

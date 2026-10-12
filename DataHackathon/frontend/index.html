@@ -101,12 +101,16 @@
                   <button type="button" id="clearClaudeApiKeyBtn">Удалить ключ</button>
                 </div>
                 <p id="claudeApiKeyStatus" role="status" aria-live="polite"></p>
+                <p id="webAiKeyNotice" role="status" hidden></p>
                 <small><span aria-hidden="true">🔒</span> Ключ хранится зашифрованным на этом компьютере.</small>
               </form>
             </div>
           </div>
           <button id="langToggleBtn" class="lang-toggle-btn" title="Сменить язык">RU</button>
           <button id="themeToggleBtn" class="theme-toggle-btn" title="Сменить тему">🌙</button>
+          <form id="webLogoutForm" action="/web/logout" method="post" hidden>
+            <button class="web-logout-btn" type="submit">Выйти</button>
+          </form>
         </div>
       </div>
     </aside>
@@ -861,6 +865,7 @@
           <iframe
             id="dataAnalyzerFrame"
             title="Анализ и очистка данных"
+            referrerpolicy="no-referrer"
             sandbox="allow-scripts allow-forms allow-same-origin allow-downloads">
           </iframe>
         </section>

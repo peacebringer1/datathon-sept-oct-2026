@@ -11,6 +11,11 @@ if (!['mac', 'win'].includes(target)) {
 const isWindows = process.platform === 'win32';
 const frontendDirectory = __dirname;
 const projectDirectory = path.resolve(frontendDirectory, '..');
+const requiredDataPaths = [
+  ...['d002', 'd004', 'd006', 'd008'].map((dataset) =>
+    path.join(projectDirectory, 'data', 'sinte', dataset)
+  )
+];
 const virtualEnvironmentPython = isWindows
   ? path.join(projectDirectory, '.venv', 'Scripts', 'python.exe')
   : path.join(projectDirectory, '.venv', 'bin', 'python');
@@ -31,6 +36,24 @@ function run(command, args) {
 }
 
 try {
+  const expectedPlatform = target === 'win' ? 'win32' : 'darwin';
+  if (process.platform !== expectedPlatform) {
+    throw new Error(
+      `${target} builds must run on ${expectedPlatform === 'win32' ? 'Windows' : 'macOS'} because the embedded Python backend is platform-specific.`
+    );
+  }
+  for (const dataPath of requiredDataPaths) {
+    if (!fs.existsSync(dataPath)) {
+      throw new Error(`Required packaged data is missing: ${dataPath}`);
+    }
+  }
+  for (const dataset of ['d002', 'd004', 'd006', 'd008']) {
+    const datasetPath = path.join(projectDirectory, 'data', 'sinte', dataset);
+    if (!fs.readdirSync(datasetPath, { recursive: true }).some((file) => file.endsWith('.csv'))) {
+      throw new Error(`No CSV files found in required dataset: ${datasetPath}`);
+    }
+  }
+
   run(python, ['build_backend.py']);
   run(
     process.execPath,

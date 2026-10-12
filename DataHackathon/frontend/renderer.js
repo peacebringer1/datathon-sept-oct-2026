@@ -22,11 +22,38 @@ import { openDetailedAnalytics, openAnalyticsFromCard, initDetailedViewClose } f
 import { startAppLoading } from './src/components/loadingIndicator.js';
 import './src/components/projectPages.js';
 
-const apiPort = new URLSearchParams(window.location.search).get('apiPort') || '5000';
-const API_BASE_URL = `http://127.0.0.1:${apiPort}`;
+const queryParams = new URLSearchParams(window.location.search);
+const apiPort = queryParams.get('apiPort') || '5000';
+const isWebApp = window.APP_MODE === 'web';
+const API_BASE_URL = isWebApp ? window.location.origin : `http://127.0.0.1:${apiPort}`;
 const analyzerPort = new URLSearchParams(window.location.search).get('analyzerPort');
-window.DATA_ANALYZER_URL = analyzerPort ? `http://127.0.0.1:${analyzerPort}` : '';
+window.DATA_ANALYZER_URL = isWebApp
+  ? `${window.location.origin}/analyzer-api`
+  : (analyzerPort ? `http://127.0.0.1:${analyzerPort}` : '');
 window.API_BASE_URL = API_BASE_URL;
+
+if (isWebApp) {
+  const apiKeyForm = document.getElementById('claudeApiKeyForm');
+  if (apiKeyForm) {
+    apiKeyForm.addEventListener('submit', (event) => event.preventDefault());
+    apiKeyForm.querySelectorAll('label, input, .settings-api-actions, small').forEach((element) => {
+      element.hidden = true;
+    });
+    const status = document.getElementById('claudeApiKeyStatus');
+    if (status) {
+      status.textContent = window.translateAppText?.(
+        'ИИ-помощник временно отключён: подключение защищённого сервиса ещё не настроено.'
+      ) || 'ИИ-помощник временно отключён: подключение защищённого сервиса ещё не настроено.';
+      status.dataset.state = 'info';
+    }
+  }
+  const logoutForm = document.getElementById('webLogoutForm');
+  if (logoutForm) logoutForm.hidden = false;
+  document.getElementById('dataAnalyzerFrame')?.setAttribute(
+    'sandbox',
+    'allow-scripts allow-forms allow-downloads'
+  );
+}
 
 document.addEventListener('click', (event) => {
   const target = event.target instanceof Element ? event.target : null;
@@ -81,6 +108,13 @@ void waitForBackendStartup().finally(() => {
 async function refreshClaudeApiKeyStatus() {
   const status = document.getElementById('claudeApiKeyStatus');
   if (!status) return;
+  if (isWebApp) {
+    status.textContent = window.translateAppText?.(
+      'ИИ-помощник временно отключён: подключение защищённого сервиса ещё не настроено.'
+    ) || 'ИИ-помощник временно отключён: подключение защищённого сервиса ещё не настроено.';
+    status.dataset.state = 'info';
+    return;
+  }
 
   try {
     const response = await fetch(`${API_BASE_URL}/api/settings/claude-key`);
@@ -307,7 +341,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  if (claudeApiKeyForm) {
+  if (claudeApiKeyForm && !isWebApp) {
     claudeApiKeyForm.addEventListener('submit', (event) => {
       event.preventDefault();
       const input = document.getElementById('claudeApiKeyInput');
@@ -323,7 +357,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  if (clearClaudeApiKeyBtn) {
+  if (clearClaudeApiKeyBtn && !isWebApp) {
     clearClaudeApiKeyBtn.addEventListener('click', () => updateClaudeApiKey('DELETE'));
   }
 

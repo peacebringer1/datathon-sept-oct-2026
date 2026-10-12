@@ -480,7 +480,8 @@
     <div id="view"></div>
   </section>
   <script>
-    const API = (window.DA_API || "") + "/api";
+    const queryParams = new URLSearchParams(location.search), DA_TOKEN = queryParams.get("daToken") || "";
+    const API = (window.DA_API || queryParams.get("daApi") || "") + "/api";
     const L = {
       ru: {
         ds: "Наборы данных", search: "Поиск набора…", title: "Анализ и очистка данных", tabs: ["Обзор", "Очистка", "Данные"],
@@ -531,7 +532,7 @@
       return text;
     };
     const num = n => n == null ? "—" : Number(n).toLocaleString(lang == "ru" ? "ru-RU" : lang == "kk" ? "kk-KZ" : "en-US");
-    async function api(p, o) { const r = await fetch(API + p, o); if (!r.ok) { let m = r.statusText; try { m = (await r.json()).detail || m } catch { } throw new Error(translateData(m)) } return r.json() }
+    async function api(p, o = {}) { const headers = new Headers(o.headers || {}); if (DA_TOKEN) headers.set("X-Jury-Token", DA_TOKEN); const r = await fetch(API + p, { ...o, headers }); if (!r.ok) { let m = r.statusText; try { m = (await r.json()).detail || m } catch { } throw new Error(translateData(m)) } return r.json() }
     function notifyDatasetSelection() { if (window.parent !== window) window.parent.postMessage({ type: "da-selected-dataset", datasetId: cur }, "*") }
     function applyTheme() { document.documentElement.dataset.theme = theme; $("#theme").textContent = theme == "dark" ? "☀️" : "🌙"; $("#theme").title = t("theme") || "Theme"; $("#theme").setAttribute("aria-label", $("#theme").title); localStorage.da_theme = theme }
     function chrome() {
