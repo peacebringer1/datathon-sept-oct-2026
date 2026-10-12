@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, safeStorage } = require('electron');
+const { app, BrowserWindow, ipcMain, safeStorage, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
@@ -83,6 +83,70 @@ function registerSettingsHandlers() {
     const keyFile = path.join(app.getPath('userData'), CLAUDE_KEY_FILE);
     if (fs.existsSync(keyFile)) fs.unlinkSync(keyFile);
     return { cleared: true };
+  });
+
+  ipcMain.handle('export:table-pdf', async (event, payload) => {
+    if (!mainWindow || event.sender.id !== mainWindow.webContents.id) {
+      throw new Error('Сохранение PDF доступно только из главного окна приложения.');
+    }
+    const html = payload?.html;
+    if (typeof html !== 'string' || html.length > 20_000_000) {
+      throw new Error('Таблица пуста или слишком велика для экспорта.');
+    }
+    const requestedName = path.basename(String(payload.filename || 'table.pdf'))
+      .replace(/[<>:"/\\|?*\x00-\x1f]/g, '_');
+    const filename = requestedName.toLowerCase().endsWith('.pdf') ? requestedName : `${requestedName}.pdf`;
+    const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
+      title: 'Сохранить таблицу в PDF',
+      defaultPath: path.join(app.getPath('documents'), filename),
+      filters: [{ name: 'PDF документ', extensions: ['pdf'] }]
+    });
+    if (canceled || !filePath) return { canceled: true };
+
+    const tempDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'datahackathon-pdf-'));
+    const tempHtml = path.join(tempDir, 'table.html');
+    const pdfWindow = new BrowserWindow({
+      show: false,
+      width: 1200,
+      height: 850,
+      webPreferences: { nodeIntegration: false, contextIsolation: true, sandbox: true }
+    });
+    try {
+      await fs.promises.writeFile(tempHtml, html, 'utf8');
+      await pdfWindow.loadFile(tempHtml);
+      const pdf = await pdfWindow.webContents.printToPDF({
+        pageSize: 'A4',
+        landscape: true,
+        printBackground: true,
+        margins: { top: 0.4, bottom: 0.4, left: 0.4, right: 0.4 }
+      });
+      await fs.promises.writeFile(filePath, pdf);
+      return { saved: true, filePath };
+    } finally {
+      if (!pdfWindow.isDestroyed()) pdfWindow.close();
+      await fs.promises.rm(tempDir, { recursive: true, force: true });
+    }
+  });
+
+  ipcMain.handle('export:table-excel', async (event, payload) => {
+    if (!mainWindow || event.sender.id !== mainWindow.webContents.id) {
+      throw new Error('Сохранение Excel доступно только из главного окна приложения.');
+    }
+    const base64 = payload?.base64;
+    if (typeof base64 !== 'string' || !base64 || base64.length > 80_000_000 || !/^[A-Za-z0-9+/]+=*$/.test(base64)) {
+      throw new Error('Excel файл пуст или слишком велик для экспорта.');
+    }
+    const requestedName = path.basename(String(payload.filename || 'table.xlsx'))
+      .replace(/[<>:"/\\|?*\x00-\x1f]/g, '_');
+    const filename = requestedName.toLowerCase().endsWith('.xlsx') ? requestedName : `${requestedName}.xlsx`;
+    const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
+      title: 'Сохранить таблицу в Excel',
+      defaultPath: path.join(app.getPath('documents'), filename),
+      filters: [{ name: 'Excel книга', extensions: ['xlsx'] }]
+    });
+    if (canceled || !filePath) return { canceled: true };
+    await fs.promises.writeFile(filePath, Buffer.from(base64, 'base64'));
+    return { saved: true, filePath };
   });
 }
 

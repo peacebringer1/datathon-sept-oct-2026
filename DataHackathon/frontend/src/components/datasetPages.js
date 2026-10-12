@@ -153,6 +153,14 @@ let d004SelectedRegion = '';
 let d004QuestionnaireObserver = null;
 let d004QuestionnaireRevision = 0;
 
+window.addEventListener('app-theme-changed', () => {
+  const chartElement = document.getElementById('d002QuestionChart');
+  const activeQuestion = d002FilteredQuestions[d002QuestionIndex];
+  if (chartElement && activeQuestion && d002Charts.has(chartElement)) {
+    renderD002QuestionChart(chartElement, activeQuestion);
+  }
+});
+
 function setText(id, value) {
   const element = document.getElementById(id);
   if (element) element.textContent = value;
@@ -188,7 +196,7 @@ function renderD002QuestionChart(element, question) {
   const chart = window.echarts.getInstanceByDom(element) || window.echarts.init(element);
   d002Charts.set(element, chart);
   const styles = getComputedStyle(element.closest('.dataset-panel') || element);
-  const textColor = styles.getPropertyValue('--text-primary').trim() || '#222222';
+  const textColor = document.body.classList.contains('dark-theme') ? '#ffffff' : '#29252a';
   const categories = new Map();
   years.forEach((item) => (item.distribution || []).forEach((answer) => categories.set(String(answer.code ?? answer.label), answer.label)));
   const trend = years.length > 1;
@@ -256,6 +264,7 @@ function renderD002QuestionChart(element, question) {
     }).filter((item) => item.value > 0)
   }));
   chart.setOption({
+    textStyle: { color: textColor },
     tooltip: {
       trigger: 'item',
       confine: true,
@@ -1531,11 +1540,14 @@ function showD004RegionDetails(regionName) {
   if (record.amount != null) values.push(['Сумма стоимости по записям', Number(record.amount).toLocaleString('ru-RU')]);
   stats.replaceChildren();
   values.forEach(([label, value]) => {
+    const item = document.createElement('div');
+    item.className = 'd004-region-stat';
     const term = document.createElement('dt');
     const detail = document.createElement('dd');
     term.textContent = label;
     detail.textContent = value;
-    stats.append(term, detail);
+    item.append(term, detail);
+    stats.append(item);
   });
   stats.hidden = false;
 }
