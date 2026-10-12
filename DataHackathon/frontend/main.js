@@ -203,18 +203,16 @@ function startAnalyzerServer(port) {
 
 function startPackagedBackend(apiPort, analyzerPort, savedApiKey) {
   const appDataPath = path.join(app.getPath('userData'), 'data');
-  const datasetsPath = path.join(process.resourcesPath, 'datasets');
+  const packagedDatabasePath = path.join(process.resourcesPath, 'database.sqlite');
   fs.mkdirSync(appDataPath, { recursive: true });
 
-  for (const dataset of ['d002', 'd004', 'd006', 'd008']) {
-    if (!fs.existsSync(path.join(datasetsPath, dataset))) {
-      dialog.showErrorBox(
-        'Не найдены встроенные данные',
-        `В установщике отсутствует набор ${dataset}. Переустановите приложение или обратитесь к команде проекта.`
-      );
-      app.quit();
-      return false;
-    }
+  if (!fs.existsSync(packagedDatabasePath)) {
+    dialog.showErrorBox(
+      'Не найдена база данных',
+      'В установщике отсутствует database.sqlite. Переустановите приложение или обратитесь к команде проекта.'
+    );
+    app.quit();
+    return false;
   }
   packagedBackendProcess = spawn(PACKAGED_BACKEND_PATH, [], {
     cwd: appDataPath,
@@ -224,7 +222,8 @@ function startPackagedBackend(apiPort, analyzerPort, savedApiKey) {
       ...(savedApiKey ? { CLAUDE_API_KEY: savedApiKey } : {}),
       APP_DATA_DIR: appDataPath,
       DATABASE_FILE: path.join(appDataPath, 'database.sqlite'),
-      DATASETS_DIR: path.join(process.resourcesPath, 'data', 'sinte'),
+      BUNDLED_DATABASE_FILE: packagedDatabasePath,
+      DATASETS_DIR: path.join(appDataPath, 'data', 'sinte'),
       APP_PACKAGED: '1',
       ANALYZER_UI_PATH: path.join(process.resourcesPath, 'app-ui', 'index.html'),
       PYTHONUNBUFFERED: '1',

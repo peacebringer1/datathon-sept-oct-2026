@@ -33,21 +33,19 @@ const PAGE_CONFIG = {
   }
 };
 
-let DATA_COLORS = ['#17b981', '#50b9d2', '#46cbb0', '#7fdef5', '#7ef5ad', '#13966d'];
-let MAP_SCALE = ['#7fdef5', '#50b9d2', '#46cbb0', '#17b981', '#13966d'];
+let DATA_COLORS = ['#cf7f5f', '#a78bb5', '#c58eaa', '#e1a07f', '#9b82a6', '#765f80'];
+let MAP_SCALE = ['#f2c09c', '#e5a5a1', '#c99fba', '#a78bb5', '#806b88'];
 let D002_SATISFACTION_COLORS = {
-  'Высокая удовлетворённость': '#7ef5ad',
-  'Частичная удовлетворённость': '#50b9d2',
-  'Низкая удовлетворённость': '#a78bfa',
-  'Не применимо / затруднились ответить': '#687780'
+  'Высокая удовлетворённость': '#a78bb5',
+  'Частичная удовлетворённость': '#f0a17e',
+  'Низкая удовлетворённость': '#b96767',
+  'Не применимо / затруднились ответить': '#8c828d'
 };
-let D002_CATEGORY_COLORS = ['#50b9d2', '#a78bfa', '#46cbb0', '#7c9cff', '#7ef5ad', '#6ee7f9', '#b8a6ff'];
-let D002_MULTI_SELECT_COLORS = ['#11845f', '#2877b8', '#177b72', '#22a873', '#176c9e', '#3b9a8b', '#2d9166', '#155a79', '#58ad91', '#247f9c', '#45b889', '#3d7386', '#70bd9e', '#548d77'];
+let D002_CATEGORY_COLORS = ['#cf7f5f', '#a78bb5', '#c58eaa', '#e1a07f', '#9b82a6', '#d99a8d', '#765f80'];
+let D002_MULTI_SELECT_COLORS = ['#c56543', '#6951a4', '#a84e62', '#d18a18', '#87549b', '#ad6440', '#78608a', '#c87382', '#88602e', '#a84f8e', '#8c7165', '#bd805b', '#765b77', '#69727b'];
 
 function d006StyleColors() {
-  return document.body.dataset.stylePreset === 'classic'
-    ? ['#f5ad86', '#c9aace']
-    : ['#17b981', '#50b9d2'];
+  return ['#f5ad86', '#c9aace'];
 }
 
 function d002MultiSelectColorMap(options) {
@@ -418,13 +416,13 @@ async function renderD002Map(question) {
       },
       legend: {
         type: 'scroll', bottom: 2, left: 'center', data: result.categories.filter((item) => !selectedAnswer || item.code === selectedAnswer).map((item) => item.label),
-        textStyle: { color: dark ? '#d4e4d4' : '#48534b', fontSize: 13 },
-        pageTextStyle: { color: dark ? '#d4e4d4' : '#48534b' }
+        textStyle: { color: dark ? '#eee5ed' : '#48434a', fontSize: 13 },
+        pageTextStyle: { color: dark ? '#eee5ed' : '#48434a' }
       },
       geo: {
         map: 'KZ_D002', roam: true, zoom: 3.1, layoutCenter: ['0%', '135%'], layoutSize: '98%',
-        itemStyle: { areaColor: dark ? '#48534b' : '#8b9298', borderColor: dark ? '#b8d6a0' : '#40684c', borderWidth: 1.1 },
-        emphasis: { itemStyle: { areaColor: dark ? '#34584d' : '#d4e4d4' }, label: { show: true, color: dark ? '#fff' : '#293a30', fontSize: 13 } },
+        itemStyle: { areaColor: dark ? '#403a43' : '#8b9298', borderColor: dark ? '#a78bb5' : '#9b82a6', borderWidth: 1.1 },
+        emphasis: { itemStyle: { areaColor: dark ? '#56414e' : '#eadfed' }, label: { show: true, color: dark ? '#fff' : '#30252f', fontSize: 13 } },
         label: { show: false }
       },
       series: visibleRegions.filter((region) => d002RegionCoordinates[region.code]).map((region) => {
@@ -1305,7 +1303,7 @@ function renderD004Chart(chartData, metric, moduleLabel, year, quarter) {
   if (!chartElement || !window.echarts) return;
   d004Chart = window.echarts.getInstanceByDom(chartElement) || window.echarts.init(chartElement);
   const dark = document.body.classList.contains('dark-theme');
-  const textColor = dark ? '#eee5ed' : '#48534b';
+  const textColor = dark ? '#eee5ed' : '#48434a';
   const colors = DATA_COLORS;
   const isCost = /STOIMK|стоимост/i.test(metric);
   d004Chart.setOption({
@@ -1317,7 +1315,7 @@ function renderD004Chart(chartData, metric, moduleLabel, year, quarter) {
       data: chartData.labels,
       axisLabel: { rotate: 35, interval: 0, color: textColor, fontSize: 12, margin: 12 },
       name: 'Область', nameLocation: 'middle', nameGap: 112, nameTextStyle: { color: textColor, fontSize: 13, fontWeight: 700 },
-      axisLine: { lineStyle: { color: dark ? '#48534b' : '#d9ced6' } }
+      axisLine: { lineStyle: { color: dark ? '#403a43' : '#d9ced6' } }
     },
     yAxis: { type: 'value', name: isCost ? 'Стоимость, ₸' : 'Записей', minInterval: 1, splitNumber: 5, axisLabel: { color: textColor, fontSize: 12, formatter: (value) => Number(value).toLocaleString('ru-RU') }, nameTextStyle: { color: textColor, fontWeight: 700, fontSize: 13 }, splitLine: { lineStyle: { color: dark ? 'rgba(255,255,255,.08)' : 'rgba(34,34,34,.08)' } } },
     series: [{
@@ -1405,15 +1403,15 @@ async function renderD004Map(summary, metric, period) {
     d004Map.setOption({
       animation: false,
       tooltip: { trigger: 'item', formatter: (params) => `${escapeHtml(params.name)}<br>${metricConfig.label}: ${params.value == null ? 'Нет данных' : Number(params.value).toLocaleString('ru-RU')}` },
-      visualMap: { min: low, max: high, left: 16, bottom: 12, orient: 'horizontal', calculable: true, inRange: { color: MAP_SCALE }, textStyle: { color: document.body.classList.contains('dark-theme') ? '#d4e4d4' : '#48534b' } },
+      visualMap: { min: low, max: high, left: 16, bottom: 12, orient: 'horizontal', calculable: true, inRange: { color: MAP_SCALE }, textStyle: { color: document.body.classList.contains('dark-theme') ? '#eee5ed' : '#48434a' } },
       series: [{
         type: 'map', map: 'KZ_D004', roam: true, zoom: 3.1, layoutCenter: ['0%', '145%'], layoutSize: '108%', selectedMode: 'single', data,
-        itemStyle: { areaColor: document.body.classList.contains('dark-theme') ? '#48534b' : '#8b9298', borderColor: document.body.classList.contains('dark-theme') ? '#b8d6a0' : '#fff', borderWidth: 1 },
+        itemStyle: { areaColor: document.body.classList.contains('dark-theme') ? '#403a43' : '#8b9298', borderColor: document.body.classList.contains('dark-theme') ? '#a78bb5' : '#fff', borderWidth: 1 },
         emphasis: { label: { show: true, formatter: (params) => `${params.name}\n${params.value == null ? 'Нет данных' : Number(params.value).toLocaleString('ru-RU')}`, fontSize: 10 } },
-        select: { itemStyle: { areaColor: '#7ef5ad', borderColor: '#17b981', borderWidth: 2 }, label: { show: true, color: '#222222', formatter: (params) => `${params.name}\n${params.value == null ? 'Нет данных' : Number(params.value).toLocaleString('ru-RU')}`, fontSize: 10 } }
+        select: { itemStyle: { areaColor: '#eadfed', borderColor: '#a78bb5', borderWidth: 2 }, label: { show: true, color: '#222222', formatter: (params) => `${params.name}\n${params.value == null ? 'Нет данных' : Number(params.value).toLocaleString('ru-RU')}`, fontSize: 10 } }
       }]
     }, true);
-    setText('d004MapCaption', `${metricConfig.label} · ${period}. Красный — меньше, зелёный — больше, серый — нет данных. Колёсико приближает карту, перетаскивание перемещает её.`);
+    setText('d004MapCaption', `${metricConfig.label} · ${period}. Цветовая шкала показывает значения, серый — нет данных. Колёсико приближает карту, перетаскивание перемещает её.`);
     if (!element.dataset.listenersReady) {
       d004Map.on('click', (params) => {
         d004SelectedRegion = params.name;

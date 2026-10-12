@@ -39,60 +39,12 @@
         "filter": ["**/*"]
       },
       {
-        "from": "../data/sinte/MANIFEST.csv",
-        "to": "data/sinte/MANIFEST.csv"
-      },
-      {
-        "from": "../data/sinte/d002",
-        "to": "data/sinte/d002",
-        "filter": ["**/*"]
-      },
-      {
-        "from": "../data/sinte/d004",
-        "to": "data/sinte/d004",
-        "filter": ["**/*"]
-      },
-      {
-        "from": "../data/sinte/d006",
-        "to": "data/sinte/d006",
-        "filter": ["**/*"]
-      },
-      {
-        "from": "../data/sinte/d008",
-        "to": "data/sinte/d008",
-        "filter": ["**/*"]
+        "from": "../database.sqlite",
+        "to": "database.sqlite"
       },
       {
         "from": "../index.html",
         "to": "app-ui/index.html"
-      },
-      {
-        "from": "../data/sinte/d002",
-        "to": "datasets/d002",
-        "filter": [
-          "**/*.csv"
-        ]
-      },
-      {
-        "from": "../data/sinte/d004",
-        "to": "datasets/d004",
-        "filter": [
-          "**/*.csv"
-        ]
-      },
-      {
-        "from": "../data/sinte/d006",
-        "to": "datasets/d006",
-        "filter": [
-          "**/*.csv"
-        ]
-      },
-      {
-        "from": "../data/sinte/d008",
-        "to": "datasets/d008",
-        "filter": [
-          "**/*.csv"
-        ]
       }
     ],
     "asarUnpack": [

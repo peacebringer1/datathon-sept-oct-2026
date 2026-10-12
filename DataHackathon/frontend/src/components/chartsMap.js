@@ -12,8 +12,8 @@ export let summaryChartInstance = null;
 export let multiSummaryChartInstance = null; // Инстанс мульти-графика
 export let kzMapInstance = null;
 let cachedKZJson = null;
-let DATA_COLORS = ['#17b981', '#50b9d2', '#46cbb0', '#7fdef5', '#7ef5ad', '#13966d'];
-let MAP_SCALE = ['#7fdef5', '#50b9d2', '#46cbb0', '#17b981', '#13966d'];
+let DATA_COLORS = ['#cf7f5f', '#a78bb5', '#c58eaa', '#e1a07f', '#9b82a6', '#765f80'];
+let MAP_SCALE = ['#f2c09c', '#e5a5a1', '#c99fba', '#a78bb5', '#806b88'];
 
 const commonToolbox = {
   feature: {
@@ -659,8 +659,8 @@ export async function initKazakhstanMap(apiBaseUrl, indicator, year) {
         layoutSize: '88%',
         zoom: 1,
         data: formattedData,
-        itemStyle: { areaColor: document.body.classList.contains('dark-theme') ? '#48534b' : '#8b9298', borderColor: document.body.classList.contains('dark-theme') ? '#b8d6a0' : '#fff', borderWidth: 1 },
-        emphasis: { itemStyle: { areaColor: '#86b93f' }, label: { show: true, color: '#222', fontSize: 11, formatter: ({ name, value }) => `${name}\n${value == null ? 'Нет данных' : Number(value).toLocaleString('ru-RU')}` } },
+        itemStyle: { areaColor: document.body.classList.contains('dark-theme') ? '#403a43' : '#8b9298', borderColor: document.body.classList.contains('dark-theme') ? '#a78bb5' : '#fff', borderWidth: 1 },
+        emphasis: { itemStyle: { areaColor: '#c9aace' }, label: { show: true, color: '#222', fontSize: 11, formatter: ({ name, value }) => `${name}\n${value == null ? 'Нет данных' : Number(value).toLocaleString('ru-RU')}` } },
         label: { show: false, fontSize: 13 },
         universalTransition: true
       }]

@@ -4,7 +4,7 @@ const availableChartTypes = [
   { type: 'scatter', name: 'Точечная' },
   { type: 'pie', name: 'Круговая' }
 ];
-const chartColors = ['#17b981', '#50b9d2', '#46cbb0', '#7fdef5', '#7ef5ad', '#13966d'];
+const chartColors = ['#cf7f5f', '#a78bb5', '#c58eaa', '#e1a07f', '#9b82a6', '#765f80'];
 
 let selectedDynamicType = 'bar';
 
@@ -138,7 +138,7 @@ function buildChart(regions, values, type, domElement) {
       data: values,
       type: type,
       smooth: type === 'line',
-      itemStyle: { color: '#17b981' },
+      itemStyle: { color: '#cf7f5f' },
       label: { show: true, position: 'top', formatter: ({ value }) => Number(value).toLocaleString('ru-RU'), fontSize: 10 },
       labelLayout: { hideOverlap: true }
     }];

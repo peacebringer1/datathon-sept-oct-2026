@@ -8,6 +8,7 @@ import json
 import re
 from pathlib import Path
 import math
+import shutil
 import time
 import urllib.error
 import urllib.request
@@ -38,6 +39,7 @@ DATA_DIR = Path(os.environ.get(
 ))
 APP_PACKAGED = os.environ.get('APP_PACKAGED') == '1'
 APP_WEB_MODE = os.environ.get('APP_WEB_MODE') == '1'
+BUNDLED_DB_FILE = os.environ.get('BUNDLED_DATABASE_FILE', '')
 ACTIVE_DEMOGRAPHICS = None
 ACTIVE_DATASET_NAME = None
 ACTIVE_DATASET_MODE = None
@@ -51,6 +53,43 @@ AI_INSIGHTS_CACHE_TTL_SECONDS = 300
 AI_INSIGHTS_CACHE_MAX_ENTRIES = 32
 
 print(f"[Flask DB]: Используется база данных по пути -> {DB_FILE}")
+
+
+def prepare_packaged_database(database_file, bundled_database_file):
+    """Seed user data from the bundled database, retaining any obsolete local DB."""
+    target = Path(database_file)
+    bundled = Path(bundled_database_file)
+    if not bundled.is_file():
+        raise FileNotFoundError(f'В ресурсах приложения не найдена база данных: {bundled}')
+
+    required_forms = {'d002', 'd004', 'd006', 'd008'}
+    if target.is_file():
+        try:
+            with sqlite3.connect(target) as connection:
+                has_manifest = connection.execute(
+                    "SELECT 1 FROM sqlite_master WHERE type='table' AND name='sinte_import_manifest'"
+                ).fetchone()
+                forms = {
+                    row[0] for row in connection.execute(
+                        'SELECT DISTINCT form FROM sinte_import_manifest'
+                    )
+                } if has_manifest else set()
+            if required_forms.issubset(forms):
+                return
+        except sqlite3.Error:
+            pass
+
+        backup = target.with_name(f'{target.stem}.legacy-{time.time_ns()}{target.suffix}')
+        target.replace(backup)
+        print(f'[Flask DB]: Старая база сохранена: {backup}')
+
+    target.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(bundled, target)
+    print(f'[Flask DB]: Данные наборов скопированы в папку пользователя: {target}')
+
+
+if APP_PACKAGED and BUNDLED_DB_FILE:
+    prepare_packaged_database(DB_FILE, BUNDLED_DB_FILE)
 
 
 class ClaudeAPIError(RuntimeError):
@@ -1626,6 +1665,32 @@ def d004_data_from_sqlite(specs, year, quarter, module, page, page_size):
         '62': 'Область Улытау', '63': 'Восточно-Казахстанская область', '71': 'г. Астана',
         '75': 'г. Алматы', '79': 'г. Шымкент'
     }
+    labels = list(territory_counts)
+    chart_metric = 'Сумма значений STOIMK в строках выборки' if has_amount else 'Количество записей'
+    chart_values = [territory_amounts.get(code, 0) for code in labels] if has_amount else [territory_counts[code] for code in labels]
+    summary = [{'code': code, 'territory': territory_names.get(code, 'Неизвестная территория'),
+                'records': territory_counts[code], 'households': len(territory_households.get(code, set())),
+                'amount': round(territory_amounts.get(code, 0), 2) if has_amount else None}
+               for code in labels]
+    summary.sort(key=lambda item: item['records'], reverse=True)
+    return {
+        'dataset': 'd004',
+        'year': year,
+        'quarter': 'Все кварталы' if quarter == 'all' else quarter,
+        'module': int(module),
+        'module_label': D004_MODULES[int(module)],
+        'columns': output_columns,
+        'rows': [{column: item.get(column, '') for column in output_columns} for item in rows],
+        'page': page,
+        'page_size': page_size,
+        'total_rows': total_rows,
+        'households': len(households),
+        'territories': len(territory_counts),
+        'chart_metric': chart_metric,
+        'chart': {'labels': labels, 'values': chart_values},
+        'territory_summary': summary,
+        'source': 'database.sqlite · импорт из data/sinte'
+    }
 
 
 def read_d004_csv_page(paths, start, page_size, output_columns):
@@ -1665,32 +1730,6 @@ def read_d004_csv_page(paths, start, page_size, output_columns):
             print(f'[D004]: РќРµ СѓРґР°Р»РѕСЃСЊ РїСЂРѕС‡РёС‚Р°С‚СЊ СЃС‚СЂР°РЅРёС†Сѓ {csv_path}: {error}')
             raise
     return rows
-    labels = list(territory_counts)
-    chart_metric = 'Сумма значений STOIMK в строках выборки' if has_amount else 'Количество записей'
-    chart_values = [territory_amounts.get(code, 0) for code in labels] if has_amount else [territory_counts[code] for code in labels]
-    summary = [{'code': code, 'territory': territory_names.get(code, 'Неизвестная территория'),
-                'records': territory_counts[code], 'households': len(territory_households.get(code, set())),
-                'amount': round(territory_amounts.get(code, 0), 2) if has_amount else None}
-               for code in labels]
-    summary.sort(key=lambda item: item['records'], reverse=True)
-    return {
-        'dataset': 'd004',
-        'year': year,
-        'quarter': 'Все кварталы' if quarter == 'all' else quarter,
-        'module': int(module),
-        'module_label': D004_MODULES[int(module)],
-        'columns': output_columns,
-        'rows': [{column: item.get(column, '') for column in output_columns} for item in rows],
-        'page': page,
-        'page_size': page_size,
-        'total_rows': total_rows,
-        'households': len(households),
-        'territories': len(territory_counts),
-        'chart_metric': chart_metric,
-        'chart': {'labels': labels, 'values': chart_values},
-        'territory_summary': summary,
-        'source': 'database.sqlite · импорт из data/sinte'
-    }
 
 
 @app.route('/api/d004/options', methods=['GET'])

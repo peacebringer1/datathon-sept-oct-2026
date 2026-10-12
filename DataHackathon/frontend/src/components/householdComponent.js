@@ -67,9 +67,9 @@ export async function initHouseholdSection(apiBaseUrl) {
           series: [{
             type: 'radar',
             data: [{ value: values, name: 'Кол-во людей' }],
-            areaStyle: { color: 'rgba(23, 185, 129, 0.24)' },
-            lineStyle: { color: '#17b981', width: 2 },
-            itemStyle: { color: '#17b981' }
+            areaStyle: { color: 'rgba(207, 127, 95, 0.24)' },
+            lineStyle: { color: '#cf7f5f', width: 2 },
+            itemStyle: { color: '#cf7f5f' }
           }]
         };
 
@@ -274,7 +274,7 @@ function renderGeneralCharts(rawData) {
             data: ages,
             label: { show: true, position: 'top', formatter: ({ value }) => Number(value).toLocaleString('ru-RU'), fontSize: 10 },
             labelLayout: { hideOverlap: true },
-            itemStyle: { color: '#17b981', borderRadius: [4, 4, 0, 0] }
+            itemStyle: { color: '#cf7f5f', borderRadius: [4, 4, 0, 0] }
         }]
     }, true);
     chart.resize();

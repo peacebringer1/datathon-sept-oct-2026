@@ -12,7 +12,7 @@ body[data-style-preset="classic"] {
     --brand-gradient-soft: linear-gradient(115deg, rgba(245, 173, 134, .15), rgba(201, 170, 206, .16));
 }
 
-/* The main app canvas has its own green backdrop and oversized rings in style.css. */
+/* The main app canvas has its own base backdrop and oversized rings in style.css. */
 body[data-style-preset="classic"] .container {
     background-color: var(--bg-color);
     background-image:

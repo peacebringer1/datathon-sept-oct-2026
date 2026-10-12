@@ -98,6 +98,121 @@ class TableDataValidationTests(unittest.TestCase):
         self.assertEqual(rows, [])
 
 
+class PackagedDatabaseTests(unittest.TestCase):
+    def setUp(self):
+        app_module.app.config['TESTING'] = True
+        self.client = app_module.app.test_client()
+
+    def _create_packaged_database(self, path):
+        import sqlite3
+
+        with sqlite3.connect(path) as connection:
+            connection.execute('CREATE TABLE sinte_import_manifest (form TEXT)')
+            connection.executemany(
+                'INSERT INTO sinte_import_manifest VALUES (?)',
+                [('d002',), ('d004',), ('d006',), ('d008',)]
+            )
+
+    def test_seeds_missing_user_database_from_packaged_database(self):
+        import sqlite3
+
+        with tempfile.TemporaryDirectory() as directory:
+            bundled = Path(directory) / 'resources' / 'database.sqlite'
+            target = Path(directory) / 'user-data' / 'database.sqlite'
+            bundled.parent.mkdir()
+            self._create_packaged_database(bundled)
+
+            app_module.prepare_packaged_database(target, bundled)
+
+            with sqlite3.connect(target) as connection:
+                forms = {
+                    row[0] for row in connection.execute(
+                        'SELECT DISTINCT form FROM sinte_import_manifest'
+                    )
+                }
+            self.assertEqual(forms, {'d002', 'd004', 'd006', 'd008'})
+
+    def test_preserves_old_user_database_before_seeding_imported_data(self):
+        import sqlite3
+
+        with tempfile.TemporaryDirectory() as directory:
+            bundled = Path(directory) / 'resources' / 'database.sqlite'
+            target = Path(directory) / 'user-data' / 'database.sqlite'
+            bundled.parent.mkdir()
+            target.parent.mkdir()
+            self._create_packaged_database(bundled)
+            with sqlite3.connect(target) as connection:
+                connection.execute('CREATE TABLE saved_data (value TEXT)')
+                connection.execute('INSERT INTO saved_data VALUES (?)', ('keep me',))
+
+            app_module.prepare_packaged_database(target, bundled)
+
+            backups = list(target.parent.glob('database.legacy-*.sqlite'))
+            self.assertEqual(len(backups), 1)
+            with sqlite3.connect(backups[0]) as connection:
+                self.assertEqual(
+                    connection.execute('SELECT value FROM saved_data').fetchone()[0],
+                    'keep me'
+                )
+            with sqlite3.connect(target) as connection:
+                forms = {
+                    row[0] for row in connection.execute(
+                        'SELECT DISTINCT form FROM sinte_import_manifest'
+                    )
+                }
+            self.assertEqual(forms, {'d002', 'd004', 'd006', 'd008'})
+
+    def test_keeps_existing_database_that_already_has_imported_datasets(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundled = Path(directory) / 'resources' / 'database.sqlite'
+            target = Path(directory) / 'user-data' / 'database.sqlite'
+            bundled.parent.mkdir()
+            target.parent.mkdir()
+            self._create_packaged_database(bundled)
+            self._create_packaged_database(target)
+            before = target.read_bytes()
+
+            app_module.prepare_packaged_database(target, bundled)
+
+            self.assertEqual(target.read_bytes(), before)
+
+    def test_d004_api_reads_imported_sqlite_table_without_sinte_files(self):
+        import sqlite3
+
+        with tempfile.TemporaryDirectory() as directory, patch.multiple(
+            app_module,
+            DB_FILE=str(Path(directory) / 'database.sqlite'),
+            DATA_DIR=Path(directory) / 'missing-sinte'
+        ):
+            with sqlite3.connect(app_module.DB_FILE) as connection:
+                connection.execute(
+                    'CREATE TABLE sinte_import_manifest '
+                    '(source_path TEXT, form TEXT, sql_table TEXT, row_count INTEGER)'
+                )
+                connection.execute(
+                    'CREATE TABLE sinte_d004_2024_4kv_kv_vopr1 '
+                    '(TE TEXT, K TEXT, NOMER TEXT, STOIMK TEXT)'
+                )
+                connection.executemany(
+                    'INSERT INTO sinte_d004_2024_4kv_kv_vopr1 VALUES (?, ?, ?, ?)',
+                    [('71', '1', '1', '100'), ('71', '1', '2', '250')]
+                )
+                connection.execute(
+                    'INSERT INTO sinte_import_manifest VALUES (?, ?, ?, ?)',
+                    ('d004/2024/4kv/kv_vopr1.csv', 'd004', 'sinte_d004_2024_4kv_kv_vopr1', 2)
+                )
+
+            response = self.client.get(
+                '/api/d004/data?year=2024&quarter=4kv&module=1&page=1&page_size=10'
+            )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json()
+        self.assertEqual(payload['total_rows'], 2)
+        self.assertEqual(len(payload['rows']), 2)
+        self.assertEqual(payload['source'], 'database.sqlite · импорт из data/sinte')
+
+
 class LocalCorsTests(unittest.TestCase):
     def setUp(self):
         app_module.app.config['TESTING'] = True
