@@ -3,14 +3,24 @@ import { loadTablePage } from './table.js';
 import { fetchAIInsights } from './insightsTicker.js';
 import { updateChartAnalysis } from './chartAnalysis.js';
 
+function replaceSelectOptions(selectElement, values, formatValue = (value) => value) {
+  if (!selectElement) return;
+  const fragment = document.createDocumentFragment();
+  values.forEach((value) => {
+    const option = document.createElement('option');
+    option.value = String(value);
+    option.textContent = formatValue(value);
+    fragment.appendChild(option);
+  });
+  selectElement.replaceChildren(fragment);
+}
+
 export async function initApp(apiBaseUrl, callbacks) {
   try {
     const res = await fetch(`${apiBaseUrl}/api/init-filters`);
     const { indicators, years } = await res.json();
 
-    const optionsHTML = indicators.map(ind => `<option value="${ind}">${ind}</option>`).join('');
     const datedYears = years.filter((year) => Number(year) > 0);
-    const yearsHTML = datedYears.map(y => `<option value="${y}">${y} год</option>`).join('');
 
     const regionIndEl = document.getElementById('regionIndicatorSelect');
     const regionYearEl = document.getElementById('regionYearSelect');
@@ -18,11 +28,11 @@ export async function initApp(apiBaseUrl, callbacks) {
     const mapYearEl = document.getElementById('mapYearSelect');
     const summaryIndEl = document.getElementById('summaryIndicatorSelect');
 
-    if (regionIndEl) regionIndEl.innerHTML = optionsHTML;
-    if (regionYearEl) regionYearEl.innerHTML = yearsHTML;
-    if (mapIndEl) mapIndEl.innerHTML = optionsHTML;
-    if (mapYearEl) mapYearEl.innerHTML = yearsHTML;
-    if (summaryIndEl) summaryIndEl.innerHTML = optionsHTML;
+    replaceSelectOptions(regionIndEl, indicators);
+    replaceSelectOptions(regionYearEl, datedYears, (year) => `${year} год`);
+    replaceSelectOptions(mapIndEl, indicators);
+    replaceSelectOptions(mapYearEl, datedYears, (year) => `${year} год`);
+    replaceSelectOptions(summaryIndEl, indicators);
 
     populateAllSelectors(indicators, datedYears);
 
@@ -49,13 +59,12 @@ export async function initApp(apiBaseUrl, callbacks) {
 }
 
 export function populateAllSelectors(indicatorsList, yearsList) {
-  const optionsHTML = indicatorsList.map(ind => `<option value="${ind}">${ind}</option>`).join('');
-  const yearsHTML = yearsList.filter((year) => Number(year) > 0).map(y => `<option value="${y}">${y} год</option>`).join('');
+  const datedYears = yearsList.filter((year) => Number(year) > 0);
 
   const regionIndEl = document.getElementById('regionIndicatorSelect');
   const regionYearEl = document.getElementById('regionYearSelect');
-  if (regionIndEl) regionIndEl.innerHTML = optionsHTML;
-  if (regionYearEl) regionYearEl.innerHTML = yearsHTML;
+  replaceSelectOptions(regionIndEl, indicatorsList);
+  replaceSelectOptions(regionYearEl, datedYears, (year) => `${year} год`);
 
   for (let i = 1; i <= 6; i++) {
     const indEl = document.getElementById(`card${i}Indicator`);
@@ -63,13 +72,13 @@ export function populateAllSelectors(indicatorsList, yearsList) {
     
     if (indEl) {
       const currentInd = indEl.value;
-      indEl.innerHTML = optionsHTML;
+      replaceSelectOptions(indEl, indicatorsList);
       if (currentInd) indEl.value = currentInd;
       if (!indEl.value) indEl.selectedIndex = 0;
     }
     if (yearEl) {
       const currentYear = yearEl.value;
-      yearEl.innerHTML = yearsHTML;
+      replaceSelectOptions(yearEl, datedYears, (year) => `${year} год`);
       if (currentYear) yearEl.value = currentYear;
       if (!yearEl.value) yearEl.selectedIndex = 0;
     }

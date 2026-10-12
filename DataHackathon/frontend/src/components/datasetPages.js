@@ -1,3 +1,5 @@
+import { escapeHtml } from './htmlUtils.js';
+
 const PAGE_CONFIG = {
   t001: {
     title: 'Труд и занятость',
@@ -205,7 +207,7 @@ function renderD002QuestionChart(element, question) {
         formatter: (items) => {
           const points = Array.isArray(items) ? items : [items];
           const answer = points[0]?.axisValueLabel || '';
-          return `${answer}<br>${points.map((point) => `${point.marker}${point.seriesName}: <strong>${Number(point.value).toLocaleString('ru-RU')} анкет</strong>`).join('<br>')}`;
+          return `${escapeHtml(answer)}<br>${points.map((point) => `${point.marker}${escapeHtml(point.seriesName)}: <strong>${Number(point.value).toLocaleString('ru-RU')} анкет</strong>`).join('<br>')}`;
         }
       },
       legend: trend ? { bottom: 0, textStyle: { color: textColor, fontSize: 12 } } : undefined,
@@ -259,7 +261,7 @@ function renderD002QuestionChart(element, question) {
     tooltip: {
       trigger: 'item',
       confine: true,
-      formatter: (point) => `${point.seriesName}<br>${point.name}<br><strong>${Number(point.value).toLocaleString('ru-RU')} ответов</strong>`
+      formatter: (point) => `${escapeHtml(point.seriesName)}<br>${escapeHtml(point.name)}<br><strong>${Number(point.value).toLocaleString('ru-RU')} ответов</strong>`
     },
     title: trend ? years.map((year, index) => ({ text: String(year.year), left: `${((index + .5) / years.length) * 100}%`, top: 8, textAlign: 'center', textStyle: { color: textColor, fontSize: 13 } })) : undefined,
     legend: { type: 'scroll', bottom: 0, left: 10, right: 10, textStyle: { color: textColor, fontSize: 12 }, data: [...categories.values()] },
@@ -406,8 +408,8 @@ async function renderD002Map(question) {
         formatter: (item) => {
           const region = d002MapRegions.find((entry) => entry.code === item.data?.regionCode);
           return region && item.data?.count != null
-            ? `${region.territory}<br>${item.name}: <strong>${Number(item.data.count).toLocaleString('ru-RU')}</strong><br>Всего ответов: ${Number(region.answered).toLocaleString('ru-RU')}`
-            : `${item.seriesName || item.name}`;
+            ? `${escapeHtml(region.territory)}<br>${escapeHtml(item.name)}: <strong>${Number(item.data.count).toLocaleString('ru-RU')}</strong><br>Всего ответов: ${Number(region.answered).toLocaleString('ru-RU')}`
+            : `${escapeHtml(item.seriesName || item.name)}`;
         }
       },
       legend: {
@@ -507,7 +509,7 @@ function renderD006Pie(id, items) {
   const colors = d006StyleColors();
   chart.setOption({
     color: colors,
-    tooltip: { trigger: 'item', formatter: ({ name, data }) => `${name}<br><strong>${Number(data.count).toLocaleString('ru-RU')} домохозяйств</strong>` },
+    tooltip: { trigger: 'item', formatter: ({ name, data }) => `${escapeHtml(name)}<br><strong>${Number(data.count).toLocaleString('ru-RU')} домохозяйств</strong>` },
     legend: { type: 'scroll', bottom: 4, left: 'center', textStyle: { color: textColor, fontSize: 12 } },
     series: [{ type: 'pie', radius: ['28%', '62%'], center: ['50%', '43%'], minAngle: 2, avoidLabelOverlap: true,
       itemStyle: { borderColor: getComputedStyle(element.closest('.d006-chart-panel')).backgroundColor, borderWidth: 2, borderRadius: 3 },
@@ -552,7 +554,7 @@ function renderD006Bars(id, items) {
     tooltip: { trigger: 'item', formatter: (point) => {
       const item = visible[point.dataIndex];
       const share = item.share == null ? '' : `<br>Доля: ${Number(item.share).toLocaleString('ru-RU')}%`;
-      return `${item.label}<br><strong>${Number(item.count).toLocaleString('ru-RU')} ${unitLabel}</strong>${share}`;
+      return `${escapeHtml(item.label)}<br><strong>${Number(item.count).toLocaleString('ru-RU')} ${unitLabel}</strong>${share}`;
     } },
     grid: {
       left: axisLabelWidth + 56,
@@ -819,7 +821,7 @@ function renderD008Trend(id, yearlyResults, metric, valueMode) {
       confine: true,
       formatter: (point) => {
         const value = point.value == null ? '—' : Number(point.value).toLocaleString('ru-RU');
-        return `${point.name || ''}<br>${point.marker}${point.seriesName}: <strong>${value}${suffix}</strong>`;
+        return `${escapeHtml(point.name || '')}<br>${point.marker}${escapeHtml(point.seriesName)}: <strong>${value}${suffix}</strong>`;
       }
     },
     legend: { type: 'scroll', bottom: 0, left: 8, right: 8, height: 48, itemWidth: 12, itemHeight: 8, textStyle: { color: textColor, fontSize: 12 } },
@@ -1304,7 +1306,7 @@ function renderD004Chart(chartData, metric, moduleLabel, year, quarter) {
   const isCost = /STOIMK|стоимост/i.test(metric);
   d004Chart.setOption({
     color: colors,
-    tooltip: { trigger: 'item', textStyle: { color: '#222' }, formatter: (point) => `${point.name}<br>${point.marker}${point.seriesName}: <strong>${Number(point.value).toLocaleString('ru-RU')}${isCost ? ' ₸' : ''}</strong>` },
+    tooltip: { trigger: 'item', textStyle: { color: '#222' }, formatter: (point) => `${escapeHtml(point.name)}<br>${point.marker}${escapeHtml(point.seriesName)}: <strong>${Number(point.value).toLocaleString('ru-RU')}${isCost ? ' ₸' : ''}</strong>` },
     grid: { left: 72, right: 28, top: 56, bottom: 142, containLabel: true },
     xAxis: {
       type: 'category',
@@ -1398,7 +1400,7 @@ async function renderD004Map(summary, metric, period) {
     const high = Math.max(...values, 1);
     d004Map.setOption({
       animation: false,
-      tooltip: { trigger: 'item', formatter: (params) => `${params.name}<br>${metricConfig.label}: ${params.value == null ? 'Нет данных' : Number(params.value).toLocaleString('ru-RU')}` },
+      tooltip: { trigger: 'item', formatter: (params) => `${escapeHtml(params.name)}<br>${metricConfig.label}: ${params.value == null ? 'Нет данных' : Number(params.value).toLocaleString('ru-RU')}` },
       visualMap: { min: low, max: high, left: 16, bottom: 12, orient: 'horizontal', calculable: true, inRange: { color: MAP_SCALE }, textStyle: { color: document.body.classList.contains('dark-theme') ? '#d4e4d4' : '#48534b' } },
       series: [{
         type: 'map', map: 'KZ_D004', roam: true, zoom: 3.1, layoutCenter: ['0%', '145%'], layoutSize: '108%', selectedMode: 'single', data,
@@ -1457,7 +1459,7 @@ function loadD004QuestionnaireCard(card, revision) {
       const chart = window.echarts.getInstanceByDom(chartElement) || window.echarts.init(chartElement);
       chart.setOption({
         color: colors,
-        tooltip: { trigger: 'item', formatter: (point) => `${point.name}<br>${point.marker}<strong>${Number(point.value).toLocaleString('ru-RU')}</strong>` },
+        tooltip: { trigger: 'item', formatter: (point) => `${escapeHtml(point.name)}<br>${point.marker}<strong>${Number(point.value).toLocaleString('ru-RU')}</strong>` },
         grid: { left: 42, right: 12, top: 12, bottom: 46, containLabel: true },
         xAxis: { type: 'category', data: regions.map((item) => item.territory), axisLabel: { rotate: 35, fontSize: 10, interval: 0 } },
         yAxis: { type: 'value', minInterval: 1 },

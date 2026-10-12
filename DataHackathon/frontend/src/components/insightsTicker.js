@@ -7,22 +7,50 @@ export async function fetchAIInsights(API_BASE_URL) {
 
   try {
     const res = await fetch(`${API_BASE_URL}/api/ai-insights?indicator=${encodeURIComponent(indicator)}`);
-    const { insights } = await res.json();
+    const result = await res.json();
+    if (!res.ok) {
+      const message = typeof result.error === 'string'
+        ? result.error
+        : result.error?.message;
+      throw new Error(message || `Не удалось получить ИИ-анализ (HTTP ${res.status}).`);
+    }
+    const { insights } = result;
 
     if (!insights || insights.length === 0) {
-      track.innerHTML = '<div class="ticker-item">Аномалий не обнаружено</div>';
+      const emptyMessage = document.createElement('div');
+      emptyMessage.className = 'ticker-item';
+      emptyMessage.textContent = 'Недостаточно данных для достоверных наблюдений';
+      track.replaceChildren(emptyMessage);
       return;
     }
 
     const fullList = [...insights, ...insights];
-    track.innerHTML = fullList.map(item => `
-      <div class="ticker-item ${item.type}">
-        <span class="ticker-title">${item.title}</span>
-        <span class="ticker-badge">${item.badge}</span>
-        <span class="ticker-sub">(${item.text})</span>
-      </div>
-    `).join('');
+    const items = fullList.map((item) => {
+      const tickerItem = document.createElement('div');
+      tickerItem.className = 'ticker-item';
+      if (item.type === 'positive') tickerItem.classList.add('positive');
+
+      const title = document.createElement('span');
+      title.className = 'ticker-title';
+      title.textContent = item.title ?? '';
+
+      const badge = document.createElement('span');
+      badge.className = 'ticker-badge';
+      badge.textContent = item.badge ?? '';
+
+      const description = document.createElement('span');
+      description.className = 'ticker-sub';
+      description.textContent = `(${item.text ?? ''})`;
+
+      tickerItem.append(title, badge, description);
+      return tickerItem;
+    });
+    track.replaceChildren(...items);
   } catch (err) {
     console.error('Ошибка тикера:', err);
+    const errorMessage = document.createElement('div');
+    errorMessage.className = 'ticker-item';
+    errorMessage.textContent = `ИИ-анализ недоступен: ${err.message || 'проверьте настройки API-ключа Claude'}`;
+    track.replaceChildren(errorMessage);
   }
 }

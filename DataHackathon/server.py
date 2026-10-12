@@ -2,6 +2,7 @@
 Запуск: python server.py [порт]   (положить рядом с папкой core/ из Data Analyzer)
 """
 import dataclasses, json, math, os, sqlite3, sys, tempfile, uuid
+from pathlib import Path
 import pandas as pd
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -15,9 +16,22 @@ from core.transformations import CoalesceRule, coalesce_columns, combine_columns
 from core.merger import JoinRelation, merge_datasets, column_pair_overlap, common_columns
 
 app = FastAPI()
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
-PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
-DEMOGRAPHICS_DB = os.path.join(PROJECT_DIR, "database.sqlite")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["null"],
+    allow_origin_regex=r"^https?://(?:localhost|127\.0\.0\.1)(?::\d+)?$",
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+PROJECT_DIR = os.environ.get("APP_DATA_DIR", os.path.dirname(os.path.abspath(__file__)))
+DEMOGRAPHICS_DB = os.environ.get(
+    "DATABASE_FILE",
+    os.path.join(PROJECT_DIR, "database.sqlite"),
+)
+ANALYZER_UI_PATH = os.environ.get(
+    "ANALYZER_UI_PATH",
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "index.html"),
+)
 TMP = tempfile.mkdtemp(prefix="da_")
 DS: dict[str, dict] = {}  # id -> {name, raw, clean, report}
 
@@ -25,7 +39,7 @@ DS: dict[str, dict] = {}  # id -> {name, raw, clean, report}
 @app.get("/", include_in_schema=False)
 @app.get("/analyzer/", include_in_schema=False)
 def analyzer_ui():
-    html_path = os.path.join(PROJECT_DIR, "index.html")
+    html_path = str(Path(ANALYZER_UI_PATH).resolve())
     if not os.path.isfile(html_path):
         raise HTTPException(404, "Файл анализатора index.html не найден в корне проекта")
     return FileResponse(html_path)
@@ -47,7 +61,7 @@ def js(data):
 
 @app.get("/api/health")
 def analyzer_health():
-    html_path = os.path.join(PROJECT_DIR, "index.html")
+    html_path = str(Path(ANALYZER_UI_PATH).resolve())
     return js({
         "ok": os.path.isfile(html_path),
         "interface": "index.html",

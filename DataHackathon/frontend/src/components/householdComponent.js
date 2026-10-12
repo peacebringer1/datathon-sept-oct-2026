@@ -284,16 +284,21 @@ function populateTable(rawData) {
 
     rawData.forEach(row => {
         const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td>${row['Год'] || ''}</td>
-            <td>${row['Код территории'] || ''}</td>
-            <td>${row['Пол'] == 1 ? 'Мужской' : 'Женский'}</td>
-            <td>${row['Возраст лица'] || ''}</td>
-            <td>${row['GR1'] || ''}</td>
-            <td>${row['GR2'] || ''}</td>
-            <td>${row['GR3'] || ''}</td>
-            <td>${row['ID'] || ''}</td>
-        `;
+        const values = [
+            row['Год'],
+            row['Код территории'],
+            row['Пол'] == 1 ? 'Мужской' : 'Женский',
+            row['Возраст лица'],
+            row['GR1'],
+            row['GR2'],
+            row['GR3'],
+            row['ID']
+        ];
+        values.forEach((value) => {
+            const td = document.createElement('td');
+            td.textContent = String(value ?? '');
+            tr.appendChild(td);
+        });
         tableBody.appendChild(tr);
     });
 }

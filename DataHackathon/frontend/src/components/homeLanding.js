@@ -1,3 +1,4 @@
+import { escapeHtml } from './htmlUtils.js';
 const API_BASE_URL = window.API_BASE_URL || `http://127.0.0.1:${new URLSearchParams(window.location.search).get('apiPort') || '5000'}`;
 const chartInstances = new Map();
 let chartColors = ['#17b981', '#50b9d2', '#46cbb0', '#7fdef5', '#7ef5ad', '#13966d'];
@@ -69,7 +70,7 @@ function chartFor(id, items, type = 'bar') {
     formatter: (params) => {
       const point = Array.isArray(params) ? params[0] : params;
       const item = cleaned.find((entry) => entry.name === point?.name) || cleaned[point?.dataIndex];
-      return item ? `${item.name}<br><strong>${numberLabel(item)}</strong>` : '';
+      return item ? `${escapeHtml(item.name)}<br><strong>${numberLabel(item)}</strong>` : '';
     }
   };
   let option;

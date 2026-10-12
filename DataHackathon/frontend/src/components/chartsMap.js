@@ -1,4 +1,5 @@
 import { updateChartAnalysis } from './chartAnalysis.js';
+import { escapeHtml } from './htmlUtils.js';
 
 export let yearChartInstance = null; // Первый график (барчарт)
 export let lineChartInstance = null; // Второй график (линейный со сглаживанием)
@@ -96,7 +97,7 @@ export async function updateBarChart(apiBaseUrl, indicator, year) {
         animationDuration: 1000,
         title: { text: window.activeAnalyzerDatasetMode === 'distribution' ? 'Распределение ответов' : 'Распределение по регионам', left: 'center', textStyle: { fontSize: 13, color: getThemeColors().textColor } },
         toolbox: commonToolbox,
-        tooltip: { trigger: 'item', formatter: (point) => `<b>${point.name}</b><br/>${indicator}: <b>${Number(point.value).toLocaleString('ru-RU')}</b>` },
+        tooltip: { trigger: 'item', formatter: (point) => `<b>${escapeHtml(point.name)}</b><br/>${escapeHtml(indicator)}: <b>${Number(point.value).toLocaleString('ru-RU')}</b>` },
         grid: { top: '22%', bottom: '15%', left: '8%', right: '5%', containLabel: true },
         xAxis: { type: 'category', data: labels, axisLabel: { interval: 0, rotate: 35, fontSize: 13, color: getThemeColors().textColor } },
         yAxis: { type: 'value', axisLabel: { fontSize: 13, color: getThemeColors().textColor }, splitLine: { lineStyle: { color: '#f5f7f6' } } },
@@ -224,7 +225,7 @@ export async function updateHBarChart(apiBaseUrl, indicator, year) {
         animationDuration: 1000,
         title: { text: window.activeAnalyzerDatasetMode === 'distribution' ? 'Частота вариантов ответа' : 'Рейтинг регионов', left: 'center', textStyle: { fontSize: 13, color: getThemeColors().textColor } },
         toolbox: commonToolbox,
-        tooltip: { trigger: 'item', formatter: (point) => `<b>${point.data[1]}</b><br/>${indicator}: <b>${Number(point.data[0]).toLocaleString('ru-RU')}</b>` },
+        tooltip: { trigger: 'item', formatter: (point) => `<b>${escapeHtml(point.data[1])}</b><br/>${escapeHtml(indicator)}: <b>${Number(point.data[0]).toLocaleString('ru-RU')}</b>` },
         dataset: { source: sourceData },
         grid: { containLabel: true, top: '18%', bottom: '22%', left: '5%', right: '5%' },
         xAxis: { type: 'value', axisLabel: { fontSize: 13, color: getThemeColors().textColor }, splitLine: { lineStyle: { color: '#f5f7f6' } } },
@@ -335,7 +336,7 @@ export async function updateCustomChart(apiBaseUrl, indicator, year, chartType) 
         delete option.yAxis;
       } else {
         option.title = { text: `Распределение: ${indicator}`, left: 'center', textStyle: { fontSize: 13, color: getThemeColors().textColor } };
-        option.tooltip = { trigger: 'item', formatter: (point) => `<b>${point.name}</b><br/>${indicator}: <b>${Number(point.value).toLocaleString('ru-RU')}</b>` };
+        option.tooltip = { trigger: 'item', formatter: (point) => `<b>${escapeHtml(point.name)}</b><br/>${escapeHtml(indicator)}: <b>${Number(point.value).toLocaleString('ru-RU')}</b>` };
         option.series = [{ data: values, type: 'bar', label: { show: true, position: 'top', fontSize: 10, formatter: ({ value }) => Number(value).toLocaleString('ru-RU') }, labelLayout: { hideOverlap: true }, itemStyle: { color: DATA_COLORS[4], borderRadius: [4, 4, 0, 0] } }];
       }
 
@@ -381,7 +382,7 @@ export async function updateSummaryChart(apiBaseUrl, indicator) {
       toolbox: commonToolbox,
       tooltip: {
         trigger: 'item',
-        formatter: (point) => `<b>${point.name}</b><br/>${indicator}: <b>${Number(point.value).toLocaleString('ru-RU')}</b>`
+        formatter: (point) => `<b>${escapeHtml(point.name)}</b><br/>${escapeHtml(indicator)}: <b>${Number(point.value).toLocaleString('ru-RU')}</b>`
       },
       grid: {
         top: '22%',
@@ -651,7 +652,7 @@ export async function initKazakhstanMap(apiBaseUrl, indicator, year) {
       animation: false,
       title: { text: `Географическое распределение: ${indicator} (${year})`, left: 'center', textStyle: { fontSize: 14, color: getThemeColors().textColor } },
       toolbox: commonToolbox,
-      tooltip: { trigger: 'item', formatter: (params) => `<b>${params.name}</b><br/>Значение: <b>${params.value !== undefined ? params.value.toLocaleString('ru-RU') : 'Нет данных'}</b>` },
+      tooltip: { trigger: 'item', formatter: (params) => `<b>${escapeHtml(params.name)}</b><br/>Значение: <b>${params.value !== undefined ? Number(params.value).toLocaleString('ru-RU') : 'Нет данных'}</b>` },
       visualMap: { left: 14, bottom: 14, orient: 'horizontal', min: minVal, max: maxVal, inRange: { color: MAP_SCALE }, text: ['Макс', 'Мин'], calculable: true, textStyle: { color: getThemeColors().textColor } },
       series: [{
         type: 'map',

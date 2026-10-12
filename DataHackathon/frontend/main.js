@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, safeStorage } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain, safeStorage } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
@@ -8,21 +8,23 @@ const { spawn } = require('child_process');
 let mainWindow;
 let flaskProcess = null;
 let analyzerProcess = null;
+let packagedBackendProcess = null;
 
 const PYTHON_SCRIPT_PATH = path.join(__dirname, 'app.py');
 const ANALYZER_SCRIPT_PATH = path.join(__dirname, '..', 'server.py');
 const INDEX_HTML_PATH = path.join(__dirname, 'index.html');
 const CLAUDE_KEY_FILE = 'claude-api-key.enc';
+const PACKAGED_BACKEND_PATH = path.join(
+  process.resourcesPath,
+  'backend',
+  `desktop-backend${process.platform === 'win32' ? '.exe' : ''}`
+);
 
-const electron = require('electron');
-
-// Указываем путь к вашему основному файлу или папке с проектом
-require('electron-reload')(__dirname, {
-  // Указываем путь до electron (если папка с node_modules находится рядом)
-  electron: require(`${__dirname}/node_modules/electron`)
-});
-
-
+if (!app.isPackaged) {
+  require('electron-reload')(__dirname, {
+    electron: require(`${__dirname}/node_modules/electron`)
+  });
+}
 
 // Функция определения интерпретатора Python (поддерживает .venv для Windows и macOS/Linux)
 function getPythonPath() {
@@ -135,6 +137,51 @@ function startAnalyzerServer(port) {
   });
 }
 
+function startPackagedBackend(apiPort, analyzerPort, savedApiKey) {
+  const appDataPath = path.join(app.getPath('userData'), 'data');
+  fs.mkdirSync(path.join(appDataPath, 'sinte'), { recursive: true });
+
+  packagedBackendProcess = spawn(PACKAGED_BACKEND_PATH, [], {
+    cwd: appDataPath,
+    windowsHide: true,
+    env: {
+      ...process.env,
+      ...(savedApiKey ? { CLAUDE_API_KEY: savedApiKey } : {}),
+      APP_DATA_DIR: appDataPath,
+      DATABASE_FILE: path.join(appDataPath, 'database.sqlite'),
+      DATASETS_DIR: path.join(appDataPath, 'sinte'),
+      APP_PACKAGED: '1',
+      ANALYZER_UI_PATH: path.join(process.resourcesPath, 'app-ui', 'index.html'),
+      PYTHONUNBUFFERED: '1',
+      FLASK_PORT: String(apiPort),
+      ANALYZER_PORT: String(analyzerPort)
+    }
+  });
+
+  packagedBackendProcess.stdout.on('data', (data) => {
+    console.log(`[Backend]: ${data.toString().trim()}`);
+  });
+  packagedBackendProcess.stderr.on('data', (data) => {
+    console.error(`[Backend Error]: ${data.toString().trim()}`);
+  });
+  packagedBackendProcess.on('error', (error) => {
+    console.error('[Backend] Не удалось запустить встроенный сервер:', error);
+    dialog.showErrorBox(
+      'Не удалось запустить приложение',
+      `Встроенный backend не запустился: ${error.message}`
+    );
+  });
+  packagedBackendProcess.on('exit', (code, signal) => {
+    if (code !== 0 && code !== null) {
+      const message = `Сервер завершился с кодом ${code} (signal: ${signal || 'none'}).`;
+      console.error(`[Backend] ${message}`);
+      if (app.isReady()) {
+        dialog.showErrorBox('Встроенный сервер остановился', message);
+      }
+    }
+  });
+}
+
 function createWindow(apiPort, analyzerPort) {
   mainWindow = new BrowserWindow({
     show: false,
@@ -148,7 +195,8 @@ function createWindow(apiPort, analyzerPort) {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
       contextIsolation: true,
-      webSecurity: false
+      sandbox: true,
+      webSecurity: true
     }
   });
   mainWindow.removeMenu();
@@ -169,12 +217,17 @@ app.whenReady().then(async () => {
     getAvailablePort(),
     getAvailablePort()
   ]);
-  startFlaskServer(apiPort, savedApiKey);
-  startAnalyzerServer(analyzerPort);
+  if (app.isPackaged) {
+    startPackagedBackend(apiPort, analyzerPort, savedApiKey);
+  } else {
+    startFlaskServer(apiPort, savedApiKey);
+    startAnalyzerServer(analyzerPort);
+  }
   createWindow(apiPort, analyzerPort);
 });
 
 app.on('window-all-closed', () => {
+  if (packagedBackendProcess) packagedBackendProcess.kill();
   if (flaskProcess) flaskProcess.kill();
   if (analyzerProcess) analyzerProcess.kill();
   if (process.platform !== 'darwin') {

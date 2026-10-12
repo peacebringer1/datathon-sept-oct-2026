@@ -21,15 +21,26 @@ export async function loadTablePage(API_BASE_URL) {
       counterEl.innerText = `Записей в базе: ${total.toLocaleString('ru-RU')}`;
     }
 
-    head.innerHTML = `<tr>${columns.map(c => `<th>${c}</th>`).join('')}</tr>`;
-    body.innerHTML = data.map(row => `
-      <tr>
-        <td>${row.indicator}</td>
-        <td>${row.year}</td>
-        <td>${row.province}</td>
-        <td>${row.value !== undefined && row.value !== null ? row.value.toLocaleString('ru-RU') : 0}</td>
-      </tr>
-    `).join('');
+    const headerRow = document.createElement('tr');
+    columns.forEach((column) => {
+      const th = document.createElement('th');
+      th.textContent = column;
+      headerRow.appendChild(th);
+    });
+    head.replaceChildren(headerRow);
+
+    const rows = data.map((row) => {
+      const tr = document.createElement('tr');
+      [row.indicator, row.year, row.province,
+        row.value !== undefined && row.value !== null ? row.value.toLocaleString('ru-RU') : 0
+      ].forEach((value) => {
+        const td = document.createElement('td');
+        td.textContent = String(value ?? '');
+        tr.appendChild(td);
+      });
+      return tr;
+    });
+    body.replaceChildren(...rows);
   } catch (err) {
     console.error('Ошибка загрузки таблицы:', err);
   }
