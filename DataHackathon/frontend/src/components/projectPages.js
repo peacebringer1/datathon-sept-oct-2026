@@ -21,8 +21,9 @@ export function initProjectPages() {
             { name: 'Frontend', max: 10 }, { name: 'Backend', max: 10 },
             { name: 'Data', max: 10 }, { name: 'Design', max: 10 }, { name: 'AI', max: 10 }
           ],
-          radius: '66%', center: ['50%', '55%'], splitNumber: 4,
-          axisName: { color: dark ? '#d4c7d5' : '#776d78', fontSize: 13 },
+          // Keep the labels inside the narrow flipped team cards.
+          radius: '38%', center: ['50%', '53%'], splitNumber: 4,
+          axisName: { color: dark ? '#d4c7d5' : '#776d78', fontSize: 10 },
           axisLine: { lineStyle: { color: dark ? 'rgba(201,170,206,.28)' : 'rgba(137,111,144,.2)' } },
           splitLine: { lineStyle: { color: dark ? 'rgba(201,170,206,.2)' : 'rgba(137,111,144,.14)' } },
           splitArea: { areaStyle: { color: dark ? ['rgba(201,170,206,.02)', 'rgba(201,170,206,.05)'] : ['rgba(201,170,206,.025)', 'rgba(201,170,206,.07)'] } }
